@@ -11,10 +11,13 @@ on:
         options:
           - debug
           - release
+  push:
+    branches:
+      - claude/android-chord-quiz-app-1UpN6
 
 jobs:
   build:
-    name: Build ${{ inputs.build_type }} APK
+    name: Build ${{ inputs.build_type || 'debug' }} APK
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -42,19 +45,19 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build debug APK
-        if: inputs.build_type == 'debug'
+        if: ${{ (inputs.build_type || 'debug') == 'debug' }}
         run: ./gradlew assembleDebug --stacktrace
         env:
           ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
 
       - name: Build release APK (unsigned)
-        if: inputs.build_type == 'release'
+        if: ${{ (inputs.build_type || 'debug') == 'release' }}
         run: ./gradlew assembleRelease --stacktrace
         env:
           ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
 
       - name: Upload debug APK
-        if: inputs.build_type == 'debug'
+        if: ${{ (inputs.build_type || 'debug') == 'debug' }}
         uses: actions/upload-artifact@v4
         with:
           name: chord-quiz-debug
@@ -62,7 +65,7 @@ jobs:
           retention-days: 14
 
       - name: Upload release APK
-        if: inputs.build_type == 'release'
+        if: ${{ (inputs.build_type || 'debug') == 'release' }}
         uses: actions/upload-artifact@v4
         with:
           name: chord-quiz-release-unsigned
