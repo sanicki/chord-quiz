@@ -15,10 +15,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.chordquiz.app.data.model.Fingering
 import com.chordquiz.app.data.model.StringPosition
 import com.chordquiz.app.ui.theme.BarreColor
@@ -51,6 +53,8 @@ fun InteractiveChordDiagram(
     var positions by remember(stringCount) {
         mutableStateOf(initialPositions.toMutableList())
     }
+
+    val textMeasurer = rememberTextMeasurer()
 
     // Expose layout metrics so tap detector can convert coordinates
     var topPad = 0f
@@ -121,15 +125,17 @@ fun InteractiveChordDiagram(
                 size = Size(diagramWidth, fretSpacing * 0.12f)
             )
         } else {
-            drawContext.canvas.nativeCanvas.drawText(
-                "${baseFret}fr",
-                leftPad - size.width * 0.12f,
-                topPad + fretSpacing * 0.6f,
-                android.graphics.Paint().apply {
-                    color = Color.Black.toArgb()
-                    textSize = size.height * 0.07f
-                    isAntiAlias = true
-                }
+            val fretLabel = "${baseFret}fr"
+            val fretTextLayout = textMeasurer.measure(
+                text = fretLabel,
+                style = TextStyle(color = Color.Black, fontSize = (size.height * 0.07f / density).sp)
+            )
+            drawText(
+                textLayoutResult = fretTextLayout,
+                topLeft = Offset(
+                    leftPad - size.width * 0.12f,
+                    topPad + fretSpacing * 0.6f - fretTextLayout.size.height
+                )
             )
         }
 
