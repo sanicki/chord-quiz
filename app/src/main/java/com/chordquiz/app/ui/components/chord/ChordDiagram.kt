@@ -86,16 +86,16 @@ fun ChordDiagramCanvas(
                 size = Size(diagramWidth, fretSpacing * 0.12f)
             )
         } else {
-            val fretLabel = "${baseFret}fr"
-            val fretTextLayout = textMeasurer.measure(
-                text = fretLabel,
-                style = TextStyle(color = Color.Black, fontSize = (size.height * 0.07f / density).sp)
-            )
             drawText(
-                textLayoutResult = fretTextLayout,
+                textMeasurer = textMeasurer,
+                text = "${baseFret}fr",
                 topLeft = Offset(
                     leftPad - size.width * 0.12f,
-                    topPad + fretSpacing * 0.6f - fretTextLayout.size.height.toFloat()
+                    topPad + fretSpacing * 0.3f
+                ),
+                style = TextStyle(
+                    color = Color.Black,
+                    fontSize = (size.height * 0.07f / density).sp
                 )
             )
         }
