@@ -134,7 +134,7 @@ fun InteractiveChordDiagram(
                 textLayoutResult = fretTextLayout,
                 topLeft = Offset(
                     leftPad - size.width * 0.12f,
-                    topPad + fretSpacing * 0.6f - fretTextLayout.size.height
+                    topPad + fretSpacing * 0.6f - fretTextLayout.size.height.toFloat()
                 )
             )
         }
