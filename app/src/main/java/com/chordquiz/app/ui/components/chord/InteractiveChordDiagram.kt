@@ -25,6 +25,7 @@ import com.chordquiz.app.data.model.Fingering
 import com.chordquiz.app.data.model.StringPosition
 import com.chordquiz.app.ui.theme.BarreColor
 import com.chordquiz.app.ui.theme.FingerDot
+import com.chordquiz.app.ui.theme.IncorrectRed
 import com.chordquiz.app.ui.theme.MutedGray
 import com.chordquiz.app.ui.theme.NutBrown
 import com.chordquiz.app.ui.theme.StringColor
@@ -35,7 +36,9 @@ import com.chordquiz.app.ui.theme.StringColor
  * Tap above nut to cycle string: empty → open → muted → empty.
  *
  * @param stringCount number of strings for this instrument
+ * @param isFeedbackIncorrect when true, finger dots are shown in red
  * @param onFingeringChanged called each time a position changes
+ * @param onNoteSelected called when the user places a finger (fret > 0) or opens a string (fret == 0)
  */
 @Composable
 fun InteractiveChordDiagram(
@@ -43,7 +46,9 @@ fun InteractiveChordDiagram(
     displayedFrets: Int = 5,
     baseFret: Int = 1,
     initialFingering: Fingering? = null,
+    isFeedbackIncorrect: Boolean = false,
     onFingeringChanged: (Fingering) -> Unit,
+    onNoteSelected: ((stringIndex: Int, fret: Int) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     // positions indexed by stringIndex
@@ -55,6 +60,8 @@ fun InteractiveChordDiagram(
     }
 
     val textMeasurer = rememberTextMeasurer()
+
+    val dotColor = if (isFeedbackIncorrect) IncorrectRed else FingerDot
 
     // Expose layout metrics so tap detector can convert coordinates
     var topPad = 0f
@@ -88,6 +95,7 @@ fun InteractiveChordDiagram(
                             if (idx >= 0) list[idx] = StringPosition(tappedString, newFret)
                         }
                         onFingeringChanged(Fingering(positions.toList(), baseFret = baseFret))
+                        if (newFret == 0) onNoteSelected?.invoke(tappedString, 0)
                         return@detectTapGestures
                     }
 
@@ -104,6 +112,7 @@ fun InteractiveChordDiagram(
                         else list.add(StringPosition(tappedString, newFret))
                     }
                     onFingeringChanged(Fingering(positions.toList(), baseFret = baseFret))
+                    if (newFret > 0) onNoteSelected?.invoke(tappedString, newFret)
                 }
             }
     ) {
@@ -171,7 +180,7 @@ fun InteractiveChordDiagram(
         positions.filter { it.fret > 0 }.forEach { pos ->
             val x = leftPad + pos.stringIndex * stringSpacing
             val y = topPad + (pos.fret - baseFret + 0.5f) * fretSpacing
-            drawCircle(FingerDot, fretSpacing * 0.35f, Offset(x, y))
+            drawCircle(dotColor, fretSpacing * 0.35f, Offset(x, y))
         }
 
         // Tap-target hint grid (faint cells)

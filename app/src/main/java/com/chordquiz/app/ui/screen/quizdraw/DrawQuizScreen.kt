@@ -32,6 +32,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -74,14 +75,15 @@ fun DrawQuizScreen(
         }
         is DrawQuizUiState.Active -> {
             val session = state.session
-            val question = session.currentQuestion ?: return
+            // Use displayedQuestion so the chord name doesn't change until Next is pressed
+            val question = state.displayedQuestion ?: session.currentQuestion ?: return
             val stringCount = session.instrument.stringCount
 
             Scaffold(
                 topBar = {
                     TopAppBar(
                         title = {
-                            Text("Question ${session.currentIndex + 1} / ${session.questions.size}")
+                            Text("Question ${state.displayedQuestionIndex + 1} / ${session.questions.size}")
                         },
                         navigationIcon = {
                             IconButton(onClick = onNavigateBack) {
@@ -100,13 +102,13 @@ fun DrawQuizScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     LinearProgressIndicator(
-                        progress = { session.currentIndex.toFloat() / session.questions.size },
+                        progress = { state.displayedQuestionIndex.toFloat() / session.questions.size },
                         modifier = Modifier.fillMaxWidth()
                     )
 
                     Spacer(Modifier.height(8.dp))
 
-                    Text("Play this chord:", style = MaterialTheme.typography.bodyLarge)
+                    Text("Draw this chord:", style = MaterialTheme.typography.bodyLarge)
                     Text(
                         text = question.chordDefinition.chordName,
                         style = MaterialTheme.typography.displayLarge.copy(
@@ -116,16 +118,19 @@ fun DrawQuizScreen(
                         color = MaterialTheme.colorScheme.primary
                     )
 
-                    Text("Draw the fingering:", style = MaterialTheme.typography.bodyMedium)
-
-                    InteractiveChordDiagram(
-                        stringCount = stringCount,
-                        initialFingering = state.currentFingering,
-                        onFingeringChanged = { viewModel.onFingeringChanged(it) },
-                        modifier = Modifier
-                            .width(220.dp)
-                            .height(280.dp)
-                    )
+                    // Reset the interactive diagram when the question changes
+                    key(state.displayedQuestionIndex) {
+                        InteractiveChordDiagram(
+                            stringCount = stringCount,
+                            initialFingering = state.currentFingering,
+                            isFeedbackIncorrect = state.feedback == AnswerFeedback.INCORRECT,
+                            onFingeringChanged = { viewModel.onFingeringChanged(it) },
+                            onNoteSelected = { strIdx, fret -> viewModel.onNoteSelected(strIdx, fret) },
+                            modifier = Modifier
+                                .width(220.dp)
+                                .height(280.dp)
+                        )
+                    }
 
                     Text(
                         "Tap strings/frets to place fingers\nTap above nut to toggle open/muted",
@@ -186,7 +191,7 @@ fun DrawQuizScreen(
                             onClick = { viewModel.nextQuestion() },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            val isLast = session.currentIndex + 1 >= session.questions.size
+                            val isLast = state.displayedQuestionIndex + 1 >= session.questions.size
                             Text(if (isLast) "Finish" else "Next  →")
                         }
                     }

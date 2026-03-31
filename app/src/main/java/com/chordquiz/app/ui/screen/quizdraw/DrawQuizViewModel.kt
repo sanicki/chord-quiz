@@ -2,10 +2,13 @@ package com.chordquiz.app.ui.screen.quizdraw
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.chordquiz.app.audio.NoteFrequencyTable
+import com.chordquiz.app.audio.NotePlayer
 import com.chordquiz.app.data.model.Fingering
 import com.chordquiz.app.data.model.Instrument
 import com.chordquiz.app.data.model.QuizAnswer
 import com.chordquiz.app.data.model.QuizMode
+import com.chordquiz.app.data.model.QuizQuestion
 import com.chordquiz.app.data.model.QuizSession
 import com.chordquiz.app.data.model.StringPosition
 import com.chordquiz.app.data.repository.ChordRepository
@@ -26,7 +29,11 @@ sealed class DrawQuizUiState {
     data class Active(
         val session: QuizSession,
         val currentFingering: Fingering,
-        val feedback: AnswerFeedback? = null
+        val feedback: AnswerFeedback? = null,
+        /** The question currently shown on screen; does not advance until Next is pressed. */
+        val displayedQuestion: QuizQuestion? = null,
+        /** Increments each time the user moves to the next question; used to reset the diagram. */
+        val displayedQuestionIndex: Int = 0
     ) : DrawQuizUiState()
     data class Complete(val sessionId: String) : DrawQuizUiState()
 }
@@ -62,7 +69,9 @@ class DrawQuizViewModel @Inject constructor(
             val session = buildSession(inst, QuizMode.DRAW, selected, questionCount, repeatMissed)
             _uiState.value = DrawQuizUiState.Active(
                 session = session,
-                currentFingering = emptyFingering(inst.stringCount)
+                currentFingering = emptyFingering(inst.stringCount),
+                displayedQuestion = session.questions.firstOrNull(),
+                displayedQuestionIndex = 0
             )
         }
     }
@@ -72,12 +81,24 @@ class DrawQuizViewModel @Inject constructor(
         _uiState.value = state.copy(currentFingering = fingering, feedback = null)
     }
 
+    fun onNoteSelected(stringIndex: Int, fret: Int) {
+        val inst = instrument ?: return
+        if (fret < 0) return
+        val openNote = inst.openStringNotes.getOrNull(stringIndex) ?: return
+        val openOctave = inst.openStringOctaves.getOrNull(stringIndex) ?: return
+        val midi = openNote.semitone + 12 * (openOctave + 1) + fret
+        viewModelScope.launch {
+            NotePlayer.playMidi(midi)
+        }
+    }
+
     fun submitAnswer() {
         val state = _uiState.value as? DrawQuizUiState.Active ?: return
         val inst = instrument ?: return
-        val question = state.session.currentQuestion ?: return
+        val question = state.displayedQuestion ?: state.session.currentQuestion ?: return
 
-        val isCorrect = evaluateAnswer(inst, state.currentFingering, question.chordDefinition)
+        val referenceFingering = question.chordDefinition.fingerings.getOrNull(question.targetFingeringIndex)
+        val isCorrect = evaluateAnswer(inst, state.currentFingering, question.chordDefinition, referenceFingering)
         val answer = QuizAnswer(
             question = question,
             isCorrect = isCorrect,
@@ -99,7 +120,9 @@ class DrawQuizViewModel @Inject constructor(
         } else {
             _uiState.value = state.copy(
                 currentFingering = emptyFingering(inst.stringCount),
-                feedback = null
+                feedback = null,
+                displayedQuestion = state.session.currentQuestion,
+                displayedQuestionIndex = state.displayedQuestionIndex + 1
             )
         }
     }

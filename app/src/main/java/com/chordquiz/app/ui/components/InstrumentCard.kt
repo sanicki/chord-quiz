@@ -66,8 +66,8 @@ fun InstrumentCard(
 
 private fun instrumentEmoji(id: String): String = when (id) {
     "guitar_standard" -> "🎸"
-    "ukulele_soprano" -> "🪕"
+    "ukulele_soprano" -> "🎸"
     "bass_standard"   -> "🎸"
-    "banjo_5string"   -> "🪗"
+    "banjo_5string"   -> "🪕"
     else              -> "🎵"
 }
