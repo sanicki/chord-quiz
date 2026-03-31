@@ -10,7 +10,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -23,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.chordquiz.app.data.model.Fingering
 import com.chordquiz.app.data.model.StringPosition
-import com.chordquiz.app.ui.theme.BarreColor
 import com.chordquiz.app.ui.theme.FingerDot
 import com.chordquiz.app.ui.theme.IncorrectRed
 import com.chordquiz.app.ui.theme.MutedGray
@@ -32,13 +30,14 @@ import com.chordquiz.app.ui.theme.StringColor
 
 /**
  * Tappable chord diagram.
- * Tap a fret position to cycle: empty → finger dot → muted → empty.
- * Tap above nut to cycle string: empty → open → muted → empty.
+ * Tap a fret position to toggle a finger dot on/off.
+ * Tap above the nut to cycle a string: open → muted → open.
  *
- * @param stringCount number of strings for this instrument
- * @param isFeedbackIncorrect when true, finger dots are shown in red
- * @param onFingeringChanged called each time a position changes
- * @param onNoteSelected called when the user places a finger (fret > 0) or opens a string (fret == 0)
+ * @param incorrectFrettedStrings  strings where the user placed a wrong-note finger (shown red)
+ * @param incorrectMutedStrings    strings the user muted but shouldn't have (X shown red)
+ * @param missedMuteStrings        strings that should be muted but the user left open/fretted
+ *                                  (open-circle shown red as a hint)
+ * @param onNoteSelected           called when a finger is placed (fret > 0) or a string opened (fret == 0)
  */
 @Composable
 fun InteractiveChordDiagram(
@@ -46,12 +45,13 @@ fun InteractiveChordDiagram(
     displayedFrets: Int = 5,
     baseFret: Int = 1,
     initialFingering: Fingering? = null,
-    isFeedbackIncorrect: Boolean = false,
+    incorrectFrettedStrings: Set<Int> = emptySet(),
+    incorrectMutedStrings: Set<Int> = emptySet(),
+    missedMuteStrings: Set<Int> = emptySet(),
     onFingeringChanged: (Fingering) -> Unit,
     onNoteSelected: ((stringIndex: Int, fret: Int) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    // positions indexed by stringIndex
     val initialPositions = initialFingering?.positions
         ?: (0 until stringCount).map { StringPosition(it, 0) }
 
@@ -61,9 +61,6 @@ fun InteractiveChordDiagram(
 
     val textMeasurer = rememberTextMeasurer()
 
-    val dotColor = if (isFeedbackIncorrect) IncorrectRed else FingerDot
-
-    // Expose layout metrics so tap detector can convert coordinates
     var topPad = 0f
     var leftPad = 0f
     var stringSpacing = 0f
@@ -78,18 +75,13 @@ fun InteractiveChordDiagram(
                 detectTapGestures { offset ->
                     if (stringSpacing == 0f) return@detectTapGestures
 
-                    // Determine tapped string
                     val rawString = ((offset.x - leftPad) / stringSpacing).toInt()
                     val tappedString = rawString.coerceIn(0, stringCount - 1)
 
-                    // Tap above nut → toggle open/muted
                     if (offset.y < topPad) {
+                        // Above nut: toggle open ↔ muted
                         val cur = positions.firstOrNull { it.stringIndex == tappedString }?.fret ?: 0
-                        val newFret = when (cur) {
-                            0 -> -1   // open → muted
-                            -1 -> 0  // muted → open
-                            else -> 0
-                        }
+                        val newFret = if (cur == -1) 0 else -1
                         positions = positions.toMutableList().also { list ->
                             val idx = list.indexOfFirst { it.stringIndex == tappedString }
                             if (idx >= 0) list[idx] = StringPosition(tappedString, newFret)
@@ -99,10 +91,9 @@ fun InteractiveChordDiagram(
                         return@detectTapGestures
                     }
 
-                    // Tap on fret grid
+                    // Fret grid tap
                     val rawFret = ((offset.y - topPad) / fretSpacing).toInt() + baseFret
                     val tappedFret = rawFret.coerceIn(baseFret, baseFret + displayedFrets - 1)
-
                     val curPos = positions.firstOrNull { it.stringIndex == tappedString }
                     val newFret = if (curPos?.fret == tappedFret) 0 else tappedFret
 
@@ -126,7 +117,7 @@ fun InteractiveChordDiagram(
         stringSpacing = diagramWidth / (stringCount - 1)
         fretSpacing = diagramHeight / displayedFrets
 
-        // Nut
+        // Nut / fret number
         if (baseFret == 1) {
             drawRect(
                 color = NutBrown,
@@ -137,14 +128,8 @@ fun InteractiveChordDiagram(
             drawText(
                 textMeasurer = textMeasurer,
                 text = "${baseFret}fr",
-                topLeft = Offset(
-                    leftPad - size.width * 0.12f,
-                    topPad + fretSpacing * 0.3f
-                ),
-                style = TextStyle(
-                    color = Color.Black,
-                    fontSize = (size.height * 0.07f / density).sp
-                )
+                topLeft = Offset(leftPad - size.width * 0.12f, topPad + fretSpacing * 0.3f),
+                style = TextStyle(color = Color.Black, fontSize = (size.height * 0.07f / density).sp)
             )
         }
 
@@ -160,19 +145,25 @@ fun InteractiveChordDiagram(
             drawLine(StringColor, Offset(x, topPad), Offset(x, topPad + diagramHeight), 1.5f)
         }
 
-        // Open/muted markers
+        // Above-nut markers (open circle or muted X)
         val symbolY = topPad - fretSpacing * 0.45f
         val symbolRadius = size.width * 0.035f
         positions.forEach { pos ->
             val x = leftPad + pos.stringIndex * stringSpacing
             when (pos.fret) {
                 -1 -> {
-                    drawLine(MutedGray, Offset(x - symbolRadius, symbolY - symbolRadius),
+                    // Muted X — red if incorrectly muted, gray otherwise
+                    val xColor = if (pos.stringIndex in incorrectMutedStrings) IncorrectRed else MutedGray
+                    drawLine(xColor, Offset(x - symbolRadius, symbolY - symbolRadius),
                         Offset(x + symbolRadius, symbolY + symbolRadius), 2f)
-                    drawLine(MutedGray, Offset(x + symbolRadius, symbolY - symbolRadius),
+                    drawLine(xColor, Offset(x + symbolRadius, symbolY - symbolRadius),
                         Offset(x - symbolRadius, symbolY + symbolRadius), 2f)
                 }
-                0 -> drawCircle(Color.Black, symbolRadius, Offset(x, symbolY), style = Stroke(2f))
+                0 -> {
+                    // Open circle — red if this string should have been muted, black otherwise
+                    val oColor = if (pos.stringIndex in missedMuteStrings) IncorrectRed else Color.Black
+                    drawCircle(oColor, symbolRadius, Offset(x, symbolY), style = Stroke(2f))
+                }
             }
         }
 
@@ -180,10 +171,11 @@ fun InteractiveChordDiagram(
         positions.filter { it.fret > 0 }.forEach { pos ->
             val x = leftPad + pos.stringIndex * stringSpacing
             val y = topPad + (pos.fret - baseFret + 0.5f) * fretSpacing
+            val dotColor = if (pos.stringIndex in incorrectFrettedStrings) IncorrectRed else FingerDot
             drawCircle(dotColor, fretSpacing * 0.35f, Offset(x, y))
         }
 
-        // Tap-target hint grid (faint cells)
+        // Faint tap-target hint grid
         for (s in 0 until stringCount) {
             for (f in 0 until displayedFrets) {
                 val cx = leftPad + s * stringSpacing

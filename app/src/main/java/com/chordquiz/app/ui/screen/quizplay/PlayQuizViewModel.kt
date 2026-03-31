@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chordquiz.app.audio.AudioRecorderManager
 import com.chordquiz.app.audio.ChordRecognizer
+import com.chordquiz.app.audio.NotePlayer
 import com.chordquiz.app.audio.PitchDetector
 import com.chordquiz.app.audio.RecognitionResult
+import com.chordquiz.app.data.model.Instrument
 import com.chordquiz.app.data.model.Note
 import com.chordquiz.app.data.model.QuizAnswer
 import com.chordquiz.app.data.model.QuizMode
@@ -56,6 +58,11 @@ class PlayQuizViewModel @Inject constructor(
 
     private var listeningJob: Job? = null
     private var autoAdvanceJob: Job? = null
+    private var instrument: Instrument? = null
+
+    companion object {
+        private const val SILENCE_THRESHOLD = 0.02f
+    }
 
     fun initialize(
         instrumentId: String,
@@ -65,6 +72,7 @@ class PlayQuizViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             val inst = instrumentRepo.getInstrumentById(instrumentId) ?: return@launch
+            instrument = inst
             val allChords = chordRepo.getChordsForInstrument(instrumentId).first()
             val selected = allChords.filter { it.id in selectedChordIds }
             if (selected.isEmpty()) return@launch
@@ -84,7 +92,12 @@ class PlayQuizViewModel @Inject constructor(
                 if (!state.isListening) return@collect
 
                 val amplitude = PitchDetector.computeAmplitude(buffer)
-                val pitches = PitchDetector.detectPitches(buffer)
+                // Gate pitch detection: ignore silent/near-silent input
+                val pitches = if (amplitude >= SILENCE_THRESHOLD) {
+                    PitchDetector.detectPitches(buffer)
+                } else {
+                    emptyList()
+                }
                 val recognition = if (pitches.isNotEmpty()) chordRecognizer.recognize(pitches) else null
                 val notes = recognition?.detectedNotes?.toList() ?: emptyList()
 
@@ -120,6 +133,24 @@ class PlayQuizViewModel @Inject constructor(
             feedback = if (isCorrect) PlayFeedback.CORRECT else PlayFeedback.INCORRECT,
             isListening = false
         )
+
+        // Play the chord back in the instrument's voice when correct
+        if (isCorrect) {
+            val inst = instrument
+            val fingering = question.chordDefinition.fingerings.firstOrNull()
+            if (inst != null && fingering != null) {
+                val midis = fingering.positions
+                    .filter { it.fret >= 0 }
+                    .mapNotNull { pos ->
+                        val openNote = inst.openStringNotes.getOrNull(pos.stringIndex) ?: return@mapNotNull null
+                        val openOctave = inst.openStringOctaves.getOrNull(pos.stringIndex) ?: return@mapNotNull null
+                        openNote.semitone + 12 * (openOctave + 1) + pos.fret
+                    }
+                viewModelScope.launch {
+                    NotePlayer.playChord(midis, inst.id)
+                }
+            }
+        }
 
         // Auto-advance after 2 seconds
         autoAdvanceJob?.cancel()

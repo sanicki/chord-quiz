@@ -15,7 +15,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.chordquiz.app.data.model.Instrument
 
 @Composable
@@ -44,10 +43,9 @@ fun InstrumentCard(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(
-                text = instrumentEmoji(instrument.id),
-                fontSize = 48.sp,
-                textAlign = TextAlign.Center
+            InstrumentIcon(
+                instrumentId = instrument.id,
+                modifier = Modifier.size(width = 56.dp, height = 72.dp)
             )
             Text(
                 text = instrument.displayName,
@@ -62,12 +60,4 @@ fun InstrumentCard(
             )
         }
     }
-}
-
-private fun instrumentEmoji(id: String): String = when (id) {
-    "guitar_standard" -> "🎸"
-    "ukulele_soprano" -> "🎸"
-    "bass_standard"   -> "🎸"
-    "banjo_5string"   -> "🪕"
-    else              -> "🎵"
 }

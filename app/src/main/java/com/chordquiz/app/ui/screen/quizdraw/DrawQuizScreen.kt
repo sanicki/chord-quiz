@@ -123,7 +123,9 @@ fun DrawQuizScreen(
                         InteractiveChordDiagram(
                             stringCount = stringCount,
                             initialFingering = state.currentFingering,
-                            isFeedbackIncorrect = state.feedback == AnswerFeedback.INCORRECT,
+                            incorrectFrettedStrings = state.incorrectFrettedStrings,
+                            incorrectMutedStrings = state.incorrectMutedStrings,
+                            missedMuteStrings = state.missedMuteStrings,
                             onFingeringChanged = { viewModel.onFingeringChanged(it) },
                             onNoteSelected = { strIdx, fret -> viewModel.onNoteSelected(strIdx, fret) },
                             modifier = Modifier
@@ -158,7 +160,7 @@ fun DrawQuizScreen(
                         ) {
                             Column(Modifier.fillMaxWidth()) {
                                 Text(
-                                    text = if (isCorrect) "✓ Correct!" else "✗ Not quite!",
+                                    text = if (isCorrect) "Correct!" else "Not quite!",
                                     color = if (isCorrect) CorrectGreen else IncorrectRed,
                                     fontWeight = FontWeight.Bold,
                                     style = MaterialTheme.typography.titleMedium
@@ -184,7 +186,7 @@ fun DrawQuizScreen(
                             onClick = { viewModel.submitAnswer() },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Submit  ✓")
+                            Text("Submit")
                         }
                     } else {
                         Button(
@@ -192,7 +194,7 @@ fun DrawQuizScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             val isLast = state.displayedQuestionIndex + 1 >= session.questions.size
-                            Text(if (isLast) "Finish" else "Next  →")
+                            Text(if (isLast) "Finish" else "Next")
                         }
                     }
                 }
