@@ -8,6 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -47,7 +48,7 @@ class AudioRecorderManager @Inject constructor() {
 
         try {
             val buffer = ShortArray(bufferSize / 2)
-            while (isActive) {
+            while (currentCoroutineContext().isActive) {
                 val read = record.read(buffer, 0, buffer.size)
                 if (read > 0) {
                     emit(buffer.copyOf(read))
