@@ -77,7 +77,10 @@ fun ResultsScreen(
         else -> ""
     }
 
-    val missedAnswers = session.answers.filter { !it.isCorrect }
+    val missedChords = session.answers
+        .filter { !it.isCorrect }
+        .distinctBy { it.question.chordDefinition.id }
+        .sortedBy { it.question.chordDefinition.chordName }
 
     Scaffold(
         topBar = {
@@ -151,14 +154,14 @@ fun ResultsScreen(
             }
 
             // Missed chords section
-            if (missedAnswers.isNotEmpty()) {
+            if (missedChords.isNotEmpty()) {
                 Text("MISSED CHORDS", style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.fillMaxWidth())
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(horizontal = 4.dp)
                 ) {
-                    items(missedAnswers) { answer ->
+                    items(missedChords) { answer ->
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             ChordDiagram(
                                 chord = answer.question.chordDefinition,
