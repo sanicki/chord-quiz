@@ -52,6 +52,7 @@ fun ResultsScreen(
     sessionId: String,
     onNavigateHome: () -> Unit,
     onNavigateBack: () -> Unit,
+    onRestartQuiz: () -> Unit,
     viewModel: ResultsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -183,7 +184,7 @@ fun ResultsScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 OutlinedButton(
-                    onClick = onNavigateBack,
+                    onClick = onRestartQuiz,
                     modifier = Modifier.weight(1f)
                 ) { Text("Try Again") }
 

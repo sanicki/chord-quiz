@@ -7,6 +7,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.chordquiz.app.ui.screen.instrument.InstrumentSelectionScreen
 import com.chordquiz.app.ui.screen.library.ChordLibraryScreen
+import com.chordquiz.app.ui.screen.results.SessionStore
 import com.chordquiz.app.ui.screen.setup.PracticeSetupScreen
 import com.chordquiz.app.ui.screen.quizdraw.DrawQuizScreen
 import com.chordquiz.app.ui.screen.quizplay.PlayQuizScreen
@@ -61,7 +62,12 @@ fun NavGraph() {
                 repeatMissed = route.repeatMissed,
                 onNavigateBack = { navController.popBackStack() },
                 onQuizComplete = { sessionId ->
-                    navController.navigate(ResultsRoute(sessionId)) {
+                    SessionStore.lastQuizType = "DrawQuizRoute"
+                    SessionStore.lastInstrumentId = route.instrumentId
+                    SessionStore.lastSelectedChordIds = route.selectedChordIds
+                    SessionStore.lastQuestionCount = route.questionCount
+                    SessionStore.lastRepeatMissed = route.repeatMissed
+                    navController.navigate(ResultsRoute(sessionId, "DrawQuizRoute")) {
                         popUpTo(InstrumentSelectionRoute)
                     }
                 }
@@ -77,7 +83,12 @@ fun NavGraph() {
                 repeatMissed = route.repeatMissed,
                 onNavigateBack = { navController.popBackStack() },
                 onQuizComplete = { sessionId ->
-                    navController.navigate(ResultsRoute(sessionId)) {
+                    SessionStore.lastQuizType = "PlayQuizRoute"
+                    SessionStore.lastInstrumentId = route.instrumentId
+                    SessionStore.lastSelectedChordIds = route.selectedChordIds
+                    SessionStore.lastQuestionCount = route.questionCount
+                    SessionStore.lastRepeatMissed = route.repeatMissed
+                    navController.navigate(ResultsRoute(sessionId, "PlayQuizRoute")) {
                         popUpTo(InstrumentSelectionRoute)
                     }
                 }
@@ -93,7 +104,36 @@ fun NavGraph() {
                         popUpTo(InstrumentSelectionRoute) { inclusive = true }
                     }
                 },
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { /* Reserved for future use */ },
+                onRestartQuiz = {
+                    when (route.restartRoute) {
+                        "DrawQuizRoute" -> SessionStore.lastInstrumentId?.let { instrumentId ->
+                            SessionStore.lastSelectedChordIds?.let { chordIds ->
+                                navController.navigate(DrawQuizRoute(
+                                    instrumentId = instrumentId,
+                                    selectedChordIds = chordIds,
+                                    questionCount = SessionStore.lastQuestionCount,
+                                    repeatMissed = SessionStore.lastRepeatMissed
+                                )) {
+                                    popUpTo(InstrumentSelectionRoute)
+                                }
+                            }
+                        }
+                        "PlayQuizRoute" -> SessionStore.lastInstrumentId?.let { instrumentId ->
+                            SessionStore.lastSelectedChordIds?.let { chordIds ->
+                                navController.navigate(PlayQuizRoute(
+                                    instrumentId = instrumentId,
+                                    selectedChordIds = chordIds,
+                                    questionCount = SessionStore.lastQuestionCount,
+                                    repeatMissed = SessionStore.lastRepeatMissed
+                                )) {
+                                    popUpTo(InstrumentSelectionRoute)
+                                }
+                            }
+                        }
+                        else -> onNavigateHome()
+                    }
+                }
             )
         }
     }
