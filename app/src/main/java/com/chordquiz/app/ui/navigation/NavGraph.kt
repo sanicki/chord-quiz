@@ -97,17 +97,16 @@ fun NavGraph() {
 
         composable<ResultsRoute> { backStackEntry ->
             val route = backStackEntry.toRoute<ResultsRoute>()
-            ResultsScreen(
-                sessionId = route.sessionId,
-                onNavigateHome = {
-                    navController.navigate(InstrumentSelectionRoute) {
-                        popUpTo(InstrumentSelectionRoute) { inclusive = true }
-                    }
-                },
-                onNavigateBack = { /* Reserved for future use */ },
-                onRestartQuiz = {
-                    when (route.restartRoute) {
-                        "DrawQuizRoute" -> SessionStore.lastInstrumentId?.let { instrumentId ->
+            
+            val onNavigateHome = {
+                navController.navigate(InstrumentSelectionRoute) {
+                    popUpTo(InstrumentSelectionRoute) { inclusive = true }
+                }
+            }
+            
+            val onRestartQuiz = {
+                when (route.restartRoute) {
+                    "DrawQuizRoute" -> SessionStore.lastInstrumentId?.let { instrumentId ->
                             SessionStore.lastSelectedChordIds?.let { chordIds ->
                                 navController.navigate(DrawQuizRoute(
                                     instrumentId = instrumentId,
@@ -119,7 +118,7 @@ fun NavGraph() {
                                 }
                             }
                         }
-                        "PlayQuizRoute" -> SessionStore.lastInstrumentId?.let { instrumentId ->
+                    "PlayQuizRoute" -> SessionStore.lastInstrumentId?.let { instrumentId ->
                             SessionStore.lastSelectedChordIds?.let { chordIds ->
                                 navController.navigate(PlayQuizRoute(
                                     instrumentId = instrumentId,
@@ -131,9 +130,15 @@ fun NavGraph() {
                                 }
                             }
                         }
-                        else -> onNavigateHome()
-                    }
+                    else -> onNavigateHome()
                 }
+            }
+            
+            ResultsScreen(
+                sessionId = route.sessionId,
+                onNavigateHome = onNavigateHome,
+                onNavigateBack = { /* Reserved for future use */ },
+                onRestartQuiz = onRestartQuiz
             )
         }
     }
