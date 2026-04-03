@@ -7,7 +7,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.chordquiz.app.ui.screen.instrument.InstrumentSelectionScreen
 import com.chordquiz.app.ui.screen.library.ChordLibraryScreen
-import com.chordquiz.app.ui.screen.results.SessionStore
+import com.chordquiz.app.ui.shared.SessionStore
 import com.chordquiz.app.ui.screen.setup.PracticeSetupScreen
 import com.chordquiz.app.ui.screen.quizdraw.DrawQuizScreen
 import com.chordquiz.app.ui.screen.quizplay.PlayQuizScreen

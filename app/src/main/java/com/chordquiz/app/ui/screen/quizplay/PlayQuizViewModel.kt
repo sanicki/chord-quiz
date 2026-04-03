@@ -16,7 +16,7 @@ import com.chordquiz.app.data.repository.ChordRepository
 import com.chordquiz.app.data.repository.InstrumentRepository
 import com.chordquiz.app.domain.BuildQuizSessionUseCase
 import com.chordquiz.app.domain.EvaluateAudioAnswerUseCase
-import com.chordquiz.app.ui.screen.results.SessionStore
+import com.chordquiz.app.ui.shared.SessionStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
