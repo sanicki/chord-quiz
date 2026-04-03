@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.chordquiz.app.data.model.QuizSession
 import com.chordquiz.app.ui.components.chord.ChordDiagram
 import com.chordquiz.app.ui.theme.CorrectGreen
 import com.chordquiz.app.ui.theme.IncorrectRed
