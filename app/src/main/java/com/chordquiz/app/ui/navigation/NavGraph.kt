@@ -97,48 +97,53 @@ fun NavGraph() {
 
         composable<ResultsRoute> { backStackEntry ->
             val route = backStackEntry.toRoute<ResultsRoute>()
-            
-            val onNavigateHome = {
-                navController.navigate(InstrumentSelectionRoute) {
-                    popUpTo(InstrumentSelectionRoute) { inclusive = true }
-                }
-            }
-            
-            val onRestartQuiz = {
-                when (route.restartRoute) {
-                    "DrawQuizRoute" -> SessionStore.lastInstrumentId?.let { instrumentId ->
-                            SessionStore.lastSelectedChordIds?.let { chordIds ->
-                                navController.navigate(DrawQuizRoute(
-                                    instrumentId = instrumentId,
-                                    selectedChordIds = chordIds,
-                                    questionCount = SessionStore.lastQuestionCount,
-                                    repeatMissed = SessionStore.lastRepeatMissed
-                                )) {
-                                    popUpTo(InstrumentSelectionRoute)
-                                }
-                            }
-                        }
-                    "PlayQuizRoute" -> SessionStore.lastInstrumentId?.let { instrumentId ->
-                            SessionStore.lastSelectedChordIds?.let { chordIds ->
-                                navController.navigate(PlayQuizRoute(
-                                    instrumentId = instrumentId,
-                                    selectedChordIds = chordIds,
-                                    questionCount = SessionStore.lastQuestionCount,
-                                    repeatMissed = SessionStore.lastRepeatMissed
-                                )) {
-                                    popUpTo(InstrumentSelectionRoute)
-                                }
-                            }
-                        }
-                    else -> onNavigateHome()
-                }
-            }
-            
             ResultsScreen(
                 sessionId = route.sessionId,
-                onNavigateHome = onNavigateHome,
+                onNavigateHome = {
+                    navController.navigate(InstrumentSelectionRoute) {
+                        popUpTo(InstrumentSelectionRoute) { inclusive = true }
+                    }
+                },
                 onNavigateBack = { /* Reserved for future use */ },
-                onRestartQuiz = onRestartQuiz
+                onRestartQuiz = {
+                    when (route.restartRoute) {
+                        "DrawQuizRoute" -> {
+                            SessionStore.lastInstrumentId?.let { instrumentId ->
+                                SessionStore.lastSelectedChordIds?.let { chordIds ->
+                                    navController.navigate(DrawQuizRoute(
+                                        instrumentId = instrumentId,
+                                        selectedChordIds = chordIds,
+                                        questionCount = SessionStore.lastQuestionCount,
+                                        repeatMissed = SessionStore.lastRepeatMissed
+                                    )) {
+                                        popUpTo(InstrumentSelectionRoute)
+                                    }
+                                }
+                            } ?: navController.navigate(InstrumentSelectionRoute) {
+                                popUpTo(InstrumentSelectionRoute) { inclusive = true }
+                            }
+                        }
+                        "PlayQuizRoute" -> {
+                            SessionStore.lastInstrumentId?.let { instrumentId ->
+                                SessionStore.lastSelectedChordIds?.let { chordIds ->
+                                    navController.navigate(PlayQuizRoute(
+                                        instrumentId = instrumentId,
+                                        selectedChordIds = chordIds,
+                                        questionCount = SessionStore.lastQuestionCount,
+                                        repeatMissed = SessionStore.lastRepeatMissed
+                                    )) {
+                                        popUpTo(InstrumentSelectionRoute)
+                                    }
+                                }
+                            } ?: navController.navigate(InstrumentSelectionRoute) {
+                                popUpTo(InstrumentSelectionRoute) { inclusive = true }
+                            }
+                        }
+                        else -> navController.navigate(InstrumentSelectionRoute) {
+                            popUpTo(InstrumentSelectionRoute) { inclusive = true }
+                        }
+                    }
+                }
             )
         }
     }
