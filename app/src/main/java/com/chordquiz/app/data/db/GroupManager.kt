@@ -17,7 +17,10 @@ class GroupManager @Inject constructor(
 
     suspend fun updateGroup(id: Long, name: String) = dao.updateGroup(id, name)
 
-    suspend fun deleteGroup(id: Long) = dao.deleteGroup(id)
+    suspend fun deleteGroup(id: Long) {
+        val group = dao.getGroupById(id)
+        group?.let { dao.deleteGroup(it) }
+    }
 
     suspend fun findGroupByName(instrumentId: String, name: String): GroupEntity? =
         dao.findGroupByName(instrumentId, name)
