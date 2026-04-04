@@ -9,7 +9,12 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface InstrumentDao {
-    @Query("SELECT * FROM instruments ORDER BY displayName")
+    @Query("SELECT * FROM instruments ORDER BY CASE displayName " +
+            "WHEN 'Guitar' THEN 1 " +
+            "WHEN 'Bass' THEN 2 " +
+            "WHEN 'Ukulele' THEN 3 " +
+            "WHEN 'Banjo' THEN 4 " +
+            "ELSE 99 END")
     fun getAllInstruments(): Flow<List<InstrumentEntity>>
 
     @Query("SELECT * FROM instruments WHERE id = :id")
