@@ -44,6 +44,6 @@ data class Instrument(
             totalFrets = 22
         )
 
-        val ALL = listOf(GUITAR, UKULELE, BASS, BANJO)
+        val ALL = listOf(GUITAR, BASS, UKULELE, BANJO)
     }
 }
