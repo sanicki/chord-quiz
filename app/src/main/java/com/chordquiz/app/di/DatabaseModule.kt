@@ -2,6 +2,7 @@ package com.chordquiz.app.di
 
 import android.content.Context
 import androidx.room.Room
+import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.chordquiz.app.data.db.ChordQuizDatabase
 import com.chordquiz.app.data.db.dao.ChordDao

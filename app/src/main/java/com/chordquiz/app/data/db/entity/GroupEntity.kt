@@ -2,7 +2,6 @@ package com.chordquiz.app.data.db.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.chordquiz.app.data.model.ChordDefinitionEntity
 
 @Entity(tableName = "groups")
 data class GroupEntity(
