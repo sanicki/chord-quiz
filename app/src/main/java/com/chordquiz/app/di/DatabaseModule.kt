@@ -2,12 +2,13 @@ package com.chordquiz.app.di
 
 import android.content.Context
 import androidx.room.Room
-import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.chordquiz.app.data.db.ChordQuizDatabase
 import com.chordquiz.app.data.db.dao.ChordDao
+import com.chordquiz.app.data.db.dao.GroupDao
 import com.chordquiz.app.data.db.dao.InstrumentDao
 import com.chordquiz.app.data.db.entity.ChordDefinitionEntity
+import com.chordquiz.app.data.db.entity.GroupEntity
 import com.chordquiz.app.data.db.entity.InstrumentEntity
 import com.chordquiz.app.data.model.Instrument
 import com.chordquiz.app.data.seed.ChordLibrary
@@ -41,6 +42,7 @@ object DatabaseModule {
                         db.chordDao().insertAll(
                             ChordLibrary.ALL.map { ChordDefinitionEntity.fromDomain(it) }
                         )
+                        // Groups are user-created, so no need to seed them
                     }
                 }
             }
@@ -60,4 +62,7 @@ object DatabaseModule {
 
     @Provides
     fun provideChordDao(db: ChordQuizDatabase): ChordDao = db.chordDao()
+
+    @Provides
+    fun provideGroupDao(db: ChordQuizDatabase): GroupDao = db.groupDao()
 }

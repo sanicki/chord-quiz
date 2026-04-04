@@ -2,6 +2,8 @@ package com.chordquiz.app.di
 
 import com.chordquiz.app.data.repository.ChordRepository
 import com.chordquiz.app.data.repository.ChordRepositoryImpl
+import com.chordquiz.app.data.repository.GroupsRepository
+import com.chordquiz.app.data.repository.GroupsRepositoryImpl
 import com.chordquiz.app.data.repository.InstrumentRepository
 import com.chordquiz.app.data.repository.InstrumentRepositoryImpl
 import dagger.Binds
@@ -21,4 +23,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindChordRepository(impl: ChordRepositoryImpl): ChordRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindGroupsRepository(impl: GroupsRepositoryImpl): GroupsRepository
 }
