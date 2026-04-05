@@ -1,10 +1,12 @@
 package com.chordquiz.app.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.chordquiz.app.data.db.GroupManager
 import com.chordquiz.app.ui.screen.instrument.InstrumentSelectionScreen
 import com.chordquiz.app.ui.screen.library.ChordLibraryScreen
 import com.chordquiz.app.ui.screen.library.GroupsScreen
@@ -20,9 +22,18 @@ import com.chordquiz.app.ui.screen.setup.PracticeSetupScreen
 import com.chordquiz.app.ui.screen.quizdraw.DrawQuizScreen
 import com.chordquiz.app.ui.screen.quizplay.PlayQuizScreen
 import com.chordquiz.app.ui.screen.results.ResultsScreen
+import dagger.hilt.android.EntryPointAccessors
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
-fun NavGraph() {
+fun NavGraph(
+    groupManager: GroupManager = EntryPointAccessors.fromApplication(
+        LocalContext.current.applicationContext,
+        GroupManager::class.java
+    )
+) {
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = InstrumentSelectionRoute) {
@@ -59,7 +70,9 @@ fun NavGraph() {
                     navController.popBackStack()
                 },
                 onDeleteGroup = { groupId, groupName ->
-                    // Implement delete confirmation dialog
+                    CoroutineScope(Dispatchers.IO).launch {
+                        groupManager.deleteGroup(groupId)
+                    }
                 }
             )
         }

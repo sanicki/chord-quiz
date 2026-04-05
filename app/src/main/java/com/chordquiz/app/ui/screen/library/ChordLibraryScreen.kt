@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -29,21 +30,30 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chordquiz.app.data.model.ChordType
 import com.chordquiz.app.ui.components.chord.ChordDiagram
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,12 +66,16 @@ fun ChordLibraryScreen(
     viewModel: ChordLibraryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var showSaveDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(instrumentId) {
         viewModel.loadInstrument(instrumentId)
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(uiState.instrument?.displayName ?: "Chords") },
@@ -77,12 +91,12 @@ fun ChordLibraryScreen(
                     ) {
                         Icon(Icons.Filled.List, contentDescription = "Groups")
                     }
-                    if (uiState.selectedChordIds.isNotEmpty()) {
+                    if (uiState.selectedChordIds.size >= 2) {
                         IconButton(
-                            onClick = { onSaveGroup(instrumentId, uiState.selectedChordIds.toList()) },
+                            onClick = { showSaveDialog = true },
                             modifier = Modifier.padding(end = 4.dp)
                         ) {
-                            Icon(Icons.Default.Save, contentDescription = "Save as Group")
+                            Icon(Icons.Filled.Save, contentDescription = "Save as Group")
                         }
                         Button(
                             onClick = {
@@ -193,6 +207,52 @@ fun ChordLibraryScreen(
                                     )
                                 }
                             }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Save dialog
+        if (showSaveDialog) {
+            var groupName by remember { mutableStateOf("") }
+            Dialog(onDismissRequest = { showSaveDialog = false }) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Text("Save as New Group", style = MaterialTheme.typography.headlineSmall)
+                    OutlinedTextField(
+                        value = groupName,
+                        onValueChange = { groupName = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        label = { Text("Group name") },
+                        singleLine = true
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(onClick = { showSaveDialog = false }) {
+                            Text("Cancel")
+                        }
+                        Button(
+                            onClick = {
+                                onSaveGroup(
+                                    instrumentId,
+                                    uiState.selectedChordIds.toList()
+                                )
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("Group saved successfully")
+                                }
+                                showSaveDialog = false
+                            },
+                            enabled = groupName.isNotBlank() && uiState.selectedChordIds.size >= 2
+                        ) {
+                            Text("Save")
                         }
                     }
                 }

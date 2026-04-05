@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
@@ -30,6 +31,7 @@ fun GroupsScreen(
     val groupName by viewModel.groupName.collectAsStateWithLifecycle()
     var showSaveDialog by remember { mutableStateOf(false) }
     var selectedChordIdsForSave by remember { mutableStateOf(emptyList<String>()) }
+    var groupToDelete: com.chordquiz.app.data.db.entity.GroupEntity? = null
 
     LaunchedEffect(instrumentId) {
         viewModel.loadGroups(instrumentId)
@@ -64,6 +66,12 @@ fun GroupsScreen(
                 }
             }
         } else {
+            // Sort groups: built-in first (by ID), then custom (alphabetically)
+            val sortedGroups = uiState.groups.sortedWith(
+                compareBy({ !it.name.startsWith("Custom:") })
+                    .thenBy { if (it.name.startsWith("Custom:")) it.name else it.id }
+            )
+
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -71,12 +79,54 @@ fun GroupsScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(uiState.groups) { group ->
+                items(sortedGroups, key = { it.id }) { group ->
                     GroupItem(
                         group = group,
                         onClick = { onLoadGroup(group.id.toString()) },
-                        onDeleteClick = { onDeleteGroup(group.id, group.toName()) }
+                        onDeleteClick = { groupToDelete = group }
                     )
+                }
+            }
+        }
+
+        // Delete confirmation dialog
+        groupToDelete?.let { group ->
+            Dialog(onDismissRequest = { groupToDelete = null }) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = "Delete Group",
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                    Text(
+                        text = "Are you sure you want to delete this group?",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                    Text(
+                        text = group.toName(),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        Button(onClick = {
+                            onDeleteGroup(group.id, group.toName())
+                            groupToDelete = null
+                        }) {
+                            Text("Delete")
+                        }
+                        Spacer(modifier = Modifier.size(8.dp))
+                        TextButton(onClick = { groupToDelete = null }) {
+                            Text("Cancel")
+                        }
+                    }
                 }
             }
         }

@@ -88,4 +88,14 @@ class GroupsViewModel @Inject constructor(
     fun clearGroupName() {
         _groupName.value = ""
     }
+
+    fun deleteGroup(groupId: Long) {
+        viewModelScope.launch {
+            try {
+                groupsRepository.deleteGroup(groupId)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(error = e.message ?: "Failed to delete group")
+            }
+        }
+    }
 }
