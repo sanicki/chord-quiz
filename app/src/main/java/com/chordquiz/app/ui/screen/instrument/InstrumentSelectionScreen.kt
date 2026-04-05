@@ -18,8 +18,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.icons.Icons
-import androidx.compose.material3.icons.filled.Settings
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -46,9 +46,9 @@ fun InstrumentSelectionScreen(
                 title = { Text("Chord Quiz") },
                 scrollBehavior = scrollBehavior,
                 actions = {
-                    androidx.compose.material3.IconButton(onClick = onNavigateToSettings) {
-                        androidx.compose.material3.Icon(
-                            imageVector = androidx.compose.material3.icons.Icons.Default.Settings,
+                    IconButton(onClick = onNavigateToSettings) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
                             contentDescription = "Settings"
                         )
                     }
