@@ -2,6 +2,7 @@ package com.chordquiz.app.ui.screen.library
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,39 +18,49 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Save
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chordquiz.app.data.model.ChordType
 import com.chordquiz.app.ui.components.chord.ChordDiagram
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -61,9 +72,20 @@ fun ChordLibraryScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showSaveDialog by remember { mutableStateOf(false) }
+    var dialogInitialName by remember { mutableStateOf("") }
+    var groupName by remember(showSaveDialog) { mutableStateOf(dialogInitialName) }
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     LaunchedEffect(instrumentId) {
         viewModel.loadInstrument(instrumentId)
+    }
+
+    // Close the naming dialog when save completes
+    LaunchedEffect(viewModel) {
+        viewModel.saveComplete.collect {
+            showSaveDialog = false
+            dialogInitialName = ""
+        }
     }
 
     Scaffold(
@@ -74,26 +96,37 @@ fun ChordLibraryScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                },
-                actions = {
-                    if (uiState.selectedChordIds.size >= 2) {
-                        IconButton(
-                            onClick = { showSaveDialog = true },
-                            modifier = Modifier.padding(end = 4.dp)
-                        ) {
-                            Icon(Icons.Filled.Save, contentDescription = "Save as Group")
-                        }
-                        Button(
-                            onClick = {
-                                onStartPractice(instrumentId, uiState.selectedChordIds.toList())
-                            },
-                            modifier = Modifier.padding(end = 8.dp)
-                        ) {
-                            Text("Start →")
-                        }
-                    }
                 }
             )
+        },
+        bottomBar = {
+            if (uiState.selectedChordIds.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (uiState.selectedChordIds.size >= 2) {
+                        OutlinedButton(
+                            onClick = {
+                                dialogInitialName = uiState.editingGroup?.toName() ?: ""
+                                showSaveDialog = true
+                            }
+                        ) {
+                            Text(if (uiState.editingGroup != null) "Update" else "Save")
+                        }
+                    }
+                    Button(
+                        onClick = {
+                            onStartPractice(instrumentId, uiState.selectedChordIds.toList())
+                        }
+                    ) {
+                        Text("Start →")
+                    }
+                }
+            }
         }
     ) { innerPadding ->
         if (uiState.isLoading) {
@@ -129,21 +162,52 @@ fun ChordLibraryScreen(
                     modifier = Modifier.padding(horizontal = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // All
                     FilterChip(
                         selected = uiState.activeTypeFilter == null && uiState.activeGroupFilter == null,
                         onClick = { viewModel.setTypeFilter(null) },
                         label = { Text("All") }
                     )
-                    // Custom groups (newest first)
                     uiState.customGroups.forEach { group ->
-                        FilterChip(
-                            selected = uiState.activeGroupFilter?.id == group.id,
-                            onClick = { viewModel.setGroupFilter(group) },
-                            label = { Text(group.toName()) }
-                        )
+                        key(group.id) {
+                            var showMenu by remember { mutableStateOf(false) }
+                            val editingGroupId = uiState.editingGroup?.id
+                            Box {
+                                FilterChip(
+                                    selected = uiState.activeGroupFilter?.id == group.id,
+                                    onClick = { viewModel.setGroupFilter(group) },
+                                    label = { Text(group.toName()) },
+                                    modifier = Modifier.pointerInput(group.id, editingGroupId) {
+                                        detectTapGestures(
+                                            onLongPress = {
+                                                if (editingGroupId == null || editingGroupId == group.id) {
+                                                    showMenu = true
+                                                }
+                                            }
+                                        )
+                                    }
+                                )
+                                DropdownMenu(
+                                    expanded = showMenu,
+                                    onDismissRequest = { showMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Edit") },
+                                        onClick = {
+                                            showMenu = false
+                                            viewModel.startEdit(group)
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Delete") },
+                                        onClick = {
+                                            showMenu = false
+                                            viewModel.requestDeleteGroup(group)
+                                        }
+                                    )
+                                }
+                            }
+                        }
                     }
-                    // Preset type filters
                     ChordType.entries.forEach { type ->
                         FilterChip(
                             selected = uiState.activeTypeFilter == type,
@@ -151,6 +215,16 @@ fun ChordLibraryScreen(
                             label = { Text(type.displayName) }
                         )
                     }
+                }
+
+                // Stale chord warning
+                if (uiState.staleChordWarning) {
+                    Text(
+                        text = "Some chords in this group are no longer available.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                    )
                 }
 
                 // Chord grid
@@ -206,49 +280,133 @@ fun ChordLibraryScreen(
             }
         }
 
-        // Save dialog
+        // --- Naming dialog (Save / Update) ---
         if (showSaveDialog) {
-            var groupName by remember { mutableStateOf("") }
-            Dialog(onDismissRequest = { showSaveDialog = false }) {
-                Surface(
-                    shape = MaterialTheme.shapes.large,
-                    tonalElevation = 6.dp
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp)
-                    ) {
-                        Text("Save as New Group", style = MaterialTheme.typography.headlineSmall)
+            val focusRequester = remember { FocusRequester() }
+            LaunchedEffect(Unit) {
+                delay(100)
+                focusRequester.requestFocus()
+                keyboardController?.show()
+            }
+            AlertDialog(
+                onDismissRequest = {
+                    showSaveDialog = false
+                    viewModel.clearSaveNameError()
+                },
+                title = {
+                    Text(if (uiState.editingGroup != null) "Update Group" else "Save as New Group")
+                },
+                text = {
+                    Column {
                         OutlinedTextField(
                             value = groupName,
-                            onValueChange = { groupName = it },
+                            onValueChange = {
+                                groupName = it
+                                viewModel.clearSaveNameError()
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 16.dp),
+                                .focusRequester(focusRequester),
                             label = { Text("Group name") },
-                            singleLine = true
+                            singleLine = true,
+                            isError = uiState.saveNameError != null,
+                            supportingText = if (uiState.saveNameError != null) {
+                                { Text(uiState.saveNameError!!) }
+                            } else null,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = {
+                                viewModel.requestSaveGroup(
+                                    groupName, instrumentId, uiState.selectedChordIds.toList()
+                                )
+                            })
                         )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            TextButton(onClick = { showSaveDialog = false }) {
-                                Text("Cancel")
-                            }
-                            Button(
-                                onClick = {
-                                    viewModel.saveGroup(groupName, instrumentId, uiState.selectedChordIds.toList())
-                                    showSaveDialog = false
-                                },
-                                enabled = groupName.isNotBlank() && uiState.selectedChordIds.size >= 2
-                            ) {
-                                Text("Save")
-                            }
-                        }
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            viewModel.requestSaveGroup(
+                                groupName, instrumentId, uiState.selectedChordIds.toList()
+                            )
+                        },
+                        enabled = groupName.isNotBlank() && uiState.selectedChordIds.size >= 2
+                    ) {
+                        Text(if (uiState.editingGroup != null) "Update" else "Save")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        showSaveDialog = false
+                        viewModel.clearSaveNameError()
+                    }) {
+                        Text("Cancel")
                     }
                 }
-            }
+            )
+        }
+
+        // --- Replace existing group dialog ---
+        if (uiState.showReplaceGroupDialog) {
+            AlertDialog(
+                onDismissRequest = { viewModel.cancelReplaceGroup() },
+                title = { Text("Replace Group?") },
+                text = {
+                    Text(
+                        "A group named \"${uiState.replaceGroupDisplayName}\" already exists. Replace it?"
+                    )
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        viewModel.confirmReplaceGroup()
+                        showSaveDialog = false
+                    }) {
+                        Text("Yes")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.cancelReplaceGroup() }) {
+                        Text("No")
+                    }
+                }
+            )
+        }
+
+        // --- Delete confirmation dialog ---
+        uiState.deleteConfirmGroup?.let { group ->
+            AlertDialog(
+                onDismissRequest = { viewModel.cancelDeleteGroup() },
+                title = { Text("Delete ${group.toName()}?") },
+                confirmButton = {
+                    Button(onClick = { viewModel.confirmDeleteGroup() }) {
+                        Text("Yes")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.cancelDeleteGroup() }) {
+                        Text("No")
+                    }
+                }
+            )
+        }
+
+        // --- Discard edit confirmation dialog ---
+        if (uiState.showDiscardEditDialog) {
+            val groupName = uiState.editingGroup?.toName() ?: ""
+            AlertDialog(
+                onDismissRequest = { viewModel.cancelDiscardEdit() },
+                title = { Text("Discard changes?") },
+                text = { Text("Discard changes to \"$groupName\"?") },
+                confirmButton = {
+                    Button(onClick = { viewModel.confirmDiscardEdit() }) {
+                        Text("Yes")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.cancelDiscardEdit() }) {
+                        Text("No")
+                    }
+                }
+            )
         }
     }
 }
