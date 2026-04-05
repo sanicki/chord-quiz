@@ -32,3 +32,6 @@ data class PlayQuizRoute(
 
 @Serializable
 data class ResultsRoute(val sessionId: String, val restartRoute: String? = null)
+
+@Serializable
+object SettingsRoute

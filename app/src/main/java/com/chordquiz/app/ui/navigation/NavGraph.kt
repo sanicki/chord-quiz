@@ -13,11 +13,13 @@ import com.chordquiz.app.ui.navigation.InstrumentSelectionRoute
 import com.chordquiz.app.ui.navigation.PracticeSetupRoute
 import com.chordquiz.app.ui.navigation.PlayQuizRoute
 import com.chordquiz.app.ui.navigation.ResultsRoute
+import com.chordquiz.app.ui.navigation.SettingsRoute
 import com.chordquiz.app.ui.shared.SessionStore
 import com.chordquiz.app.ui.screen.setup.PracticeSetupScreen
 import com.chordquiz.app.ui.screen.quizdraw.DrawQuizScreen
 import com.chordquiz.app.ui.screen.quizplay.PlayQuizScreen
 import com.chordquiz.app.ui.screen.results.ResultsScreen
+import com.chordquiz.app.ui.screen.settings.SettingsScreen
 
 @Composable
 fun NavGraph() {
@@ -29,6 +31,9 @@ fun NavGraph() {
             InstrumentSelectionScreen(
                 onInstrumentSelected = { instrumentId ->
                     navController.navigate(ChordLibraryRoute(instrumentId))
+                },
+                onNavigateToSettings = {
+                    navController.navigate(SettingsRoute)
                 }
             )
         }
@@ -150,6 +155,12 @@ fun NavGraph() {
                         }
                     }
                 }
+            )
+        }
+
+        composable<SettingsRoute> {
+            SettingsScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }

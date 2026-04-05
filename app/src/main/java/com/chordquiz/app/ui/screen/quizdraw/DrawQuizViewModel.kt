@@ -13,6 +13,7 @@ import com.chordquiz.app.data.model.StringPosition
 import com.chordquiz.app.data.repository.ChordRepository
 import com.chordquiz.app.data.repository.InstrumentRepository
 import com.chordquiz.app.domain.BuildQuizSessionUseCase
+import com.chordquiz.app.haptic.HapticManager
 import com.chordquiz.app.domain.EvaluateDrawAnswerUseCase
 import com.chordquiz.app.ui.shared.SessionStore
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -47,7 +48,8 @@ class DrawQuizViewModel @Inject constructor(
     private val instrumentRepo: InstrumentRepository,
     private val chordRepo: ChordRepository,
     private val buildSession: BuildQuizSessionUseCase,
-    private val evaluateAnswer: EvaluateDrawAnswerUseCase
+    private val evaluateAnswer: EvaluateDrawAnswerUseCase,
+    private val hapticManager: HapticManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<DrawQuizUiState>(DrawQuizUiState.Loading)
@@ -139,6 +141,12 @@ class DrawQuizViewModel @Inject constructor(
             incorrectMutedStrings = incorrectMutedStrings,
             missedMuteStrings = missedMuteStrings
         )
+
+        if (!isCorrect) {
+            viewModelScope.launch {
+                hapticManager.vibrateWrongAnswer()
+            }
+        }
 
         if (isCorrect && referenceFingering != null) {
             val midis = referenceFingering.positions
