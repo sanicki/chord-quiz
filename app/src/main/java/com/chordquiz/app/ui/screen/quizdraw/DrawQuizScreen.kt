@@ -36,6 +36,7 @@ import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -44,8 +45,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chordquiz.app.ui.components.chord.ChordDiagram
 import com.chordquiz.app.ui.components.chord.InteractiveChordDiagram
+import com.chordquiz.app.ui.screen.settings.SettingsViewModel
 import com.chordquiz.app.ui.theme.CorrectGreen
 import com.chordquiz.app.ui.theme.IncorrectRed
+import android.view.HapticFeedbackConstants
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,9 +59,12 @@ fun DrawQuizScreen(
     repeatMissed: Boolean,
     onNavigateBack: () -> Unit,
     onQuizComplete: (String) -> Unit,
-    viewModel: DrawQuizViewModel = hiltViewModel()
+    viewModel: DrawQuizViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val settings by settingsViewModel.uiState.collectAsStateWithLifecycle()
+    val hapticFeedback = LocalHapticFeedback.current
 
     LaunchedEffect(instrumentId) {
         viewModel.initialize(instrumentId, selectedChordIds, questionCount, repeatMissed)
@@ -78,6 +84,13 @@ fun DrawQuizScreen(
             // Use displayedQuestion so the chord name doesn't change until Next is pressed
             val question = state.displayedQuestion ?: session.currentQuestion ?: return
             val stringCount = session.instrument.stringCount
+
+            // Trigger haptic feedback on wrong answer
+            LaunchedEffect(state.feedback) {
+                if (state.feedback == AnswerFeedback.INCORRECT && settings.hapticFeedbackEnabled) {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackConstants.ERROR)
+                }
+            }
 
             Scaffold(
                 topBar = {
