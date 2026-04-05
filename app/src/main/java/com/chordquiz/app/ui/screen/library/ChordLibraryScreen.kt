@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -50,6 +51,8 @@ fun ChordLibraryScreen(
     instrumentId: String,
     onNavigateBack: () -> Unit,
     onStartPractice: (String, List<String>) -> Unit,
+    onNavigateToGroups: (String) -> Unit,
+    onSaveGroup: (String, List<String>) -> Unit,
     viewModel: ChordLibraryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -68,7 +71,19 @@ fun ChordLibraryScreen(
                     }
                 },
                 actions = {
+                    IconButton(
+                        onClick = { onNavigateToGroups(instrumentId) },
+                        modifier = Modifier.padding(end = 4.dp)
+                    ) {
+                        Icon(Icons.Filled.List, contentDescription = "Groups")
+                    }
                     if (uiState.selectedChordIds.isNotEmpty()) {
+                        IconButton(
+                            onClick = { onSaveGroup(instrumentId, uiState.selectedChordIds.toList()) },
+                            modifier = Modifier.padding(end = 4.dp)
+                        ) {
+                            Icon(Icons.Default.Save, contentDescription = "Save as Group")
+                        }
                         Button(
                             onClick = {
                                 onStartPractice(instrumentId, uiState.selectedChordIds.toList())

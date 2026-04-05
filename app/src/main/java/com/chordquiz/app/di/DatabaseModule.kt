@@ -66,4 +66,8 @@ object DatabaseModule {
 
     @Provides
     fun provideGroupDao(db: ChordQuizDatabase): GroupDao = db.groupDao()
+
+    @Provides
+    @Singleton
+    fun provideGroupManager(dao: GroupDao): GroupManager = GroupManager(dao)
 }
