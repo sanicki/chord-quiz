@@ -1,18 +1,14 @@
 package com.chordquiz.app.ui.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import com.chordquiz.app.data.db.GroupManager
 import com.chordquiz.app.ui.screen.instrument.InstrumentSelectionScreen
 import com.chordquiz.app.ui.screen.library.ChordLibraryScreen
-import com.chordquiz.app.ui.screen.library.GroupsScreen
 import com.chordquiz.app.ui.navigation.ChordLibraryRoute
 import com.chordquiz.app.ui.navigation.DrawQuizRoute
-import com.chordquiz.app.ui.navigation.GroupsRoute
 import com.chordquiz.app.ui.navigation.InstrumentSelectionRoute
 import com.chordquiz.app.ui.navigation.PracticeSetupRoute
 import com.chordquiz.app.ui.navigation.PlayQuizRoute
@@ -22,18 +18,9 @@ import com.chordquiz.app.ui.screen.setup.PracticeSetupScreen
 import com.chordquiz.app.ui.screen.quizdraw.DrawQuizScreen
 import com.chordquiz.app.ui.screen.quizplay.PlayQuizScreen
 import com.chordquiz.app.ui.screen.results.ResultsScreen
-import dagger.hilt.android.EntryPointAccessors
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 @Composable
-fun NavGraph(
-    groupManager: GroupManager = EntryPointAccessors.fromApplication(
-        LocalContext.current.applicationContext,
-        GroupManager::class.java
-    )
-) {
+fun NavGraph() {
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = InstrumentSelectionRoute) {
@@ -53,26 +40,6 @@ fun NavGraph(
                 onNavigateBack = { navController.popBackStack() },
                 onStartPractice = { instrumentId, chordIds ->
                     navController.navigate(PracticeSetupRoute(instrumentId, chordIds))
-                },
-                onNavigateToGroups = { instrumentId ->
-                    navController.navigate(GroupsRoute(instrumentId))
-                }
-            )
-        }
-
-        composable<GroupsRoute> { backStackEntry ->
-            val route = backStackEntry.toRoute<GroupsRoute>()
-            GroupsScreen(
-                instrumentId = route.instrumentId,
-                onNavigateBack = { navController.popBackStack() },
-                onLoadGroup = { groupId ->
-                    // Navigate back to library with group loaded (implement later)
-                    navController.popBackStack()
-                },
-                onDeleteGroup = { groupId, groupName ->
-                    CoroutineScope(Dispatchers.IO).launch {
-                        groupManager.deleteGroup(groupId)
-                    }
                 }
             )
         }

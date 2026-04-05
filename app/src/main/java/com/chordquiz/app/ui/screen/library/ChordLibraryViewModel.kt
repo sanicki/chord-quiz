@@ -2,9 +2,11 @@ package com.chordquiz.app.ui.screen.library
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.chordquiz.app.data.db.entity.GroupEntity
 import com.chordquiz.app.data.model.ChordDefinition
 import com.chordquiz.app.data.model.ChordType
 import com.chordquiz.app.data.model.Instrument
+import com.chordquiz.app.data.repository.GroupsRepository
 import com.chordquiz.app.data.repository.InstrumentRepository
 import com.chordquiz.app.domain.GetChordsForInstrumentUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,7 +29,8 @@ data class ChordLibraryUiState(
 @HiltViewModel
 class ChordLibraryViewModel @Inject constructor(
     private val instrumentRepo: InstrumentRepository,
-    private val getChordsForInstrument: GetChordsForInstrumentUseCase
+    private val getChordsForInstrument: GetChordsForInstrumentUseCase,
+    private val groupsRepository: GroupsRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChordLibraryUiState())
@@ -77,5 +80,18 @@ class ChordLibraryViewModel @Inject constructor(
 
     fun clearSelection() {
         _uiState.value = _uiState.value.copy(selectedChordIds = emptySet())
+    }
+
+    fun saveGroup(name: String, instrumentId: String, chordIds: List<String>) {
+        if (name.isBlank() || chordIds.size < 2) return
+        val prefixedName = "Custom:${name.trim()}"
+        val chordIdsString = chordIds.joinToString(",")
+        viewModelScope.launch {
+            val existing = groupsRepository.findGroupByName(instrumentId, prefixedName)
+            existing?.let { groupsRepository.deleteGroup(it.id) }
+            groupsRepository.insertGroup(
+                GroupEntity(instrumentId = instrumentId, name = prefixedName, chordIds = chordIdsString)
+            )
+        }
     }
 }

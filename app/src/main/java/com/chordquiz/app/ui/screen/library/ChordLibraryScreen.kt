@@ -20,7 +20,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
@@ -32,8 +31,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -42,7 +39,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,7 +49,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chordquiz.app.data.model.ChordType
 import com.chordquiz.app.ui.components.chord.ChordDiagram
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,21 +56,16 @@ fun ChordLibraryScreen(
     instrumentId: String,
     onNavigateBack: () -> Unit,
     onStartPractice: (String, List<String>) -> Unit,
-    onNavigateToGroups: (String) -> Unit,
-    onSaveGroup: (String, List<String>) -> Unit,
     viewModel: ChordLibraryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showSaveDialog by remember { mutableStateOf(false) }
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
 
     LaunchedEffect(instrumentId) {
         viewModel.loadInstrument(instrumentId)
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(uiState.instrument?.displayName ?: "Chords") },
@@ -85,12 +75,6 @@ fun ChordLibraryScreen(
                     }
                 },
                 actions = {
-                    IconButton(
-                        onClick = { onNavigateToGroups(instrumentId) },
-                        modifier = Modifier.padding(end = 4.dp)
-                    ) {
-                        Icon(Icons.Filled.List, contentDescription = "Groups")
-                    }
                     if (uiState.selectedChordIds.size >= 2) {
                         IconButton(
                             onClick = { showSaveDialog = true },
@@ -241,13 +225,7 @@ fun ChordLibraryScreen(
                         }
                         Button(
                             onClick = {
-                                onSaveGroup(
-                                    instrumentId,
-                                    uiState.selectedChordIds.toList()
-                                )
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("Group saved successfully")
-                                }
+                                viewModel.saveGroup(groupName, instrumentId, uiState.selectedChordIds.toList())
                                 showSaveDialog = false
                             },
                             enabled = groupName.isNotBlank() && uiState.selectedChordIds.size >= 2

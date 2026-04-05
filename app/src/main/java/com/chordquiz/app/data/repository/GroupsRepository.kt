@@ -1,6 +1,5 @@
 package com.chordquiz.app.data.repository
 
-import com.chordquiz.app.data.db.GroupManager
 import com.chordquiz.app.data.db.entity.GroupEntity
 import com.chordquiz.app.data.model.ChordDefinition
 import com.chordquiz.app.data.model.Instrument

@@ -9,9 +9,6 @@ object InstrumentSelectionRoute
 data class ChordLibraryRoute(val instrumentId: String)
 
 @Serializable
-data class GroupsRoute(val instrumentId: String)
-
-@Serializable
 data class PracticeSetupRoute(
     val instrumentId: String,
     val selectedChordIds: List<String>
