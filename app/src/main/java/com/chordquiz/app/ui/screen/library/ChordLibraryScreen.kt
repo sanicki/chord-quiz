@@ -27,8 +27,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -108,14 +106,16 @@ fun ChordLibraryScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (uiState.selectedChordIds.size >= 2) {
+                    if (uiState.selectedChordIds.size >= 2
+                        && uiState.activeTypeFilter == null
+                        && uiState.activeGroupFilter == null) {
                         OutlinedButton(
                             onClick = {
-                                dialogInitialName = uiState.editingGroup?.toName() ?: ""
+                                dialogInitialName = ""
                                 showSaveDialog = true
                             }
                         ) {
-                            Text(if (uiState.editingGroup != null) "Update" else "Save")
+                            Text("Save")
                         }
                     }
                     Button(
@@ -169,43 +169,16 @@ fun ChordLibraryScreen(
                     )
                     uiState.customGroups.forEach { group ->
                         key(group.id) {
-                            var showMenu by remember { mutableStateOf(false) }
-                            val editingGroupId = uiState.editingGroup?.id
-                            Box {
-                                FilterChip(
-                                    selected = uiState.activeGroupFilter?.id == group.id,
-                                    onClick = { viewModel.setGroupFilter(group) },
-                                    label = { Text(group.toName()) },
-                                    modifier = Modifier.pointerInput(group.id, editingGroupId) {
-                                        detectTapGestures(
-                                            onLongPress = {
-                                                if (editingGroupId == null || editingGroupId == group.id) {
-                                                    showMenu = true
-                                                }
-                                            }
-                                        )
-                                    }
-                                )
-                                DropdownMenu(
-                                    expanded = showMenu,
-                                    onDismissRequest = { showMenu = false }
-                                ) {
-                                    DropdownMenuItem(
-                                        text = { Text("Edit") },
-                                        onClick = {
-                                            showMenu = false
-                                            viewModel.startEdit(group)
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text("Delete") },
-                                        onClick = {
-                                            showMenu = false
-                                            viewModel.requestDeleteGroup(group)
-                                        }
+                            FilterChip(
+                                selected = uiState.activeGroupFilter?.id == group.id,
+                                onClick = { viewModel.setGroupFilter(group) },
+                                label = { Text(group.toName()) },
+                                modifier = Modifier.pointerInput(group.id) {
+                                    detectTapGestures(
+                                        onLongPress = { viewModel.requestDeleteGroup(group) }
                                     )
                                 }
-                            }
+                            )
                         }
                     }
                     ChordType.entries.forEach { type ->
@@ -215,16 +188,6 @@ fun ChordLibraryScreen(
                             label = { Text(type.displayName) }
                         )
                     }
-                }
-
-                // Stale chord warning
-                if (uiState.staleChordWarning) {
-                    Text(
-                        text = "Some chords in this group are no longer available.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                    )
                 }
 
                 // Chord grid
@@ -280,7 +243,7 @@ fun ChordLibraryScreen(
             }
         }
 
-        // --- Naming dialog (Save / Update) ---
+        // --- Naming dialog (Save as New Group) ---
         if (showSaveDialog) {
             val focusRequester = remember { FocusRequester() }
             LaunchedEffect(Unit) {
@@ -294,7 +257,7 @@ fun ChordLibraryScreen(
                     viewModel.clearSaveNameError()
                 },
                 title = {
-                    Text(if (uiState.editingGroup != null) "Update Group" else "Save as New Group")
+                    Text("Save as New Group")
                 },
                 text = {
                     Column {
@@ -331,7 +294,7 @@ fun ChordLibraryScreen(
                         },
                         enabled = groupName.isNotBlank() && uiState.selectedChordIds.size >= 2
                     ) {
-                        Text(if (uiState.editingGroup != null) "Update" else "Save")
+                        Text("Save")
                     }
                 },
                 dismissButton = {
@@ -375,35 +338,15 @@ fun ChordLibraryScreen(
         uiState.deleteConfirmGroup?.let { group ->
             AlertDialog(
                 onDismissRequest = { viewModel.cancelDeleteGroup() },
-                title = { Text("Delete ${group.toName()}?") },
+                title = { Text("Delete group ${group.toName()}?") },
                 confirmButton = {
                     Button(onClick = { viewModel.confirmDeleteGroup() }) {
-                        Text("Yes")
+                        Text("Delete")
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { viewModel.cancelDeleteGroup() }) {
-                        Text("No")
-                    }
-                }
-            )
-        }
-
-        // --- Discard edit confirmation dialog ---
-        if (uiState.showDiscardEditDialog) {
-            val groupName = uiState.editingGroup?.toName() ?: ""
-            AlertDialog(
-                onDismissRequest = { viewModel.cancelDiscardEdit() },
-                title = { Text("Discard changes?") },
-                text = { Text("Discard changes to \"$groupName\"?") },
-                confirmButton = {
-                    Button(onClick = { viewModel.confirmDiscardEdit() }) {
-                        Text("Yes")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { viewModel.cancelDiscardEdit() }) {
-                        Text("No")
+                        Text("Cancel")
                     }
                 }
             )

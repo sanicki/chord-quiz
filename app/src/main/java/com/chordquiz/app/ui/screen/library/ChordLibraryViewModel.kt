@@ -29,10 +29,7 @@ data class ChordLibraryUiState(
     val activeGroupFilter: GroupEntity? = null,
     val customGroups: List<GroupEntity> = emptyList(),
     val isLoading: Boolean = true,
-    val editingGroup: GroupEntity? = null,
-    val staleChordWarning: Boolean = false,
     val deleteConfirmGroup: GroupEntity? = null,
-    val showDiscardEditDialog: Boolean = false,
     val saveNameError: String? = null,
     val showReplaceGroupDialog: Boolean = false,
     val replaceGroupDisplayName: String? = null
@@ -55,7 +52,6 @@ class ChordLibraryViewModel @Inject constructor(
     private val groupFilter = MutableStateFlow<GroupEntity?>(null)
 
     // Held across the async validation → save flow
-    private var pendingFilterChange: (() -> Unit)? = null
     private var pendingSaveName: String? = null
     private var pendingSaveInstrumentId: String? = null
     private var pendingSaveChordIds: List<String>? = null
@@ -69,13 +65,10 @@ class ChordLibraryViewModel @Inject constructor(
                 groupFilter,
                 groupsRepository.getGroupsFlow(instrumentId)
             ) { chords, typeF, groupF, groups ->
-                val existingIds = chords.map { it.id }.toSet()
                 var filtered = chords
-                var stale = false
                 when {
                     groupF != null -> {
                         val groupIds = groupF.chordIdsList()
-                        stale = groupIds.any { it !in existingIds }
                         filtered = chords.filter { it.id in groupIds }
                     }
                     typeF != null -> {
@@ -89,7 +82,6 @@ class ChordLibraryViewModel @Inject constructor(
                     activeTypeFilter = typeF,
                     activeGroupFilter = groupF,
                     customGroups = groups.sortedByDescending { it.createdAt },
-                    staleChordWarning = stale,
                     isLoading = false
                 )
             }.collect {}
@@ -103,51 +95,25 @@ class ChordLibraryViewModel @Inject constructor(
     }
 
     fun setTypeFilter(type: ChordType?) {
-        if (_uiState.value.editingGroup != null) {
-            pendingFilterChange = {
-                groupFilter.value = null
-                typeFilter.value = type
-                _uiState.value = _uiState.value.copy(
-                    editingGroup = null,
-                    showDiscardEditDialog = false,
-                    selectedChordIds = emptySet()
-                )
-            }
-            _uiState.value = _uiState.value.copy(showDiscardEditDialog = true)
-            return
-        }
+        val wasOnGroup = groupFilter.value != null
         groupFilter.value = null
         typeFilter.value = type
+        if (wasOnGroup) {
+            _uiState.value = _uiState.value.copy(selectedChordIds = emptySet())
+        }
     }
 
     fun setGroupFilter(group: GroupEntity?) {
-        val editing = _uiState.value.editingGroup
-        if (editing != null && group?.id != editing.id) {
-            pendingFilterChange = {
-                typeFilter.value = null
-                groupFilter.value = group
-                _uiState.value = _uiState.value.copy(
-                    editingGroup = null,
-                    showDiscardEditDialog = false,
-                    selectedChordIds = emptySet()
-                )
-            }
-            _uiState.value = _uiState.value.copy(showDiscardEditDialog = true)
-            return
+        val wasOnGroup = groupFilter.value != null
+        typeFilter.value = null
+        groupFilter.value = group
+        if (group != null) {
+            val existingIds = _uiState.value.allChords.map { it.id }.toSet()
+            val selected = group.chordIdsList().filter { it in existingIds }.toSet()
+            _uiState.value = _uiState.value.copy(selectedChordIds = selected)
+        } else if (wasOnGroup) {
+            _uiState.value = _uiState.value.copy(selectedChordIds = emptySet())
         }
-        typeFilter.value = null
-        groupFilter.value = group
-    }
-
-    fun startEdit(group: GroupEntity) {
-        val existingIds = _uiState.value.allChords.map { it.id }.toSet()
-        val selectedIds = group.chordIdsList().filter { it in existingIds }.toSet()
-        typeFilter.value = null
-        groupFilter.value = group
-        _uiState.value = _uiState.value.copy(
-            editingGroup = group,
-            selectedChordIds = selectedIds
-        )
     }
 
     fun requestDeleteGroup(group: GroupEntity) {
@@ -163,7 +129,6 @@ class ChordLibraryViewModel @Inject constructor(
                 groupFilter.value = null
                 _uiState.value = _uiState.value.copy(
                     deleteConfirmGroup = null,
-                    editingGroup = null,
                     selectedChordIds = emptySet()
                 )
             } else {
@@ -174,16 +139,6 @@ class ChordLibraryViewModel @Inject constructor(
 
     fun cancelDeleteGroup() {
         _uiState.value = _uiState.value.copy(deleteConfirmGroup = null)
-    }
-
-    fun confirmDiscardEdit() {
-        pendingFilterChange?.invoke()
-        pendingFilterChange = null
-    }
-
-    fun cancelDiscardEdit() {
-        pendingFilterChange = null
-        _uiState.value = _uiState.value.copy(showDiscardEditDialog = false)
     }
 
     fun requestSaveGroup(name: String, instrumentId: String, chordIds: List<String>) {
@@ -203,20 +158,16 @@ class ChordLibraryViewModel @Inject constructor(
         pendingSaveChordIds = chordIds
 
         val prefixedName = "Custom:$trimmed"
-        val editingGroup = _uiState.value.editingGroup
 
         viewModelScope.launch {
             val existing = groupsRepository.findGroupByName(instrumentId, prefixedName)
-            when {
-                existing == null ->
-                    doSaveGroup(trimmed, instrumentId, chordIds)
-                editingGroup != null && existing.id == editingGroup.id ->
-                    doSaveGroup(trimmed, instrumentId, chordIds)
-                else ->
-                    _uiState.value = _uiState.value.copy(
-                        showReplaceGroupDialog = true,
-                        replaceGroupDisplayName = trimmed
-                    )
+            if (existing == null) {
+                doSaveGroup(trimmed, instrumentId, chordIds)
+            } else {
+                _uiState.value = _uiState.value.copy(
+                    showReplaceGroupDialog = true,
+                    replaceGroupDisplayName = trimmed
+                )
             }
         }
     }
@@ -254,34 +205,12 @@ class ChordLibraryViewModel @Inject constructor(
     private suspend fun doSaveGroup(name: String, instrumentId: String, chordIds: List<String>) {
         val prefixedName = "Custom:$name"
         val chordIdsString = chordIds.joinToString(",")
-        val editingGroup = _uiState.value.editingGroup
 
-        // Delete the group being edited (handles rename case)
-        editingGroup?.let { groupsRepository.deleteGroup(it.id) }
-
-        // Delete any other existing group with the same name (overwrite case)
         val existingWithName = groupsRepository.findGroupByName(instrumentId, prefixedName)
-        if (existingWithName != null && existingWithName.id != editingGroup?.id) {
-            groupsRepository.deleteGroup(existingWithName.id)
-        }
+        existingWithName?.let { groupsRepository.deleteGroup(it.id) }
 
-        val newId = groupsRepository.insertGroup(
+        groupsRepository.insertGroup(
             GroupEntity(instrumentId = instrumentId, name = prefixedName, chordIds = chordIdsString)
-        )
-
-        // In edit mode, keep the active filter pointing at the new group
-        if (editingGroup != null) {
-            groupFilter.value = GroupEntity(
-                id = newId,
-                instrumentId = instrumentId,
-                name = prefixedName,
-                chordIds = chordIdsString
-            )
-        }
-
-        _uiState.value = _uiState.value.copy(
-            editingGroup = null,
-            saveNameError = null
         )
         pendingSaveName = null
         pendingSaveInstrumentId = null
