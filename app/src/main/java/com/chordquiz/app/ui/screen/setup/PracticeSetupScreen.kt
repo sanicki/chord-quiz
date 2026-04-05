@@ -96,7 +96,7 @@ fun PracticeSetupScreen(
                     Icon(Icons.Default.Edit, contentDescription = null)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text("Mode A: Draw", style = MaterialTheme.typography.titleSmall)
+                        Text("Draw", style = MaterialTheme.typography.titleSmall)
                         Text("Place finger dots on a blank diagram",
                             style = MaterialTheme.typography.bodySmall)
                     }
@@ -123,7 +123,7 @@ fun PracticeSetupScreen(
                     Icon(Icons.Default.MusicNote, contentDescription = null)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text("Mode B: Play", style = MaterialTheme.typography.titleSmall)
+                        Text("Play", style = MaterialTheme.typography.titleSmall)
                         Text("Strum your instrument, we'll detect the chord",
                             style = MaterialTheme.typography.bodySmall)
                     }
