@@ -1,5 +1,6 @@
 package com.chordquiz.app.ui.screen.library
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -357,6 +358,7 @@ fun ChordLibraryScreen(
  * Uses [combinedClickable] as the sole gesture handler instead of FilterChip's internal
  * Surface/selectable, which would compete with an outer pointerInput detector.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun GroupFilterChip(
     name: String,
