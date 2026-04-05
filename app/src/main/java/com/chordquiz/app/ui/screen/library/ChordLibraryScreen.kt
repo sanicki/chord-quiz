@@ -5,14 +5,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items as gridItems
@@ -31,6 +30,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -105,7 +105,7 @@ fun ChordLibraryScreen(
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
-                // Selection info + Select All
+                // Selection info + Select All / None
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -123,19 +123,27 @@ fun ChordLibraryScreen(
                     }
                 }
 
-                // Type filter chips
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 12.dp),
+                // Filter chips: All → custom groups (newest first) → preset types
+                FlowRow(
+                    modifier = Modifier.padding(horizontal = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    item {
+                    // All
+                    FilterChip(
+                        selected = uiState.activeTypeFilter == null && uiState.activeGroupFilter == null,
+                        onClick = { viewModel.setTypeFilter(null) },
+                        label = { Text("All") }
+                    )
+                    // Custom groups (newest first)
+                    uiState.customGroups.forEach { group ->
                         FilterChip(
-                            selected = uiState.activeTypeFilter == null,
-                            onClick = { viewModel.setTypeFilter(null) },
-                            label = { Text("All") }
+                            selected = uiState.activeGroupFilter?.id == group.id,
+                            onClick = { viewModel.setGroupFilter(group) },
+                            label = { Text(group.toName()) }
                         )
                     }
-                    items(ChordType.entries.toList()) { type ->
+                    // Preset type filters
+                    ChordType.entries.forEach { type ->
                         FilterChip(
                             selected = uiState.activeTypeFilter == type,
                             onClick = { viewModel.setTypeFilter(type) },
@@ -201,36 +209,41 @@ fun ChordLibraryScreen(
         if (showSaveDialog) {
             var groupName by remember { mutableStateOf("") }
             Dialog(onDismissRequest = { showSaveDialog = false }) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
+                Surface(
+                    shape = MaterialTheme.shapes.large,
+                    tonalElevation = 6.dp
                 ) {
-                    Text("Save as New Group", style = MaterialTheme.typography.headlineSmall)
-                    OutlinedTextField(
-                        value = groupName,
-                        onValueChange = { groupName = it },
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        label = { Text("Group name") },
-                        singleLine = true
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
+                            .padding(24.dp)
                     ) {
-                        TextButton(onClick = { showSaveDialog = false }) {
-                            Text("Cancel")
-                        }
-                        Button(
-                            onClick = {
-                                viewModel.saveGroup(groupName, instrumentId, uiState.selectedChordIds.toList())
-                                showSaveDialog = false
-                            },
-                            enabled = groupName.isNotBlank() && uiState.selectedChordIds.size >= 2
+                        Text("Save as New Group", style = MaterialTheme.typography.headlineSmall)
+                        OutlinedTextField(
+                            value = groupName,
+                            onValueChange = { groupName = it },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp),
+                            label = { Text("Group name") },
+                            singleLine = true
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
                         ) {
-                            Text("Save")
+                            TextButton(onClick = { showSaveDialog = false }) {
+                                Text("Cancel")
+                            }
+                            Button(
+                                onClick = {
+                                    viewModel.saveGroup(groupName, instrumentId, uiState.selectedChordIds.toList())
+                                    showSaveDialog = false
+                                },
+                                enabled = groupName.isNotBlank() && uiState.selectedChordIds.size >= 2
+                            ) {
+                                Text("Save")
+                            }
                         }
                     }
                 }

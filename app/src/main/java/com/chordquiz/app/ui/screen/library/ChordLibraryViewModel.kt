@@ -23,6 +23,8 @@ data class ChordLibraryUiState(
     val filteredChords: List<ChordDefinition> = emptyList(),
     val selectedChordIds: Set<String> = emptySet(),
     val activeTypeFilter: ChordType? = null,
+    val activeGroupFilter: GroupEntity? = null,
+    val customGroups: List<GroupEntity> = emptyList(),
     val isLoading: Boolean = true
 )
 
@@ -37,20 +39,29 @@ class ChordLibraryViewModel @Inject constructor(
     val uiState: StateFlow<ChordLibraryUiState> = _uiState.asStateFlow()
 
     private val typeFilter = MutableStateFlow<ChordType?>(null)
+    private val groupFilter = MutableStateFlow<GroupEntity?>(null)
 
     fun loadInstrument(instrumentId: String) {
         viewModelScope.launch {
             val instrument = instrumentRepo.getInstrumentById(instrumentId) ?: return@launch
             combine(
                 getChordsForInstrument(instrumentId),
-                typeFilter
-            ) { chords, filter ->
-                val filtered = if (filter == null) chords else chords.filter { it.chordType == filter }
+                typeFilter,
+                groupFilter,
+                groupsRepository.getGroupsFlow(instrumentId)
+            ) { chords, typeF, groupF, groups ->
+                val filtered = when {
+                    groupF != null -> chords.filter { it.id in groupF.chordIdsList() }
+                    typeF != null -> chords.filter { it.chordType == typeF }
+                    else -> chords
+                }
                 _uiState.value = _uiState.value.copy(
                     instrument = instrument,
                     allChords = chords,
                     filteredChords = filtered,
-                    activeTypeFilter = filter,
+                    activeTypeFilter = typeF,
+                    activeGroupFilter = groupF,
+                    customGroups = groups.sortedByDescending { it.createdAt },
                     isLoading = false
                 )
             }.collect {}
@@ -64,13 +75,13 @@ class ChordLibraryViewModel @Inject constructor(
     }
 
     fun setTypeFilter(type: ChordType?) {
+        groupFilter.value = null
         typeFilter.value = type
-        val filtered = if (type == null) _uiState.value.allChords
-        else _uiState.value.allChords.filter { it.chordType == type }
-        _uiState.value = _uiState.value.copy(
-            filteredChords = filtered,
-            activeTypeFilter = type
-        )
+    }
+
+    fun setGroupFilter(group: GroupEntity?) {
+        typeFilter.value = null
+        groupFilter.value = group
     }
 
     fun selectAll() {
