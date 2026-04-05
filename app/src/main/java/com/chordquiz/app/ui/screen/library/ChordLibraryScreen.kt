@@ -175,6 +175,7 @@ fun ChordLibraryScreen(
                                 label = { Text(group.toName()) },
                                 modifier = Modifier.pointerInput(group.id) {
                                     detectTapGestures(
+                                        onTap = { viewModel.setGroupFilter(group) },
                                         onLongPress = { viewModel.requestDeleteGroup(group) }
                                     )
                                 }
