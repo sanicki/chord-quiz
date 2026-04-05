@@ -36,6 +36,7 @@ import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -48,7 +49,6 @@ import com.chordquiz.app.ui.components.chord.InteractiveChordDiagram
 import com.chordquiz.app.ui.screen.settings.SettingsViewModel
 import com.chordquiz.app.ui.theme.CorrectGreen
 import com.chordquiz.app.ui.theme.IncorrectRed
-import android.view.HapticFeedbackConstants
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -88,7 +88,7 @@ fun DrawQuizScreen(
             // Trigger haptic feedback on wrong answer
             LaunchedEffect(state.feedback) {
                 if (state.feedback == AnswerFeedback.INCORRECT && settings.hapticFeedbackEnabled) {
-                    hapticFeedback.performHapticFeedback(HapticFeedbackConstants.ERROR)
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                 }
             }
 
