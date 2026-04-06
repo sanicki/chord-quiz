@@ -64,6 +64,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chordquiz.app.data.model.ChordType
 import com.chordquiz.app.ui.components.chord.ChordDiagram
+import com.chordquiz.app.ui.screen.settings.SettingsViewModel
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -72,9 +73,11 @@ fun ChordLibraryScreen(
     instrumentId: String,
     onNavigateBack: () -> Unit,
     onStartPractice: (String, List<String>) -> Unit,
-    viewModel: ChordLibraryViewModel = hiltViewModel()
+    viewModel: ChordLibraryViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val settings by settingsViewModel.uiState.collectAsStateWithLifecycle()
     var showSaveDialog by remember { mutableStateOf(false) }
     var dialogInitialName by remember { mutableStateOf("") }
     var groupName by remember(showSaveDialog) { mutableStateOf(dialogInitialName) }
@@ -221,7 +224,7 @@ fun ChordLibraryScreen(
                                     modifier = Modifier.size(width = 80.dp, height = 96.dp)
                                 )
                                 Text(
-                                    text = chord.chordName,
+                                    text = chord.displayName(settings.noteDisplayMode),
                                     style = MaterialTheme.typography.labelMedium,
                                     modifier = Modifier.padding(bottom = 4.dp)
                                 )

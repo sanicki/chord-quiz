@@ -1,5 +1,7 @@
 package com.chordquiz.app.data.model
 
+import com.chordquiz.app.domain.model.NoteDisplayMode
+
 data class ChordDefinition(
     val id: String,
     val instrumentId: String,
@@ -12,4 +14,7 @@ data class ChordDefinition(
     val noteComponents: List<Note>
 ) {
     val displayName: String get() = "${rootNote.displayName}${chordType.suffix}"
+
+    fun displayName(mode: NoteDisplayMode): String =
+        "${rootNote.displayNameFor(mode)}${chordType.suffix}"
 }

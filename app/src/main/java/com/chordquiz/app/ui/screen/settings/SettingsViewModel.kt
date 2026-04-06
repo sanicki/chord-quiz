@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chordquiz.app.data.preferences.UserPreferencesRepository
 import com.chordquiz.app.domain.model.Difficulty
+import com.chordquiz.app.domain.model.NoteDisplayMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -39,6 +40,11 @@ class SettingsViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(difficulty = difficulty)
             }
         }
+        viewModelScope.launch {
+            userPreferencesRepository.noteDisplayMode.collect { mode ->
+                _uiState.value = _uiState.value.copy(noteDisplayMode = mode)
+            }
+        }
     }
 
     fun toggleHapticFeedback(enabled: Boolean) {
@@ -56,6 +62,12 @@ class SettingsViewModel @Inject constructor(
     fun setDifficulty(difficulty: Difficulty) {
         viewModelScope.launch {
             userPreferencesRepository.setDifficulty(difficulty)
+        }
+    }
+
+    fun setNoteDisplayMode(mode: NoteDisplayMode) {
+        viewModelScope.launch {
+            userPreferencesRepository.setNoteDisplayMode(mode)
         }
     }
 }

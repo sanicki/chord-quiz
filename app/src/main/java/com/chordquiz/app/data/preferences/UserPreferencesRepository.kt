@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.chordquiz.app.data.model.Instrument
 import com.chordquiz.app.domain.model.Difficulty
+import com.chordquiz.app.domain.model.NoteDisplayMode
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -26,6 +27,7 @@ class UserPreferencesRepository @Inject constructor(
     private val hapticFeedbackKey = booleanPreferencesKey("haptic_feedback_enabled")
     private val autoContinueDelayKey = intPreferencesKey("auto_continue_delay_seconds")
     private val difficultyKey = stringPreferencesKey("difficulty")
+    private val noteDisplayModeKey = stringPreferencesKey("note_display_mode")
 
     val lastInstrumentId: Flow<String> = context.dataStore.data
         .map { prefs -> prefs[lastInstrumentKey] ?: Instrument.GUITAR.id }
@@ -38,6 +40,9 @@ class UserPreferencesRepository @Inject constructor(
 
     val difficulty: Flow<Difficulty> = context.dataStore.data
         .map { prefs -> prefs[difficultyKey]?.let { runCatching { Difficulty.valueOf(it) }.getOrNull() } ?: Difficulty.DEFAULT }
+
+    val noteDisplayMode: Flow<NoteDisplayMode> = context.dataStore.data
+        .map { prefs -> prefs[noteDisplayModeKey]?.let { runCatching { NoteDisplayMode.valueOf(it) }.getOrNull() } ?: NoteDisplayMode.NONE }
 
     suspend fun setLastInstrumentId(id: String) {
         context.dataStore.edit { prefs -> prefs[lastInstrumentKey] = id }
@@ -53,5 +58,9 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun setDifficulty(difficulty: Difficulty) {
         context.dataStore.edit { prefs -> prefs[difficultyKey] = difficulty.name }
+    }
+
+    suspend fun setNoteDisplayMode(mode: NoteDisplayMode) {
+        context.dataStore.edit { prefs -> prefs[noteDisplayModeKey] = mode.name }
     }
 }
