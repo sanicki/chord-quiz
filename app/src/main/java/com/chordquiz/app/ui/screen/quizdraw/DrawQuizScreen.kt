@@ -223,19 +223,19 @@ fun DrawQuizScreen(
                         }
                     }
 
-                    if (state.feedback != null) {
-                        LinearProgressIndicator(
-                            progress = { countdownProgress },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-
                     Text(
                         "Tap strings/frets to place fingers\nTap above nut to toggle open/muted\nDrag right-to-left along a fret to draw a barre",
                         style = MaterialTheme.typography.bodySmall,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+
+                    if (state.feedback != null) {
+                        LinearProgressIndicator(
+                            progress = { countdownProgress },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
 
                     // Feedback banner
                     AnimatedVisibility(
