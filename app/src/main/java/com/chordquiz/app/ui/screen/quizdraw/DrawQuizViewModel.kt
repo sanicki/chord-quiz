@@ -71,10 +71,13 @@ class DrawQuizViewModel @Inject constructor(
             if (selected.isEmpty()) return@launch
 
             val session = buildSession(inst, QuizMode.DRAW, selected, questionCount, repeatMissed)
+            val firstQuestion = session.questions.firstOrNull()
+            val firstBaseFret = firstQuestion?.chordDefinition?.fingerings
+                ?.getOrNull(firstQuestion.targetFingeringIndex)?.baseFret ?: 1
             _uiState.value = DrawQuizUiState.Active(
                 session = session,
-                currentFingering = emptyFingering(inst.stringCount),
-                displayedQuestion = session.questions.firstOrNull(),
+                currentFingering = emptyFingering(inst.stringCount, firstBaseFret),
+                displayedQuestion = firstQuestion,
                 displayedQuestionIndex = 0
             )
         }
@@ -172,19 +175,23 @@ class DrawQuizViewModel @Inject constructor(
             SessionStore.save(state.session)
             _uiState.value = DrawQuizUiState.Complete(state.session.id)
         } else {
+            val nextQuestion = state.session.currentQuestion
+            val nextBaseFret = nextQuestion?.chordDefinition?.fingerings
+                ?.getOrNull(nextQuestion.targetFingeringIndex)?.baseFret ?: 1
             _uiState.value = state.copy(
-                currentFingering = emptyFingering(inst.stringCount),
+                currentFingering = emptyFingering(inst.stringCount, nextBaseFret),
                 feedback = null,
                 incorrectFrettedStrings = emptySet(),
                 incorrectMutedStrings = emptySet(),
                 missedMuteStrings = emptySet(),
-                displayedQuestion = state.session.currentQuestion,
+                displayedQuestion = nextQuestion,
                 displayedQuestionIndex = state.displayedQuestionIndex + 1
             )
         }
     }
 
-    private fun emptyFingering(stringCount: Int) = Fingering(
-        positions = (0 until stringCount).map { StringPosition(it, 0) }
+    private fun emptyFingering(stringCount: Int, baseFret: Int = 1) = Fingering(
+        positions = (0 until stringCount).map { StringPosition(it, 0) },
+        baseFret = baseFret
     )
 }
