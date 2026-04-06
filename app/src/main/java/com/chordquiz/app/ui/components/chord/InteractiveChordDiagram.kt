@@ -323,6 +323,16 @@ fun InteractiveChordDiagram(
             drawLine(StringColor, Offset(x, topPad), Offset(x, topPad + diagramHeight), 1.5f)
         }
 
+        // Tap-target grid — drawn first so finger dots and barre render on top.
+        // Full dot radius always, for reliable tap accuracy.
+        for (s in 0 until stringCount) {
+            for (f in 0 until displayedFrets) {
+                val cx = effectiveLeftPad + s * stringSpacing
+                val cy = topPad + (f + 0.5f) * fretSpacing
+                drawCircle(Color.Gray.copy(alpha = 0.18f), fretSpacing * 0.35f, Offset(cx, cy))
+            }
+        }
+
         // Above-nut markers (open circle or muted X)
         val symbolY = topPad - fretSpacing * 0.45f
         val symbolRadius = size.width * 0.035f
@@ -372,36 +382,48 @@ fun InteractiveChordDiagram(
         // Note labels
         if (noteDisplayMode.showNotes() && openStringNotes.isNotEmpty() && openStringOctaves.isNotEmpty()) {
             val noteFontSize = (fretSpacing * 0.22f / density).sp
-            val noteStyleOnDark = TextStyle(color = Color.White, fontSize = noteFontSize)
+            val noteStyleOnDark  = TextStyle(color = Color.White, fontSize = noteFontSize)
             val noteStyleOnLight = TextStyle(color = Color.Black, fontSize = noteFontSize)
+            val noteStyleMuted   = TextStyle(color = Color(0xFF666666), fontSize = noteFontSize)
 
-            // Labels on finger dots
-            positions.filter { it.fret > 0 && it.fret in visibleRange }.forEach { pos ->
-                val openNote = openStringNotes.getOrNull(pos.stringIndex) ?: return@forEach
-                val openOctave = openStringOctaves.getOrNull(pos.stringIndex) ?: return@forEach
-                val note = openNote.plus(pos.fret)
-                val octave = openOctave + (openNote.semitone + pos.fret) / 12
-                val label = note.displayNameFor(noteDisplayMode, octave.takeIf { noteDisplayMode.showOctave() })
-                val x = effectiveLeftPad + pos.stringIndex * stringSpacing
-                val y = topPad + (pos.fret - effectiveBaseFret + 0.5f) * fretSpacing
-                val measured = textMeasurer.measure(label, style = noteStyleOnDark)
-                drawText(
-                    textMeasurer = textMeasurer,
-                    text = label,
-                    topLeft = Offset(x - measured.size.width / 2f, y - measured.size.height / 2f),
-                    style = noteStyleOnDark
-                )
+            // Unified grid: every fret × string position in the visible window
+            for (s in 0 until stringCount) {
+                for (f in 0 until displayedFrets) {
+                    val actualFret = effectiveBaseFret + f
+                    val hasFingerDot = positions.any { it.stringIndex == s && it.fret == actualFret }
+                    val isInBarre   = barre?.let { b ->
+                        actualFret == b.fret && s in b.fromString..b.toString
+                    } ?: false
+
+                    val openNote   = openStringNotes.getOrNull(s)   ?: continue
+                    val openOctave = openStringOctaves.getOrNull(s) ?: continue
+                    val note   = openNote.plus(actualFret)
+                    val octave = openOctave + (openNote.semitone + actualFret) / 12
+                    val label  = note.displayNameFor(
+                        noteDisplayMode,
+                        octave.takeIf { noteDisplayMode.showOctave() }
+                    )
+                    val style   = if (hasFingerDot || isInBarre) noteStyleOnDark else noteStyleMuted
+                    val cx      = effectiveLeftPad + s * stringSpacing
+                    val cy      = topPad + (f + 0.5f) * fretSpacing
+                    val measured = textMeasurer.measure(label, style = style)
+                    drawText(
+                        textMeasurer = textMeasurer,
+                        text = label,
+                        topLeft = Offset(cx - measured.size.width / 2f, cy - measured.size.height / 2f),
+                        style = style
+                    )
+                }
             }
 
-            // Labels on above-nut markers (open and muted)
+            // Above-nut labels (open strings and muted markers)
             positions.forEach { pos ->
                 if (pos.fret != -1 && pos.fret != 0) return@forEach
-                val openNote = openStringNotes.getOrNull(pos.stringIndex) ?: return@forEach
+                val openNote   = openStringNotes.getOrNull(pos.stringIndex)   ?: return@forEach
                 val openOctave = openStringOctaves.getOrNull(pos.stringIndex) ?: return@forEach
-                val note = openNote
                 val octave = openOctave + openNote.semitone / 12
-                val label = note.displayNameFor(noteDisplayMode, octave.takeIf { noteDisplayMode.showOctave() })
-                val x = effectiveLeftPad + pos.stringIndex * stringSpacing
+                val label  = openNote.displayNameFor(noteDisplayMode, octave.takeIf { noteDisplayMode.showOctave() })
+                val x       = effectiveLeftPad + pos.stringIndex * stringSpacing
                 val measured = textMeasurer.measure(label, style = noteStyleOnLight)
                 drawText(
                     textMeasurer = textMeasurer,
@@ -409,35 +431,6 @@ fun InteractiveChordDiagram(
                     topLeft = Offset(x - measured.size.width / 2f, symbolY - measured.size.height / 2f),
                     style = noteStyleOnLight
                 )
-            }
-
-            // Labels on barre segments
-            barre?.takeIf { it.fret in visibleRange }?.let { b ->
-                val y = topPad + (b.fret - effectiveBaseFret + 0.5f) * fretSpacing
-                for (s in b.fromString..b.toString) {
-                    val openNote = openStringNotes.getOrNull(s) ?: continue
-                    val openOctave = openStringOctaves.getOrNull(s) ?: continue
-                    val note = openNote.plus(b.fret)
-                    val octave = openOctave + (openNote.semitone + b.fret) / 12
-                    val label = note.displayNameFor(noteDisplayMode, octave.takeIf { noteDisplayMode.showOctave() })
-                    val x = effectiveLeftPad + s * stringSpacing
-                    val measured = textMeasurer.measure(label, style = noteStyleOnDark)
-                    drawText(
-                        textMeasurer = textMeasurer,
-                        text = label,
-                        topLeft = Offset(x - measured.size.width / 2f, y - measured.size.height / 2f),
-                        style = noteStyleOnDark
-                    )
-                }
-            }
-        }
-
-        // Faint tap-target hint grid
-        for (s in 0 until stringCount) {
-            for (f in 0 until displayedFrets) {
-                val cx = effectiveLeftPad + s * stringSpacing
-                val cy = topPad + (f + 0.5f) * fretSpacing
-                drawCircle(Color.Gray.copy(alpha = 0.15f), fretSpacing * 0.3f, Offset(cx, cy))
             }
         }
     }
