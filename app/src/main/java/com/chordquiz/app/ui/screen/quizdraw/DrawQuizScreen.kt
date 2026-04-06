@@ -212,6 +212,7 @@ fun DrawQuizScreen(
                         ) {
                             InteractiveChordDiagram(
                                 stringCount = stringCount,
+                                totalFrets = session.instrument.totalFrets,
                                 initialFingering = state.currentFingering,
                                 incorrectFrettedStrings = state.incorrectFrettedStrings,
                                 incorrectMutedStrings = state.incorrectMutedStrings,
