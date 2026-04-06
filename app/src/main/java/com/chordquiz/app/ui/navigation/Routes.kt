@@ -11,7 +11,10 @@ data class ChordLibraryRoute(val instrumentId: String)
 @Serializable
 data class PracticeSetupRoute(
     val instrumentId: String,
-    val selectedChordIds: List<String>
+    val selectedChordIds: List<String>,
+    val preserveSettings: Boolean = false,
+    val initialMode: String = "DRAW",
+    val initialRepeatMissed: Boolean = true
 )
 
 @Serializable
