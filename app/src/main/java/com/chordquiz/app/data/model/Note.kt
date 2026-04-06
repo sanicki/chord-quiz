@@ -1,5 +1,7 @@
 package com.chordquiz.app.data.model
 
+import com.chordquiz.app.domain.model.NoteDisplayMode
+
 enum class Note(val semitone: Int, val displayName: String, val flatName: String? = null) {
     C(0, "C"),
     C_SHARP(1, "C#", "Db"),
@@ -15,6 +17,11 @@ enum class Note(val semitone: Int, val displayName: String, val flatName: String
     B(11, "B");
 
     fun plus(semitones: Int): Note = fromSemitone(semitone + semitones)
+
+    fun displayNameFor(mode: NoteDisplayMode, octave: Int? = null): String {
+        val base = if (mode.useFlats()) flatName ?: displayName else displayName
+        return if (mode.showOctave() && octave != null) "$base$octave" else base
+    }
 
     companion object {
         fun fromSemitone(s: Int): Note = entries[s.mod(12)]

@@ -48,7 +48,9 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chordquiz.app.data.model.ChordDefinition
+import com.chordquiz.app.domain.model.NoteDisplayMode
 import com.chordquiz.app.ui.components.chord.ChordDiagram
+import com.chordquiz.app.ui.screen.settings.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,9 +59,11 @@ fun ChordPreviewScreen(
     selectedChordIds: List<String>,
     onBack: () -> Unit,
     onBegin: () -> Unit,
-    viewModel: ChordPreviewViewModel = hiltViewModel()
+    viewModel: ChordPreviewViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val settings by settingsViewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(instrumentId, selectedChordIds) {
         viewModel.initialize(instrumentId, selectedChordIds)
@@ -116,6 +120,7 @@ fun ChordPreviewScreen(
                     itemsIndexed(state.chords) { index, chord ->
                         ChordPreviewCard(
                             chord = chord,
+                            displayName = chord.displayName(settings.noteDisplayMode),
                             onClick = { selectedChordIndex = index }
                         )
                     }
@@ -125,6 +130,7 @@ fun ChordPreviewScreen(
                     ChordDetailModal(
                         chords = state.chords,
                         initialIndex = index,
+                        noteDisplayMode = settings.noteDisplayMode,
                         onDismiss = { selectedChordIndex = null }
                     )
                 }
@@ -136,6 +142,7 @@ fun ChordPreviewScreen(
 @Composable
 private fun ChordPreviewCard(
     chord: ChordDefinition,
+    displayName: String,
     onClick: () -> Unit
 ) {
     Box(
@@ -155,7 +162,7 @@ private fun ChordPreviewCard(
                 modifier = Modifier.size(width = 80.dp, height = 96.dp)
             )
             Text(
-                text = chord.chordName,
+                text = displayName,
                 style = MaterialTheme.typography.labelMedium,
                 modifier = Modifier.padding(bottom = 4.dp)
             )
@@ -168,6 +175,7 @@ private fun ChordPreviewCard(
 private fun ChordDetailModal(
     chords: List<ChordDefinition>,
     initialIndex: Int,
+    noteDisplayMode: NoteDisplayMode,
     onDismiss: () -> Unit
 ) {
     var currentIndex by remember(initialIndex) { mutableIntStateOf(initialIndex) }
@@ -181,7 +189,7 @@ private fun ChordDetailModal(
             Scaffold(
                 topBar = {
                     TopAppBar(
-                        title = { Text(chord.chordName, style = MaterialTheme.typography.titleLarge) },
+                        title = { Text(chord.displayName(noteDisplayMode), style = MaterialTheme.typography.titleLarge) },
                         navigationIcon = {
                             IconButton(onClick = onDismiss) {
                                 Icon(Icons.Default.Close, contentDescription = "Close")
@@ -225,7 +233,7 @@ private fun ChordDetailModal(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = chord.chordName,
+                        text = chord.displayName(noteDisplayMode),
                         style = MaterialTheme.typography.displayMedium
                     )
 

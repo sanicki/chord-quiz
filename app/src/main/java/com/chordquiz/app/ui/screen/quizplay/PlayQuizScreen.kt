@@ -53,6 +53,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chordquiz.app.ui.components.AudioWaveform
 import com.chordquiz.app.ui.components.chord.ChordDiagram
+import com.chordquiz.app.ui.screen.settings.SettingsViewModel
 import com.chordquiz.app.ui.theme.CorrectGreen
 import com.chordquiz.app.ui.theme.IncorrectRed
 
@@ -65,9 +66,11 @@ fun PlayQuizScreen(
     repeatMissed: Boolean,
     onNavigateBack: () -> Unit,
     onQuizComplete: (String) -> Unit,
-    viewModel: PlayQuizViewModel = hiltViewModel()
+    viewModel: PlayQuizViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val settings by settingsViewModel.uiState.collectAsStateWithLifecycle()
     var permissionGranted by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -143,7 +146,7 @@ fun PlayQuizScreen(
                     Text("Play this chord:", style = MaterialTheme.typography.bodyLarge)
 
                     Text(
-                        text = question.chordDefinition.chordName,
+                        text = question.chordDefinition.displayName(settings.noteDisplayMode),
                         style = MaterialTheme.typography.displayLarge.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 64.sp
@@ -186,7 +189,7 @@ fun PlayQuizScreen(
                             if (state.detectedNotes.isNotEmpty()) {
                                 Spacer(Modifier.height(8.dp))
                                 Text(
-                                    "Detected: ${state.detectedNotes.joinToString(" ") { it.displayName }}",
+                                    "Detected: ${state.detectedNotes.joinToString(" ") { it.displayNameFor(settings.noteDisplayMode) }}",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

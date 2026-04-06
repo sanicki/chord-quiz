@@ -167,7 +167,7 @@ fun DrawQuizScreen(
 
                     Text("Draw this chord:", style = MaterialTheme.typography.bodyLarge)
                     Text(
-                        text = question.chordDefinition.chordName,
+                        text = question.chordDefinition.displayName(settings.noteDisplayMode),
                         style = MaterialTheme.typography.displayLarge.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 64.sp
@@ -217,6 +217,9 @@ fun DrawQuizScreen(
                                 incorrectFrettedStrings = state.incorrectFrettedStrings,
                                 incorrectMutedStrings = state.incorrectMutedStrings,
                                 missedMuteStrings = state.missedMuteStrings,
+                                openStringNotes = session.instrument.openStringNotes,
+                                openStringOctaves = session.instrument.openStringOctaves,
+                                noteDisplayMode = settings.noteDisplayMode,
                                 onFingeringChanged = { viewModel.onFingeringChanged(it) },
                                 onNoteSelected = { strIdx, fret -> viewModel.onNoteSelected(strIdx, fret) },
                                 modifier = Modifier.fillMaxSize()
