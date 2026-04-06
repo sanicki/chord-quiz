@@ -30,6 +30,18 @@ class EvaluateDrawAnswerUseCase @Inject constructor() {
             val userMuted = userFingering.positions.filter { it.fret == -1 }.map { it.stringIndex }.toSet()
             if (refMuted != userMuted) return false
 
+            // If the reference has a barre, the user must draw an exact matching barre —
+            // tapping each string individually is not sufficient.
+            val refBarre = referenceFingering.barre
+            if (refBarre != null) {
+                val userBarre = userFingering.barre
+                if (userBarre == null ||
+                    userBarre.fret != refBarre.fret ||
+                    userBarre.fromString != refBarre.fromString ||
+                    userBarre.toString != refBarre.toString
+                ) return false
+            }
+
             // Notes produced by the non-muted strings must match
             val refNotes  = computeNotes(instrument, referenceFingering)
             val userNotes = computeNotes(instrument, userFingering)

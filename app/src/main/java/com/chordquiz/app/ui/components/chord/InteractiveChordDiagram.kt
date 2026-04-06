@@ -1,7 +1,8 @@
 package com.chordquiz.app.ui.components.chord
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -10,6 +11,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -20,8 +22,10 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.chordquiz.app.data.model.BarreSegment
 import com.chordquiz.app.data.model.Fingering
 import com.chordquiz.app.data.model.StringPosition
+import com.chordquiz.app.ui.theme.BarreColor
 import com.chordquiz.app.ui.theme.FingerDot
 import com.chordquiz.app.ui.theme.IncorrectRed
 import com.chordquiz.app.ui.theme.MutedGray
@@ -32,6 +36,7 @@ import com.chordquiz.app.ui.theme.StringColor
  * Tappable chord diagram.
  * Tap a fret position to toggle a finger dot on/off.
  * Tap above the nut to cycle a string: open → muted → open.
+ * Drag right-to-left along a fret to draw a barre across multiple strings.
  *
  * @param incorrectFrettedStrings  strings where the user placed a wrong-note finger (shown red)
  * @param incorrectMutedStrings    strings the user muted but shouldn't have (X shown red)
@@ -59,6 +64,9 @@ fun InteractiveChordDiagram(
     var positions by remember(stringCount) {
         mutableStateOf(initialPositions.toMutableList())
     }
+    var barre by remember(stringCount) {
+        mutableStateOf(initialFingering?.barre)
+    }
 
     val textMeasurer = rememberTextMeasurer()
 
@@ -74,38 +82,174 @@ fun InteractiveChordDiagram(
             .aspectRatio(0.7f)
             .padding(4.dp)
             .pointerInput(stringCount, displayedFrets) {
-                detectTapGestures { offset ->
-                    if (stringSpacing == 0f) return@detectTapGestures
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    if (stringSpacing == 0f) return@awaitEachGesture
 
-                    val rawString = ((offset.x - effectiveLeftPad) / stringSpacing).toInt()
-                    val tappedString = rawString.coerceIn(0, stringCount - 1)
+                    val startX = down.position.x
+                    val startY = down.position.y
 
-                    if (offset.y < topPad) {
-                        // Above nut: toggle open ↔ muted
-                        val cur = positions.firstOrNull { it.stringIndex == tappedString }?.fret ?: 0
-                        val newFret = if (cur == -1) 0 else -1
-                        positions = positions.toMutableList().also { list ->
-                            val idx = list.indexOfFirst { it.stringIndex == tappedString }
-                            if (idx >= 0) list[idx] = StringPosition(tappedString, newFret)
+                    val rawString = ((startX - effectiveLeftPad) / stringSpacing).toInt()
+                    val touchDownString = rawString.coerceIn(0, stringCount - 1)
+                    val touchDownInFretGrid = startY >= topPad
+                    val rawFret = ((startY - topPad) / fretSpacing).toInt() + effectiveBaseFret
+                    val touchDownFret = rawFret.coerceIn(effectiveBaseFret, effectiveBaseFret + displayedFrets - 1)
+
+                    // Snapshot base positions before any barre drag:
+                    // strings previously absorbed by a barre are reset to open so
+                    // a new drag (or a short drag falling back to tap) starts clean.
+                    val existingBarre = barre
+                    val basePositions: List<StringPosition> = if (existingBarre != null) {
+                        positions.map { pos ->
+                            if (pos.stringIndex in existingBarre.fromString..existingBarre.toString)
+                                StringPosition(pos.stringIndex, 0)
+                            else pos
                         }
-                        onFingeringChanged(Fingering(positions.toList(), baseFret = effectiveBaseFret))
-                        if (newFret == 0) onNoteSelected?.invoke(tappedString, 0)
-                        return@detectTapGestures
+                    } else positions.toList()
+
+                    // Tap handler — defined here so it closes over all gesture-local variables
+                    // and can be called from both the "pure tap" and "short drag" paths.
+                    fun performTap() {
+                        if (!touchDownInFretGrid) {
+                            // Above nut: toggle open ↔ muted
+                            val cur = positions.firstOrNull { it.stringIndex == touchDownString }?.fret ?: 0
+                            val newFret = if (cur == -1) 0 else -1
+                            positions = positions.toMutableList().also { list ->
+                                val idx = list.indexOfFirst { it.stringIndex == touchDownString }
+                                if (idx >= 0) list[idx] = StringPosition(touchDownString, newFret)
+                            }
+                            onFingeringChanged(Fingering(positions.toList(), barre, effectiveBaseFret))
+                            if (newFret == 0) onNoteSelected?.invoke(touchDownString, 0)
+                            return
+                        }
+
+                        val currentBarre = barre
+                        if (currentBarre != null &&
+                            touchDownString in currentBarre.fromString..currentBarre.toString &&
+                            touchDownFret == currentBarre.fret
+                        ) {
+                            // Tap lands on an existing barre
+                            val isEndpoint = touchDownString == currentBarre.fromString ||
+                                touchDownString == currentBarre.toString
+                            if (isEndpoint) {
+                                // Shrink the barre span by detaching this endpoint string
+                                val newFrom = if (touchDownString == currentBarre.fromString)
+                                    currentBarre.fromString + 1 else currentBarre.fromString
+                                val newTo = if (touchDownString == currentBarre.toString)
+                                    currentBarre.toString - 1 else currentBarre.toString
+                                barre = if (newTo - newFrom >= 1)
+                                    BarreSegment(currentBarre.fret, newFrom, newTo)
+                                else null
+                                positions = positions.toMutableList().also { list ->
+                                    val idx = list.indexOfFirst { it.stringIndex == touchDownString }
+                                    if (idx >= 0) list[idx] = StringPosition(touchDownString, 0)
+                                }
+                            } else {
+                                // Middle of barre: remove the entire barre and its dots
+                                barre = null
+                                positions = positions.toMutableList().also { list ->
+                                    for (s in currentBarre.fromString..currentBarre.toString) {
+                                        val idx = list.indexOfFirst { it.stringIndex == s }
+                                        if (idx >= 0) list[idx] = StringPosition(s, 0)
+                                    }
+                                }
+                            }
+                            onFingeringChanged(Fingering(positions.toList(), barre, effectiveBaseFret))
+                            return
+                        }
+
+                        // Regular fret tap: toggle dot on/off
+                        val curPos = positions.firstOrNull { it.stringIndex == touchDownString }
+                        val newFret = if (curPos?.fret == touchDownFret) 0 else touchDownFret
+                        positions = positions.toMutableList().also { list ->
+                            val idx = list.indexOfFirst { it.stringIndex == touchDownString }
+                            if (idx >= 0) list[idx] = StringPosition(touchDownString, newFret)
+                            else list.add(StringPosition(touchDownString, newFret))
+                        }
+                        onFingeringChanged(Fingering(positions.toList(), barre, effectiveBaseFret))
+                        if (newFret > 0) onNoteSelected?.invoke(touchDownString, newFret)
                     }
 
-                    // Fret grid tap
-                    val rawFret = ((offset.y - topPad) / fretSpacing).toInt() + effectiveBaseFret
-                    val tappedFret = rawFret.coerceIn(effectiveBaseFret, effectiveBaseFret + displayedFrets - 1)
-                    val curPos = positions.firstOrNull { it.stringIndex == tappedString }
-                    val newFret = if (curPos?.fret == tappedFret) 0 else tappedFret
+                    var gestureClassified = false
+                    var isBarreDrag = false
 
-                    positions = positions.toMutableList().also { list ->
-                        val idx = list.indexOfFirst { it.stringIndex == tappedString }
-                        if (idx >= 0) list[idx] = StringPosition(tappedString, newFret)
-                        else list.add(StringPosition(tappedString, newFret))
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        val pointer = event.changes.firstOrNull { it.id == down.id } ?: break
+
+                        val dx = pointer.position.x - startX
+                        val dy = pointer.position.y - startY
+
+                        // Classify once horizontal movement reaches one full string spacing
+                        if (!gestureClassified &&
+                            kotlin.math.abs(dx) >= stringSpacing &&
+                            kotlin.math.abs(dx) > kotlin.math.abs(dy)
+                        ) {
+                            gestureClassified = true
+                            if (dx < 0 && touchDownInFretGrid) {
+                                // Right-to-left drag in fret grid → barre mode
+                                isBarreDrag = true
+                                barre = null
+                                positions = basePositions.toMutableList()
+                            } else {
+                                // Left-to-right drag (or above-nut drag) → let bubble to parent
+                                break
+                            }
+                        }
+
+                        if (isBarreDrag) {
+                            pointer.consume()
+                            val rawCurrent = ((pointer.position.x - effectiveLeftPad) / stringSpacing).toInt()
+                            // Rubber-band: span from leftmost reached back to touchDownString
+                            val barreEndString = minOf(
+                                rawCurrent.coerceIn(0, stringCount - 1),
+                                touchDownString
+                            )
+
+                            if (barreEndString < touchDownString) {
+                                val span = barreEndString..touchDownString
+                                // Recompute from base each frame so rubber-band reversal is clean
+                                val newPositions = basePositions.map { pos ->
+                                    if (pos.stringIndex in span && pos.fret <= touchDownFret)
+                                        StringPosition(pos.stringIndex, touchDownFret)
+                                    else pos
+                                }
+                                // Actual barre span = only strings that were absorbed (fret ≤ barreFret)
+                                val absorbed = span.filter { s ->
+                                    (basePositions.firstOrNull { it.stringIndex == s }?.fret ?: 0) <= touchDownFret
+                                }
+                                barre = if (absorbed.size >= 2)
+                                    BarreSegment(touchDownFret, absorbed.min(), absorbed.max())
+                                else null
+                                positions = newPositions.toMutableList()
+                            } else {
+                                // Dragged back to starting string
+                                barre = null
+                                positions = basePositions.toMutableList()
+                            }
+                        }
+
+                        if (!pointer.pressed) {
+                            val committedBarre = barre
+                            when {
+                                isBarreDrag && committedBarre != null -> {
+                                    // Commit the barre
+                                    onFingeringChanged(Fingering(positions.toList(), committedBarre, effectiveBaseFret))
+                                }
+                                isBarreDrag -> {
+                                    // Drag didn't reach 2+ strings → restore and treat as tap
+                                    positions = basePositions.toMutableList()
+                                    barre = existingBarre
+                                    performTap()
+                                }
+                                !gestureClassified -> {
+                                    // Pure tap
+                                    performTap()
+                                }
+                            }
+                            break
+                        }
                     }
-                    onFingeringChanged(Fingering(positions.toList(), baseFret = effectiveBaseFret))
-                    if (newFret > 0) onNoteSelected?.invoke(tappedString, newFret)
                 }
             }
     ) {
@@ -175,6 +319,20 @@ fun InteractiveChordDiagram(
                     drawCircle(oColor, symbolRadius, Offset(x, symbolY), style = Stroke(2f))
                 }
             }
+        }
+
+        // Barre (drawn before finger dots so dots render on top)
+        barre?.let { b ->
+            val y = topPad + (b.fret - effectiveBaseFret + 0.5f) * fretSpacing
+            val x1 = effectiveLeftPad + b.fromString * stringSpacing
+            val x2 = effectiveLeftPad + b.toString * stringSpacing
+            val barreRadius = fretSpacing * 0.35f
+            drawRoundRect(
+                color = BarreColor,
+                topLeft = Offset(x1, y - barreRadius),
+                size = Size(x2 - x1, barreRadius * 2),
+                cornerRadius = CornerRadius(barreRadius, barreRadius)
+            )
         }
 
         // Finger dots
