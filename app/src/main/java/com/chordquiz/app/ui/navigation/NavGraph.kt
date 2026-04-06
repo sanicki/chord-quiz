@@ -8,6 +8,7 @@ import androidx.navigation.toRoute
 import com.chordquiz.app.ui.screen.instrument.InstrumentSelectionScreen
 import com.chordquiz.app.ui.screen.library.ChordLibraryScreen
 import com.chordquiz.app.ui.navigation.ChordLibraryRoute
+import com.chordquiz.app.ui.navigation.ChordPreviewRoute
 import com.chordquiz.app.ui.navigation.DrawQuizRoute
 import com.chordquiz.app.ui.navigation.InstrumentSelectionRoute
 import com.chordquiz.app.ui.navigation.PracticeSetupRoute
@@ -15,6 +16,7 @@ import com.chordquiz.app.ui.navigation.PlayQuizRoute
 import com.chordquiz.app.ui.navigation.ResultsRoute
 import com.chordquiz.app.ui.navigation.SettingsRoute
 import com.chordquiz.app.ui.shared.SessionStore
+import com.chordquiz.app.ui.screen.preview.ChordPreviewScreen
 import com.chordquiz.app.ui.screen.setup.PracticeSetupScreen
 import com.chordquiz.app.ui.screen.quizdraw.DrawQuizScreen
 import com.chordquiz.app.ui.screen.quizplay.PlayQuizScreen
@@ -56,10 +58,26 @@ fun NavGraph() {
                 selectedChordIds = route.selectedChordIds,
                 onNavigateBack = { navController.popBackStack() },
                 onStartDrawQuiz = { instrumentId, chordIds, count, repeat ->
-                    navController.navigate(DrawQuizRoute(instrumentId, chordIds, count, repeat))
+                    navController.navigate(ChordPreviewRoute(instrumentId, chordIds, count, repeat, "draw"))
                 },
                 onStartPlayQuiz = { instrumentId, chordIds, count, repeat ->
-                    navController.navigate(PlayQuizRoute(instrumentId, chordIds, count, repeat))
+                    navController.navigate(ChordPreviewRoute(instrumentId, chordIds, count, repeat, "play"))
+                }
+            )
+        }
+
+        composable<ChordPreviewRoute> { backStackEntry ->
+            val route = backStackEntry.toRoute<ChordPreviewRoute>()
+            ChordPreviewScreen(
+                instrumentId = route.instrumentId,
+                selectedChordIds = route.selectedChordIds,
+                onBack = { navController.popBackStack() },
+                onBegin = {
+                    if (route.quizMode == "play") {
+                        navController.navigate(PlayQuizRoute(route.instrumentId, route.selectedChordIds, route.questionCount, route.repeatMissed))
+                    } else {
+                        navController.navigate(DrawQuizRoute(route.instrumentId, route.selectedChordIds, route.questionCount, route.repeatMissed))
+                    }
                 }
             )
         }
@@ -136,40 +154,21 @@ fun NavGraph() {
                     }
                 },
                 onRestartQuiz = {
-                    when (route.restartRoute) {
-                        "DrawQuizRoute" -> {
-                            SessionStore.lastInstrumentId?.let { instrumentId ->
-                                SessionStore.lastSelectedChordIds?.let { chordIds ->
-                                    navController.navigate(DrawQuizRoute(
-                                        instrumentId = instrumentId,
-                                        selectedChordIds = chordIds,
-                                        questionCount = SessionStore.lastQuestionCount,
-                                        repeatMissed = SessionStore.lastRepeatMissed
-                                    )) {
-                                        popUpTo(InstrumentSelectionRoute)
-                                    }
-                                }
-                            } ?: navController.navigate(InstrumentSelectionRoute) {
-                                popUpTo(InstrumentSelectionRoute) { inclusive = true }
-                            }
+                    val instrumentId = SessionStore.lastInstrumentId
+                    val chordIds = SessionStore.lastSelectedChordIds
+                    if (instrumentId != null && chordIds != null) {
+                        val quizMode = if (route.restartRoute == "PlayQuizRoute") "play" else "draw"
+                        navController.navigate(ChordPreviewRoute(
+                            instrumentId = instrumentId,
+                            selectedChordIds = chordIds,
+                            questionCount = SessionStore.lastQuestionCount,
+                            repeatMissed = SessionStore.lastRepeatMissed,
+                            quizMode = quizMode
+                        )) {
+                            popUpTo(InstrumentSelectionRoute)
                         }
-                        "PlayQuizRoute" -> {
-                            SessionStore.lastInstrumentId?.let { instrumentId ->
-                                SessionStore.lastSelectedChordIds?.let { chordIds ->
-                                    navController.navigate(PlayQuizRoute(
-                                        instrumentId = instrumentId,
-                                        selectedChordIds = chordIds,
-                                        questionCount = SessionStore.lastQuestionCount,
-                                        repeatMissed = SessionStore.lastRepeatMissed
-                                    )) {
-                                        popUpTo(InstrumentSelectionRoute)
-                                    }
-                                }
-                            } ?: navController.navigate(InstrumentSelectionRoute) {
-                                popUpTo(InstrumentSelectionRoute) { inclusive = true }
-                            }
-                        }
-                        else -> navController.navigate(InstrumentSelectionRoute) {
+                    } else {
+                        navController.navigate(InstrumentSelectionRoute) {
                             popUpTo(InstrumentSelectionRoute) { inclusive = true }
                         }
                     }
