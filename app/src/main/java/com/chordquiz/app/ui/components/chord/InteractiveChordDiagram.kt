@@ -229,7 +229,7 @@ fun InteractiveChordDiagram(
                             }
                         }
 
-                        if (pointer.changedToUp()) {
+                        if (!pointer.pressed) {
                             val committedBarre = barre
                             when {
                                 isBarreDrag && committedBarre != null -> {
