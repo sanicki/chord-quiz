@@ -123,7 +123,7 @@ class DrawQuizViewModel @Inject constructor(
                 when {
                     refFret == -1 && userFret != -1 -> missedMuteStrings.add(stringIndex)
                     refFret != -1 && userFret == -1 -> incorrectMutedStrings.add(stringIndex)
-                    refFret > 0 && userFret != refFret -> incorrectFrettedStrings.add(stringIndex)
+                    refFret >= 0 && userFret != refFret -> incorrectFrettedStrings.add(stringIndex)
                 }
             }
         }
