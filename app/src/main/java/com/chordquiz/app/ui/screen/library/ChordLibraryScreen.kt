@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,10 +33,11 @@ import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.material3.ripple
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -163,17 +166,18 @@ fun ChordLibraryScreen(
                 // Filter chips: All → custom groups (newest first) → preset types
                 FlowRow(
                     modifier = Modifier.padding(horizontal = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    itemVerticalAlignment = Alignment.CenterVertically
                 ) {
-                    FilterChip(
+                    LibraryFilterChip(
+                        label = "All",
                         selected = uiState.activeTypeFilter == null && uiState.activeGroupFilter == null,
-                        onClick = { viewModel.setTypeFilter(null) },
-                        label = { Text("All") }
+                        onClick = { viewModel.setTypeFilter(null) }
                     )
                     uiState.customGroups.forEach { group ->
                         key(group.id) {
-                            GroupFilterChip(
-                                name = group.toName(),
+                            LibraryFilterChip(
+                                label = group.toName(),
                                 selected = uiState.activeGroupFilter?.id == group.id,
                                 onClick = { viewModel.setGroupFilter(group) },
                                 onLongClick = { viewModel.requestDeleteGroup(group) }
@@ -181,10 +185,10 @@ fun ChordLibraryScreen(
                         }
                     }
                     ChordType.entries.forEach { type ->
-                        FilterChip(
+                        LibraryFilterChip(
+                            label = type.displayName,
                             selected = uiState.activeTypeFilter == type,
-                            onClick = { viewModel.setTypeFilter(type) },
-                            label = { Text(type.displayName) }
+                            onClick = { viewModel.setTypeFilter(type) }
                         )
                     }
                 }
@@ -354,39 +358,55 @@ fun ChordLibraryScreen(
 }
 
 /**
- * A chip for custom groups that supports both tap and long-press without gesture conflicts.
- * Uses [combinedClickable] as the sole gesture handler instead of FilterChip's internal
- * Surface/selectable, which would compete with an outer pointerInput detector.
+ * A custom chip component using [combinedClickable] for consistent tap/long-press support.
+ * Replaces FilterChip to ensure identical rendering and consistent tap behavior for
+ * All, custom groups, and preset types.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun GroupFilterChip(
-    name: String,
+private fun LibraryFilterChip(
+    label: String,
     selected: Boolean,
     onClick: () -> Unit,
-    onLongClick: () -> Unit,
+    onLongClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val containerColor = if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent
-    val contentColor = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface
-    val borderColor = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.outline
+    val interactionSource = remember { MutableInteractionSource() }
+    val selectedColor = MaterialTheme.colorScheme.primaryContainer
+    val unselectedColor = MaterialTheme.colorScheme.surfaceVariant
+    val selectedTextColor = MaterialTheme.colorScheme.onPrimaryContainer
+    val unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val selectedBorderColor = MaterialTheme.colorScheme.primaryContainer
+    val unselectedBorderColor = MaterialTheme.colorScheme.outline
 
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .clip(CircleShape)
-            .background(containerColor)
-            .border(1.dp, borderColor, CircleShape)
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (selected) selectedColor else unselectedColor)
+            .border(
+                width = 1.dp,
+                color = if (selected) selectedBorderColor else unselectedBorderColor,
+                shape = RoundedCornerShape(8.dp)
+            )
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick
             )
+            .indication(
+                interactionSource = interactionSource,
+                indication = ripple(
+                    bounded = false,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                )
+            )
+            .minimumInteractiveComponentSize()
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         Text(
-            text = name,
+            text = label,
             style = MaterialTheme.typography.labelLarge,
-            color = contentColor
+            color = if (selected) selectedTextColor else unselectedTextColor
         )
     }
 }
