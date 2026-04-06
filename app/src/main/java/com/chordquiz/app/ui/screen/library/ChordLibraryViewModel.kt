@@ -123,17 +123,12 @@ class ChordLibraryViewModel @Inject constructor(
     fun confirmDeleteGroup() {
         val group = _uiState.value.deleteConfirmGroup ?: return
         viewModelScope.launch {
-            val wasActive = _uiState.value.activeGroupFilter?.id == group.id
             groupsRepository.deleteGroup(group.id)
-            if (wasActive) {
-                groupFilter.value = null
-                _uiState.value = _uiState.value.copy(
-                    deleteConfirmGroup = null,
-                    selectedChordIds = emptySet()
-                )
-            } else {
-                _uiState.value = _uiState.value.copy(deleteConfirmGroup = null)
-            }
+            groupFilter.value = null
+            _uiState.value = _uiState.value.copy(
+                deleteConfirmGroup = null,
+                selectedChordIds = emptySet()
+            )
         }
     }
 
