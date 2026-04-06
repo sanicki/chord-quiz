@@ -49,6 +49,7 @@ fun InteractiveChordDiagram(
     stringCount: Int,
     displayedFrets: Int = 5,
     baseFret: Int = 1,
+    totalFrets: Int = 21,
     initialFingering: Fingering? = null,
     incorrectFrettedStrings: Set<Int> = emptySet(),
     incorrectMutedStrings: Set<Int> = emptySet(),
@@ -206,12 +207,11 @@ fun InteractiveChordDiagram(
                         ) {
                             gestureClassified = true
                             val delta = if (dy < 0) 1 else -1  // swipe up → higher up neck
-                            val newBase = (effectiveBaseFret + delta).coerceAtLeast(1)
+                            val maxBaseFret = (totalFrets - displayedFrets + 1).coerceAtLeast(1)
+                            val newBase = (effectiveBaseFret + delta).coerceIn(1, maxBaseFret)
                             if (newBase != effectiveBaseFret) {
                                 effectiveBaseFret = newBase
-                                barre = null
-                                positions = (0 until stringCount).map { StringPosition(it, 0) }.toMutableList()
-                                onFingeringChanged(Fingering(positions.toList(), null, newBase))
+                                onFingeringChanged(Fingering(positions.toList(), barre, newBase))
                             }
                             break
                         }
@@ -340,8 +340,10 @@ fun InteractiveChordDiagram(
             }
         }
 
+        val visibleRange = effectiveBaseFret..(effectiveBaseFret + displayedFrets - 1)
+
         // Barre (drawn before finger dots so dots render on top)
-        barre?.let { b ->
+        barre?.takeIf { it.fret in visibleRange }?.let { b ->
             val y = topPad + (b.fret - effectiveBaseFret + 0.5f) * fretSpacing
             val x1 = effectiveLeftPad + b.fromString * stringSpacing
             val x2 = effectiveLeftPad + b.toString * stringSpacing
@@ -355,7 +357,7 @@ fun InteractiveChordDiagram(
         }
 
         // Finger dots
-        positions.filter { it.fret > 0 }.forEach { pos ->
+        positions.filter { it.fret > 0 && it.fret in visibleRange }.forEach { pos ->
             val x = effectiveLeftPad + pos.stringIndex * stringSpacing
             val y = topPad + (pos.fret - effectiveBaseFret + 0.5f) * fretSpacing
             val dotColor = if (pos.stringIndex in incorrectFrettedStrings) IncorrectRed else FingerDot

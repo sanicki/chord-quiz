@@ -17,14 +17,16 @@ data class Instrument(
             displayName = "Guitar",
             stringCount = 6,
             openStringNotes = listOf(Note.E, Note.A, Note.D, Note.G, Note.B, Note.E),
-            openStringOctaves = listOf(2, 2, 3, 3, 3, 4)
+            openStringOctaves = listOf(2, 2, 3, 3, 3, 4),
+            totalFrets = 20
         )
         val UKULELE = Instrument(
             id = "ukulele_soprano",
             displayName = "Ukulele",
             stringCount = 4,
             openStringNotes = listOf(Note.G, Note.C, Note.E, Note.A),
-            openStringOctaves = listOf(4, 4, 4, 4)
+            openStringOctaves = listOf(4, 4, 4, 4),
+            totalFrets = 12
         )
         val BASS = Instrument(
             id = "bass_standard",
