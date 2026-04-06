@@ -82,6 +82,7 @@ class DrawQuizViewModel @Inject constructor(
 
     fun onFingeringChanged(fingering: Fingering) {
         val state = _uiState.value as? DrawQuizUiState.Active ?: return
+        if (state.feedback != null) return  // locked during countdown
         _uiState.value = state.copy(
             currentFingering = fingering,
             feedback = null,
@@ -92,6 +93,8 @@ class DrawQuizViewModel @Inject constructor(
     }
 
     fun onNoteSelected(stringIndex: Int, fret: Int) {
+        val state = _uiState.value as? DrawQuizUiState.Active ?: return
+        if (state.feedback != null) return  // locked during countdown
         val inst = instrument ?: return
         if (fret < 0) return
         val openNote = inst.openStringNotes.getOrNull(stringIndex) ?: return

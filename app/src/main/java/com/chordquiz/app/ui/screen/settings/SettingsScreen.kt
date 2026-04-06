@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -73,6 +74,16 @@ fun SettingsScreen(
                 enabled = settings.hapticFeedbackEnabled,
                 onToggle = { viewModel.toggleHapticFeedback(it) }
             )
+            Text(
+                text = "Draw Mode",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(16.dp)
+            )
+            AutoContinueDelayStepper(
+                seconds = settings.autoContinueDelaySeconds,
+                onDecrement = { viewModel.setAutoContinueDelay(settings.autoContinueDelaySeconds - 1) },
+                onIncrement = { viewModel.setAutoContinueDelay(settings.autoContinueDelaySeconds + 1) }
+            )
         }
     }
 }
@@ -108,6 +119,43 @@ fun HapticFeedbackToggle(
     }
 }
 
+@Composable
+fun AutoContinueDelayStepper(
+    seconds: Int,
+    onDecrement: () -> Unit,
+    onIncrement: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text("Auto-continue delay", style = MaterialTheme.typography.bodyLarge)
+            Text(
+                "Time before advancing in Draw mode",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        IconButton(onClick = onDecrement, enabled = seconds > 1) {
+            Text("−", style = MaterialTheme.typography.titleLarge)
+        }
+        Text(
+            "${seconds}s",
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.width(32.dp),
+            textAlign = TextAlign.Center
+        )
+        IconButton(onClick = onIncrement, enabled = seconds < 5) {
+            Text("+", style = MaterialTheme.typography.titleLarge)
+        }
+    }
+}
+
 data class Settings(
-    val hapticFeedbackEnabled: Boolean = true
+    val hapticFeedbackEnabled: Boolean = true,
+    val autoContinueDelaySeconds: Int = 2
 )

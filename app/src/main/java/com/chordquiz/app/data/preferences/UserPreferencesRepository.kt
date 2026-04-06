@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.chordquiz.app.data.model.Instrument
@@ -22,6 +23,7 @@ class UserPreferencesRepository @Inject constructor(
 ) {
     private val lastInstrumentKey = stringPreferencesKey("last_instrument_id")
     private val hapticFeedbackKey = booleanPreferencesKey("haptic_feedback_enabled")
+    private val autoContinueDelayKey = intPreferencesKey("auto_continue_delay_seconds")
 
     val lastInstrumentId: Flow<String> = context.dataStore.data
         .map { prefs -> prefs[lastInstrumentKey] ?: Instrument.GUITAR.id }
@@ -29,11 +31,18 @@ class UserPreferencesRepository @Inject constructor(
     val hapticFeedbackEnabled: Flow<Boolean> = context.dataStore.data
         .map { prefs -> prefs[hapticFeedbackKey] ?: true }
 
+    val autoContinueDelaySeconds: Flow<Int> = context.dataStore.data
+        .map { prefs -> prefs[autoContinueDelayKey] ?: 2 }
+
     suspend fun setLastInstrumentId(id: String) {
         context.dataStore.edit { prefs -> prefs[lastInstrumentKey] = id }
     }
 
     suspend fun setHapticFeedbackEnabled(enabled: Boolean) {
         context.dataStore.edit { prefs -> prefs[hapticFeedbackKey] = enabled }
+    }
+
+    suspend fun setAutoContinueDelaySeconds(seconds: Int) {
+        context.dataStore.edit { prefs -> prefs[autoContinueDelayKey] = seconds }
     }
 }

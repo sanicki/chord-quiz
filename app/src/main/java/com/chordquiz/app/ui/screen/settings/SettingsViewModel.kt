@@ -28,11 +28,22 @@ class SettingsViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(hapticFeedbackEnabled = enabled)
             }
         }
+        viewModelScope.launch {
+            userPreferencesRepository.autoContinueDelaySeconds.collect { delay ->
+                _uiState.value = _uiState.value.copy(autoContinueDelaySeconds = delay)
+            }
+        }
     }
 
     fun toggleHapticFeedback(enabled: Boolean) {
         viewModelScope.launch {
             userPreferencesRepository.setHapticFeedbackEnabled(enabled)
+        }
+    }
+
+    fun setAutoContinueDelay(seconds: Int) {
+        viewModelScope.launch {
+            userPreferencesRepository.setAutoContinueDelaySeconds(seconds.coerceIn(1, 5))
         }
     }
 }
