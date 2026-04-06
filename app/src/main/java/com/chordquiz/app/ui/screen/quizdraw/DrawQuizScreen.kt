@@ -163,13 +163,6 @@ fun DrawQuizScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    if (state.feedback != null) {
-                        LinearProgressIndicator(
-                            progress = { countdownProgress },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-
                     Spacer(Modifier.height(8.dp))
 
                     Text("Draw this chord:", style = MaterialTheme.typography.bodyLarge)
@@ -228,6 +221,13 @@ fun DrawQuizScreen(
                                 modifier = Modifier.fillMaxSize()
                             )
                         }
+                    }
+
+                    if (state.feedback != null) {
+                        LinearProgressIndicator(
+                            progress = { countdownProgress },
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
 
                     Text(
