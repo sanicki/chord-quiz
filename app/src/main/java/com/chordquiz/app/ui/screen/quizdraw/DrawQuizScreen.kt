@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -92,6 +93,7 @@ fun DrawQuizScreen(
             // Use displayedQuestion so the chord name doesn't change until Next is pressed
             val question = state.displayedQuestion ?: session.currentQuestion ?: return
             val stringCount = session.instrument.stringCount
+            val autoContinueDelayMs = settings.autoContinueDelaySeconds * 1000
 
             // Swipe-to-submit flash state
             var showSwipeFlash by remember { mutableStateOf(false) }
@@ -116,6 +118,23 @@ fun DrawQuizScreen(
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                 }
             }
+
+            // Auto-advance after delay when feedback is shown
+            LaunchedEffect(state.feedback) {
+                if (state.feedback != null) {
+                    delay(autoContinueDelayMs.toLong())
+                    viewModel.nextQuestion()
+                }
+            }
+
+            val countdownProgress by animateFloatAsState(
+                targetValue = if (state.feedback != null) 0f else 1f,
+                animationSpec = if (state.feedback != null)
+                    tween(durationMillis = autoContinueDelayMs, easing = LinearEasing)
+                else
+                    snap(),
+                label = "countdown"
+            )
 
             Scaffold(
                 topBar = {
@@ -143,6 +162,13 @@ fun DrawQuizScreen(
                         progress = { state.displayedQuestionIndex.toFloat() / session.questions.size },
                         modifier = Modifier.fillMaxWidth()
                     )
+
+                    if (state.feedback != null) {
+                        LinearProgressIndicator(
+                            progress = { countdownProgress },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
 
                     Spacer(Modifier.height(8.dp))
 
@@ -257,14 +283,6 @@ fun DrawQuizScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Submit")
-                        }
-                    } else {
-                        Button(
-                            onClick = { viewModel.nextQuestion() },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            val isLast = state.displayedQuestionIndex + 1 >= session.questions.size
-                            Text(if (isLast) "Finish" else "Next")
                         }
                     }
                 }
