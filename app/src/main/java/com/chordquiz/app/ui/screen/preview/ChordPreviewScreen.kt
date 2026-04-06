@@ -235,14 +235,6 @@ private fun ChordDetailModal(
                         chord = chord,
                         modifier = Modifier.fillMaxWidth(0.75f)
                     )
-
-                    Spacer(Modifier.height(24.dp))
-
-                    Text(
-                        text = chord.noteComponents.joinToString(" · ") { it.displayName },
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
             }
         }
