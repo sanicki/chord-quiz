@@ -34,6 +34,15 @@ data class PlayQuizRoute(
 )
 
 @Serializable
+data class ChordPreviewRoute(
+    val instrumentId: String,
+    val selectedChordIds: List<String>,
+    val questionCount: Int,
+    val repeatMissed: Boolean,
+    val quizMode: String // "draw" | "play"
+)
+
+@Serializable
 data class ResultsRoute(val sessionId: String, val restartRoute: String? = null)
 
 @Serializable
