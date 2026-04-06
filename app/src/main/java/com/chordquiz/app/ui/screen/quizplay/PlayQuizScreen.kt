@@ -199,7 +199,8 @@ fun PlayQuizScreen(
                         visible = state.feedback != null,
                         enter = fadeIn() + scaleIn()
                     ) {
-                        val isCorrect = state.feedback == PlayFeedback.CORRECT
+                        val feedback = state.feedback
+                        val isCorrect = feedback?.isCorrect == true
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -212,8 +213,13 @@ fun PlayQuizScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = if (isCorrect) "✓ ${question.chordDefinition.chordName} detected!"
-                                       else "✗ Skipped",
+                                text = when (feedback) {
+                                    PlayFeedback.CORRECT_PERFECT -> "✓ Perfect!"
+                                    PlayFeedback.CORRECT_GOOD -> "✓ Good!"
+                                    PlayFeedback.CORRECT_CLOSE -> "✓ Close enough!"
+                                    PlayFeedback.INCORRECT -> "✗ Skipped"
+                                    null -> ""
+                                },
                                 color = if (isCorrect) CorrectGreen else IncorrectRed,
                                 fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.titleMedium,

@@ -1,16 +1,19 @@
 package com.chordquiz.app.ui.screen.settings
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +33,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.chordquiz.app.domain.model.Difficulty
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,6 +69,15 @@ fun SettingsScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
         ) {
+            Text(
+                text = "Play Mode",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(16.dp)
+            )
+            DifficultySelector(
+                selected = settings.difficulty,
+                onSelect = { viewModel.setDifficulty(it) }
+            )
             Text(
                 text = "Draw Mode",
                 style = MaterialTheme.typography.titleLarge,
@@ -150,7 +163,51 @@ fun AutoContinueDelayStepper(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DifficultySelector(
+    selected: Difficulty,
+    onSelect: (Difficulty) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+    ) {
+        Text("Detection difficulty", style = MaterialTheme.typography.bodyLarge)
+        Text(
+            text = when (selected) {
+                Difficulty.EASY -> "Partial chords accepted"
+                Difficulty.MEDIUM -> "Root note required"
+                Difficulty.HARD -> "Root and third required"
+            },
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Difficulty.entries.forEach { level ->
+                FilterChip(
+                    selected = selected == level,
+                    onClick = { onSelect(level) },
+                    label = {
+                        Text(
+                            text = when (level) {
+                                Difficulty.EASY -> "Easy"
+                                Difficulty.MEDIUM -> "Medium"
+                                Difficulty.HARD -> "Hard"
+                            }
+                        )
+                    }
+                )
+            }
+        }
+    }
+}
+
 data class Settings(
     val hapticFeedbackEnabled: Boolean = true,
-    val autoContinueDelaySeconds: Int = 2
+    val autoContinueDelaySeconds: Int = 2,
+    val difficulty: Difficulty = Difficulty.DEFAULT
 )
