@@ -57,7 +57,9 @@ fun InteractiveChordDiagram(
     onNoteSelected: ((stringIndex: Int, fret: Int) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    val effectiveBaseFret = initialFingering?.baseFret ?: baseFret
+    var effectiveBaseFret by remember {
+        mutableStateOf(initialFingering?.baseFret ?: baseFret)
+    }
     val initialPositions = initialFingering?.positions
         ?: (0 until stringCount).map { StringPosition(it, 0) }
 
@@ -195,6 +197,23 @@ fun InteractiveChordDiagram(
                                 // Left-to-right drag (or above-nut drag) → let bubble to parent
                                 break
                             }
+                        }
+
+                        // Classify once vertical movement reaches one full fret spacing
+                        if (!gestureClassified &&
+                            kotlin.math.abs(dy) >= fretSpacing &&
+                            kotlin.math.abs(dy) > kotlin.math.abs(dx)
+                        ) {
+                            gestureClassified = true
+                            val delta = if (dy < 0) 1 else -1  // swipe up → higher up neck
+                            val newBase = (effectiveBaseFret + delta).coerceAtLeast(1)
+                            if (newBase != effectiveBaseFret) {
+                                effectiveBaseFret = newBase
+                                barre = null
+                                positions = (0 until stringCount).map { StringPosition(it, 0) }.toMutableList()
+                                onFingeringChanged(Fingering(positions.toList(), null, newBase))
+                            }
+                            break
                         }
 
                         if (isBarreDrag) {
