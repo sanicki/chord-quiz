@@ -33,6 +33,12 @@ object DatabaseModule {
         }
     }
 
+    private val MIGRATION_4_5 = object : Migration(4, 5) {
+        override fun migrate(database: SupportSQLiteDatabase) {
+            database.execSQL("DELETE FROM chords")
+        }
+    }
+
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): ChordQuizDatabase {
@@ -64,7 +70,7 @@ object DatabaseModule {
             context,
             ChordQuizDatabase::class.java,
             "chord_quiz.db"
-        ).addMigrations(MIGRATION_3_4)
+        ).addMigrations(MIGRATION_3_4, MIGRATION_4_5)
             .addCallback(callback)
             .build()
             .also { database = it }
