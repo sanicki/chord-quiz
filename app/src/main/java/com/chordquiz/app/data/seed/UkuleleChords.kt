@@ -26,7 +26,9 @@ object UkuleleChords {
             rootNote = root,
             chordType = type,
             fingerings = fingeringData.map { (positions, barre) ->
-                val baseFret = positions.filter { it.fret > 0 }.minOfOrNull { it.fret } ?: 1
+                val fretted = positions.filter { it.fret > 0 }
+                val baseFret = if ((fretted.maxOfOrNull { it.fret } ?: 0) > 5)
+                    fretted.minOfOrNull { it.fret } ?: 1 else 1
                 Fingering(positions = positions, barre = barre, baseFret = baseFret)
             },
             noteComponents = notes
