@@ -37,7 +37,7 @@ fun ChordDiagram(
     val fingering = chord.fingerings.getOrElse(fingeringIndex) { chord.fingerings.first() }
     ChordDiagramCanvas(
         fingering = fingering,
-        stringCount = chord.fingerings.first().positions.size,
+        stringCount = fingering.positions.size,
         modifier = modifier
     )
 }
@@ -69,34 +69,37 @@ fun ChordDiagramCanvas(
         val bottomPad = size.height * 0.04f
         val leftPad = size.width * 0.14f
         val rightPad = size.width * 0.06f
+        val baseFret = fingering.baseFret
+        val fretLabelExtra = if (baseFret > 1) size.width * 0.06f else 0f
+        val effectiveLeftPad = leftPad + fretLabelExtra
 
-        val diagramWidth = size.width - leftPad - rightPad
+        val diagramWidth = size.width - effectiveLeftPad - rightPad
         val diagramHeight = size.height - topPad - bottomPad
 
-        val stringSpacing = diagramWidth / (stringCount - 1)
+        // Use actual position count for spacing calculation
+        val actualStringCount = fingering.positions.size
+        val stringSpacing = diagramWidth / (if (actualStringCount > 1) actualStringCount - 1 else 1)
         val fretSpacing = diagramHeight / displayedFrets
-
-        val baseFret = fingering.baseFret
 
         // Draw nut or fret number
         if (baseFret == 1) {
             drawRect(
                 color = nutColor,
-                topLeft = Offset(leftPad, topPad - fretSpacing * 0.12f),
+                topLeft = Offset(effectiveLeftPad, topPad - fretSpacing * 0.12f),
                 size = Size(diagramWidth, fretSpacing * 0.12f)
             )
         } else {
+            val labelText = "$baseFret"
+            val labelStyle = TextStyle(color = Color.Black, fontSize = (size.height * 0.07f / density).sp)
+            val measured = textMeasurer.measure(labelText, style = labelStyle)
             drawText(
                 textMeasurer = textMeasurer,
-                text = "${baseFret}fr",
+                text = labelText,
                 topLeft = Offset(
-                    leftPad - size.width * 0.12f,
-                    topPad + fretSpacing * 0.3f
+                    x = effectiveLeftPad - size.width * 0.12f,
+                    y = topPad - measured.size.height / 2f
                 ),
-                style = TextStyle(
-                    color = Color.Black,
-                    fontSize = (size.height * 0.07f / density).sp
-                )
+                style = labelStyle
             )
         }
 
@@ -105,15 +108,15 @@ fun ChordDiagramCanvas(
             val y = topPad + f * fretSpacing
             drawLine(
                 color = Color.Gray,
-                start = Offset(leftPad, y),
-                end = Offset(leftPad + diagramWidth, y),
+                start = Offset(effectiveLeftPad, y),
+                end = Offset(effectiveLeftPad + diagramWidth, y),
                 strokeWidth = if (f == 0 && baseFret == 1) 0f else 1.5f
             )
         }
 
         // Draw string lines
         for (s in 0 until stringCount) {
-            val x = leftPad + s * stringSpacing
+            val x = effectiveLeftPad + s * stringSpacing
             drawLine(
                 color = stringLineColor,
                 start = Offset(x, topPad),
@@ -126,7 +129,7 @@ fun ChordDiagramCanvas(
         val symbolY = topPad - fretSpacing * 0.45f
         val symbolRadius = size.width * 0.035f
         fingering.positions.forEach { pos ->
-            val x = leftPad + pos.stringIndex * stringSpacing
+            val x = effectiveLeftPad + pos.stringIndex * stringSpacing
             when {
                 pos.fret == -1 -> {
                     // Muted X
@@ -146,8 +149,8 @@ fun ChordDiagramCanvas(
         // Draw barre
         fingering.barre?.let { barre ->
             val y = topPad + (barre.fret - baseFret + 0.5f) * fretSpacing
-            val x1 = leftPad + barre.fromString * stringSpacing
-            val x2 = leftPad + barre.toString * stringSpacing
+            val x1 = effectiveLeftPad + barre.fromString * stringSpacing
+            val x2 = effectiveLeftPad + barre.toString * stringSpacing
             val barreRadius = fretSpacing * 0.35f
             drawRoundRect(
                 color = barreColor,
@@ -161,7 +164,7 @@ fun ChordDiagramCanvas(
         fingering.positions
             .filter { it.fret > 0 }
             .forEach { pos ->
-                val x = leftPad + pos.stringIndex * stringSpacing
+                val x = effectiveLeftPad + pos.stringIndex * stringSpacing
                 val y = topPad + (pos.fret - baseFret + 0.5f) * fretSpacing
                 drawCircle(dotColor, fretSpacing * 0.35f, Offset(x, y))
             }

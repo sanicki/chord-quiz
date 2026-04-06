@@ -21,6 +21,9 @@ interface ChordDao {
     @Query("SELECT COUNT(*) FROM chords WHERE instrumentId = :instrumentId")
     suspend fun countForInstrument(instrumentId: String): Int
 
+    @Query("SELECT COUNT(*) FROM chords")
+    suspend fun count(): Int
+
     @Query("SELECT * FROM chords WHERE instrumentId = :instrumentId AND id = :chordId")
     suspend fun getChordById(instrumentId: String, chordId: String): ChordDefinitionEntity?
 

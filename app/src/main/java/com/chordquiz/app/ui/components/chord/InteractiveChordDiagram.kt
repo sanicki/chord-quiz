@@ -52,6 +52,7 @@ fun InteractiveChordDiagram(
     onNoteSelected: ((stringIndex: Int, fret: Int) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    val effectiveBaseFret = initialFingering?.baseFret ?: baseFret
     val initialPositions = initialFingering?.positions
         ?: (0 until stringCount).map { StringPosition(it, 0) }
 
@@ -63,6 +64,7 @@ fun InteractiveChordDiagram(
 
     var topPad = 0f
     var leftPad = 0f
+    var effectiveLeftPad = 0f
     var stringSpacing = 0f
     var fretSpacing = 0f
     var diagramHeight = 0f
@@ -75,7 +77,7 @@ fun InteractiveChordDiagram(
                 detectTapGestures { offset ->
                     if (stringSpacing == 0f) return@detectTapGestures
 
-                    val rawString = ((offset.x - leftPad) / stringSpacing).toInt()
+                    val rawString = ((offset.x - effectiveLeftPad) / stringSpacing).toInt()
                     val tappedString = rawString.coerceIn(0, stringCount - 1)
 
                     if (offset.y < topPad) {
@@ -86,14 +88,14 @@ fun InteractiveChordDiagram(
                             val idx = list.indexOfFirst { it.stringIndex == tappedString }
                             if (idx >= 0) list[idx] = StringPosition(tappedString, newFret)
                         }
-                        onFingeringChanged(Fingering(positions.toList(), baseFret = baseFret))
+                        onFingeringChanged(Fingering(positions.toList(), baseFret = effectiveBaseFret))
                         if (newFret == 0) onNoteSelected?.invoke(tappedString, 0)
                         return@detectTapGestures
                     }
 
                     // Fret grid tap
-                    val rawFret = ((offset.y - topPad) / fretSpacing).toInt() + baseFret
-                    val tappedFret = rawFret.coerceIn(baseFret, baseFret + displayedFrets - 1)
+                    val rawFret = ((offset.y - topPad) / fretSpacing).toInt() + effectiveBaseFret
+                    val tappedFret = rawFret.coerceIn(effectiveBaseFret, effectiveBaseFret + displayedFrets - 1)
                     val curPos = positions.firstOrNull { it.stringIndex == tappedString }
                     val newFret = if (curPos?.fret == tappedFret) 0 else tappedFret
 
@@ -102,7 +104,7 @@ fun InteractiveChordDiagram(
                         if (idx >= 0) list[idx] = StringPosition(tappedString, newFret)
                         else list.add(StringPosition(tappedString, newFret))
                     }
-                    onFingeringChanged(Fingering(positions.toList(), baseFret = baseFret))
+                    onFingeringChanged(Fingering(positions.toList(), baseFret = effectiveBaseFret))
                     if (newFret > 0) onNoteSelected?.invoke(tappedString, newFret)
                 }
             }
@@ -111,37 +113,45 @@ fun InteractiveChordDiagram(
         val bottomPad = size.height * 0.04f
         leftPad = size.width * 0.14f
         val rightPad = size.width * 0.06f
+        val fretLabelExtra = if (effectiveBaseFret > 1) size.width * 0.06f else 0f
+        effectiveLeftPad = leftPad + fretLabelExtra
 
-        val diagramWidth = size.width - leftPad - rightPad
+        val diagramWidth = size.width - effectiveLeftPad - rightPad
         diagramHeight = size.height - topPad - bottomPad
         stringSpacing = diagramWidth / (stringCount - 1)
         fretSpacing = diagramHeight / displayedFrets
 
         // Nut / fret number
-        if (baseFret == 1) {
+        if (effectiveBaseFret == 1) {
             drawRect(
                 color = NutBrown,
-                topLeft = Offset(leftPad, topPad - fretSpacing * 0.12f),
+                topLeft = Offset(effectiveLeftPad, topPad - fretSpacing * 0.12f),
                 size = Size(diagramWidth, fretSpacing * 0.12f)
             )
         } else {
+            val labelText = "$effectiveBaseFret"
+            val labelStyle = TextStyle(color = Color.Black, fontSize = (size.height * 0.07f / density).sp)
+            val measured = textMeasurer.measure(labelText, style = labelStyle)
             drawText(
                 textMeasurer = textMeasurer,
-                text = "${baseFret}fr",
-                topLeft = Offset(leftPad - size.width * 0.12f, topPad + fretSpacing * 0.3f),
-                style = TextStyle(color = Color.Black, fontSize = (size.height * 0.07f / density).sp)
+                text = labelText,
+                topLeft = Offset(
+                    x = effectiveLeftPad - size.width * 0.12f,
+                    y = topPad - measured.size.height / 2f
+                ),
+                style = labelStyle
             )
         }
 
         // Fret lines
         for (f in 0..displayedFrets) {
             val y = topPad + f * fretSpacing
-            drawLine(Color.Gray, Offset(leftPad, y), Offset(leftPad + diagramWidth, y), 1.5f)
+            drawLine(Color.Gray, Offset(effectiveLeftPad, y), Offset(effectiveLeftPad + diagramWidth, y), 1.5f)
         }
 
         // String lines
         for (s in 0 until stringCount) {
-            val x = leftPad + s * stringSpacing
+            val x = effectiveLeftPad + s * stringSpacing
             drawLine(StringColor, Offset(x, topPad), Offset(x, topPad + diagramHeight), 1.5f)
         }
 
@@ -149,7 +159,7 @@ fun InteractiveChordDiagram(
         val symbolY = topPad - fretSpacing * 0.45f
         val symbolRadius = size.width * 0.035f
         positions.forEach { pos ->
-            val x = leftPad + pos.stringIndex * stringSpacing
+            val x = effectiveLeftPad + pos.stringIndex * stringSpacing
             when (pos.fret) {
                 -1 -> {
                     // Muted X — red if incorrectly muted, gray otherwise
@@ -169,8 +179,8 @@ fun InteractiveChordDiagram(
 
         // Finger dots
         positions.filter { it.fret > 0 }.forEach { pos ->
-            val x = leftPad + pos.stringIndex * stringSpacing
-            val y = topPad + (pos.fret - baseFret + 0.5f) * fretSpacing
+            val x = effectiveLeftPad + pos.stringIndex * stringSpacing
+            val y = topPad + (pos.fret - effectiveBaseFret + 0.5f) * fretSpacing
             val dotColor = if (pos.stringIndex in incorrectFrettedStrings) IncorrectRed else FingerDot
             drawCircle(dotColor, fretSpacing * 0.35f, Offset(x, y))
         }
@@ -178,7 +188,7 @@ fun InteractiveChordDiagram(
         // Faint tap-target hint grid
         for (s in 0 until stringCount) {
             for (f in 0 until displayedFrets) {
-                val cx = leftPad + s * stringSpacing
+                val cx = effectiveLeftPad + s * stringSpacing
                 val cy = topPad + (f + 0.5f) * fretSpacing
                 drawCircle(Color.Gray.copy(alpha = 0.15f), fretSpacing * 0.3f, Offset(cx, cy))
             }
