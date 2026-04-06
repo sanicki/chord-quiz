@@ -30,7 +30,8 @@ object BanjoChords {
             rootNote = root,
             chordType = type,
             fingerings = fingeringData.map { (positions, barre) ->
-                Fingering(positions = positions, barre = barre)
+                val baseFret = positions.filter { it.fret > 0 }.minOfOrNull { it.fret } ?: 1
+                Fingering(positions = positions, barre = barre, baseFret = baseFret)
             },
             noteComponents = notes
         )

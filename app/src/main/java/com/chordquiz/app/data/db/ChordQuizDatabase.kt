@@ -12,7 +12,7 @@ import com.chordquiz.app.data.db.entity.InstrumentEntity
 
 @Database(
     entities = [InstrumentEntity::class, ChordDefinitionEntity::class, GroupEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class ChordQuizDatabase : RoomDatabase() {
