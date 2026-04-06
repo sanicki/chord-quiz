@@ -66,15 +66,6 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             Text(
-                text = "General",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(16.dp)
-            )
-            HapticFeedbackToggle(
-                enabled = settings.hapticFeedbackEnabled,
-                onToggle = { viewModel.toggleHapticFeedback(it) }
-            )
-            Text(
                 text = "Draw Mode",
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(16.dp)
@@ -83,6 +74,10 @@ fun SettingsScreen(
                 seconds = settings.autoContinueDelaySeconds,
                 onDecrement = { viewModel.setAutoContinueDelay(settings.autoContinueDelaySeconds - 1) },
                 onIncrement = { viewModel.setAutoContinueDelay(settings.autoContinueDelaySeconds + 1) }
+            )
+            HapticFeedbackToggle(
+                enabled = settings.hapticFeedbackEnabled,
+                onToggle = { viewModel.toggleHapticFeedback(it) }
             )
         }
     }
