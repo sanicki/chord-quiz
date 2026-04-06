@@ -160,8 +160,8 @@ fun InteractiveChordDiagram(
                         Offset(x - symbolRadius, symbolY + symbolRadius), 2f)
                 }
                 0 -> {
-                    // Open circle — red if this string should have been muted, black otherwise
-                    val oColor = if (pos.stringIndex in missedMuteStrings) IncorrectRed else Color.Black
+                    // Open circle — red if this string should have been muted or fretted, black otherwise
+                    val oColor = if (pos.stringIndex in missedMuteStrings || pos.stringIndex in incorrectFrettedStrings) IncorrectRed else Color.Black
                     drawCircle(oColor, symbolRadius, Offset(x, symbolY), style = Stroke(2f))
                 }
             }
