@@ -1,5 +1,10 @@
 # Chord Quiz App - Development Context
 
+## Build Environment
+- **CI-ONLY:** This project is designed to be built ONLY via GitHub Actions.
+- **Local Gradle:** Do not attempt to run or configure local Gradle/SDK settings.
+- **Verification:** Only perform static analysis and code edits.
+
 ## Current Feature: Chord Groups Save/Delete
 
 ### Status: In Progress - Database Layer Complete, Repository Layer Partially Implemented
