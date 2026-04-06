@@ -115,7 +115,26 @@ fun NavGraph() {
                         popUpTo(InstrumentSelectionRoute) { inclusive = true }
                     }
                 },
-                onNavigateBack = { /* Reserved for future use */ },
+                onNavigateBack = {
+                    val instrumentId = SessionStore.lastInstrumentId
+                    val chordIds = SessionStore.lastSelectedChordIds
+                    if (instrumentId != null && chordIds != null) {
+                        val modeStr = if (SessionStore.lastQuizType == "PlayQuizRoute") "PLAY" else "DRAW"
+                        navController.navigate(PracticeSetupRoute(
+                            instrumentId = instrumentId,
+                            selectedChordIds = chordIds,
+                            preserveSettings = true,
+                            initialMode = modeStr,
+                            initialRepeatMissed = SessionStore.lastRepeatMissed
+                        )) {
+                            popUpTo(InstrumentSelectionRoute)
+                        }
+                    } else {
+                        navController.navigate(InstrumentSelectionRoute) {
+                            popUpTo(InstrumentSelectionRoute) { inclusive = true }
+                        }
+                    }
+                },
                 onRestartQuiz = {
                     when (route.restartRoute) {
                         "DrawQuizRoute" -> {

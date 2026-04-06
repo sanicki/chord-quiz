@@ -22,11 +22,19 @@ class PracticeSetupViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val chordCount =
-        savedStateHandle.toRoute<PracticeSetupRoute>().selectedChordIds.size
+    private val route = savedStateHandle.toRoute<PracticeSetupRoute>()
+    private val chordCount = route.selectedChordIds.size
 
     private val _uiState = MutableStateFlow(
-        PracticeSetupUiState(questionCount = computeDefaultQuestionCount(chordCount))
+        if (route.preserveSettings) {
+            PracticeSetupUiState(
+                mode = QuizMode.valueOf(route.initialMode),
+                repeatMissed = route.initialRepeatMissed,
+                questionCount = computeDefaultQuestionCount(chordCount)
+            )
+        } else {
+            PracticeSetupUiState(questionCount = computeDefaultQuestionCount(chordCount))
+        }
     )
     val uiState: StateFlow<PracticeSetupUiState> = _uiState.asStateFlow()
 

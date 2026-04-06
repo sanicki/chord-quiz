@@ -190,9 +190,9 @@ fun ResultsScreen(
                 ) { Text("Try Again") }
 
                 Button(
-                    onClick = onNavigateHome,
+                    onClick = onNavigateBack,
                     modifier = Modifier.weight(1f)
-                ) { Text("Home") }
+                ) { Text("Back") }
             }
         }
     }
