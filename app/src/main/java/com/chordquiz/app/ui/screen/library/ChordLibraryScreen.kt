@@ -166,8 +166,7 @@ fun ChordLibraryScreen(
                 // Filter chips: All → custom groups (newest first) → preset types
                 FlowRow(
                     modifier = Modifier.padding(horizontal = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    itemVerticalAlignment = Alignment.CenterVertically
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     LibraryFilterChip(
                         label = "All",
