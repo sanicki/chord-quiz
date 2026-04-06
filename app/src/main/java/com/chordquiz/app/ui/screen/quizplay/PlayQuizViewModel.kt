@@ -7,15 +7,18 @@ import com.chordquiz.app.audio.ChordRecognizer
 import com.chordquiz.app.audio.NotePlayer
 import com.chordquiz.app.audio.PitchDetector
 import com.chordquiz.app.audio.RecognitionResult
+import com.chordquiz.app.data.model.ChordDefinition
 import com.chordquiz.app.data.model.Instrument
 import com.chordquiz.app.data.model.Note
 import com.chordquiz.app.data.model.QuizAnswer
 import com.chordquiz.app.data.model.QuizMode
 import com.chordquiz.app.data.model.QuizSession
+import com.chordquiz.app.data.preferences.UserPreferencesRepository
 import com.chordquiz.app.data.repository.ChordRepository
 import com.chordquiz.app.data.repository.InstrumentRepository
 import com.chordquiz.app.domain.BuildQuizSessionUseCase
 import com.chordquiz.app.domain.EvaluateAudioAnswerUseCase
+import com.chordquiz.app.domain.model.Difficulty
 import com.chordquiz.app.ui.shared.SessionStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -24,7 +27,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -41,7 +43,10 @@ sealed class PlayQuizUiState {
     data class Complete(val sessionId: String) : PlayQuizUiState()
 }
 
-enum class PlayFeedback { CORRECT, INCORRECT }
+enum class PlayFeedback { CORRECT_PERFECT, CORRECT_GOOD, CORRECT_CLOSE, INCORRECT }
+
+val PlayFeedback.isCorrect: Boolean
+    get() = this != PlayFeedback.INCORRECT
 
 @HiltViewModel
 class PlayQuizViewModel @Inject constructor(
@@ -50,7 +55,8 @@ class PlayQuizViewModel @Inject constructor(
     private val buildSession: BuildQuizSessionUseCase,
     private val evaluateAudio: EvaluateAudioAnswerUseCase,
     private val audioRecorder: AudioRecorderManager,
-    private val chordRecognizer: ChordRecognizer
+    private val chordRecognizer: ChordRecognizer,
+    private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<PlayQuizUiState>(PlayQuizUiState.Loading)
@@ -59,9 +65,16 @@ class PlayQuizViewModel @Inject constructor(
     private var listeningJob: Job? = null
     private var autoAdvanceJob: Job? = null
     private var instrument: Instrument? = null
+    private var difficulty: Difficulty = Difficulty.DEFAULT
 
     companion object {
         private const val SILENCE_THRESHOLD = 0.02f
+    }
+
+    init {
+        viewModelScope.launch {
+            userPreferencesRepository.difficulty.collect { difficulty = it }
+        }
     }
 
     fun initialize(
@@ -107,12 +120,12 @@ class PlayQuizViewModel @Inject constructor(
                     recognition = recognition
                 )
 
-                // If high-confidence match to the current question chord
+                // If match to the current question chord, validate against difficulty
                 val question = state.session.currentQuestion
                 if (recognition != null && question != null &&
                     recognition.chord.id == question.chordDefinition.id &&
-                    recognition.confidence >= 0.6f) {
-                    onChordDetected(newState, isCorrect = true)
+                    isAcceptedByDifficulty(recognition, question.chordDefinition)) {
+                    onChordDetected(newState, feedback = confidenceToFeedback(recognition.confidence))
                 } else {
                     _uiState.value = newState
                 }
@@ -120,7 +133,28 @@ class PlayQuizViewModel @Inject constructor(
         }
     }
 
-    private fun onChordDetected(state: PlayQuizUiState.Active, isCorrect: Boolean) {
+    private fun isAcceptedByDifficulty(
+        recognition: RecognitionResult,
+        chord: ChordDefinition
+    ): Boolean {
+        if (recognition.confidence < difficulty.acceptanceThreshold) return false
+        if (difficulty.requiresRoot && chord.rootNote !in recognition.detectedNotes) return false
+        if (difficulty.requiresThird) {
+            val thirdInterval = chord.chordType.intervals.getOrElse(1) { 4 }
+            val third = chord.rootNote.plus(thirdInterval)
+            if (third !in recognition.detectedNotes) return false
+        }
+        return true
+    }
+
+    private fun confidenceToFeedback(confidence: Float): PlayFeedback = when {
+        confidence >= 0.90f -> PlayFeedback.CORRECT_PERFECT
+        confidence >= 0.70f -> PlayFeedback.CORRECT_GOOD
+        else -> PlayFeedback.CORRECT_CLOSE
+    }
+
+    private fun onChordDetected(state: PlayQuizUiState.Active, feedback: PlayFeedback) {
+        val isCorrect = feedback.isCorrect
         val question = state.session.currentQuestion ?: return
         val answer = QuizAnswer(
             question = question,
@@ -130,7 +164,7 @@ class PlayQuizViewModel @Inject constructor(
         val newSession = state.session.copy(answers = state.session.answers + answer)
         _uiState.value = state.copy(
             session = newSession,
-            feedback = if (isCorrect) PlayFeedback.CORRECT else PlayFeedback.INCORRECT,
+            feedback = feedback,
             isListening = false
         )
 

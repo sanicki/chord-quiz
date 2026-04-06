@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.chordquiz.app.data.model.Instrument
+import com.chordquiz.app.domain.model.Difficulty
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -24,6 +25,7 @@ class UserPreferencesRepository @Inject constructor(
     private val lastInstrumentKey = stringPreferencesKey("last_instrument_id")
     private val hapticFeedbackKey = booleanPreferencesKey("haptic_feedback_enabled")
     private val autoContinueDelayKey = intPreferencesKey("auto_continue_delay_seconds")
+    private val difficultyKey = stringPreferencesKey("difficulty")
 
     val lastInstrumentId: Flow<String> = context.dataStore.data
         .map { prefs -> prefs[lastInstrumentKey] ?: Instrument.GUITAR.id }
@@ -33,6 +35,9 @@ class UserPreferencesRepository @Inject constructor(
 
     val autoContinueDelaySeconds: Flow<Int> = context.dataStore.data
         .map { prefs -> prefs[autoContinueDelayKey] ?: 2 }
+
+    val difficulty: Flow<Difficulty> = context.dataStore.data
+        .map { prefs -> prefs[difficultyKey]?.let { runCatching { Difficulty.valueOf(it) }.getOrNull() } ?: Difficulty.DEFAULT }
 
     suspend fun setLastInstrumentId(id: String) {
         context.dataStore.edit { prefs -> prefs[lastInstrumentKey] = id }
@@ -44,5 +49,9 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun setAutoContinueDelaySeconds(seconds: Int) {
         context.dataStore.edit { prefs -> prefs[autoContinueDelayKey] = seconds }
+    }
+
+    suspend fun setDifficulty(difficulty: Difficulty) {
+        context.dataStore.edit { prefs -> prefs[difficultyKey] = difficulty.name }
     }
 }
