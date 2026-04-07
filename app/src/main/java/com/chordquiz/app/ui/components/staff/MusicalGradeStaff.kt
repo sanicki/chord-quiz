@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -15,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import com.chordquiz.app.audio.NotePlayer
 import kotlin.math.roundToInt
@@ -124,15 +126,16 @@ fun MusicalGradeStaff(
         val noteSpacing = noteArea / GRADE_NOTES.size.toFloat()
 
         // ── 5 staff lines ──────────────────────────────────────────────────────
+        val inkColor = MaterialTheme.colorScheme.onSurface
         for (i in 0..4) {
             val y = staffTop + i * lineSpacing
-            drawLine(Color.Black, Offset(0f, y), Offset(size.width, y), strokeWidth = 2f)
+            drawLine(inkColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 2f)
         }
 
         // ── Treble clef ────────────────────────────────────────────────────────
         drawIntoCanvas { canvas ->
             val paint = android.graphics.Paint().apply {
-                color       = android.graphics.Color.BLACK
+                color       = inkColor.toArgb()
                 textSize    = lineSpacing * 2.5f
                 isAntiAlias = true
             }
@@ -150,7 +153,7 @@ fun MusicalGradeStaff(
             val noteY = middleCY - step * (lineSpacing / 2f)
 
             val isFilled  = index < filledCount
-            val noteColor = if (isFilled) NOTE_COLORS[index] else Color.Black.copy(alpha = 0.2f)
+            val noteColor = if (isFilled) NOTE_COLORS[index] else inkColor.copy(alpha = 0.2f)
 
             val rx = lineSpacing * 0.45f
             val ry = lineSpacing * 0.35f

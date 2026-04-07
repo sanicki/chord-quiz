@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -11,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 
 data class StaffNote(val semitone: Int, val octave: Int, val displayName: String)
@@ -42,7 +44,7 @@ fun MusicStaff(
         val staffTop = lineSpacing * 1.5f
         val staffBottom = staffTop + lineSpacing * 4f
 
-        val inkColor = Color.Black
+        val inkColor = MaterialTheme.colorScheme.onSurface
 
         // Draw 5 staff lines
         for (i in 0..4) {
@@ -53,7 +55,7 @@ fun MusicStaff(
         // Draw clef symbol using Unicode music characters
         drawIntoCanvas { canvas ->
             val paint = android.graphics.Paint().apply {
-                color = android.graphics.Color.BLACK
+                color = inkColor.toArgb()
                 textSize = lineSpacing * 2.5f
                 isAntiAlias = true
             }
@@ -107,7 +109,7 @@ fun MusicStaff(
             if (accidental != null) {
                 drawIntoCanvas { canvas ->
                     val paint = android.graphics.Paint().apply {
-                        color = android.graphics.Color.BLACK
+                        color = inkColor.toArgb()
                         textSize = lineSpacing * 1.1f
                         isAntiAlias = true
                     }
@@ -123,7 +125,7 @@ fun MusicStaff(
             // Draw note name label below staff
             drawIntoCanvas { canvas ->
                 val paint = android.graphics.Paint().apply {
-                    color = android.graphics.Color.DKGRAY
+                    color = inkColor.toArgb()
                     textSize = lineSpacing * 0.8f
                     textAlign = android.graphics.Paint.Align.CENTER
                     isAntiAlias = true
