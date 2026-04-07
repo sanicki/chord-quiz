@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.unit.dp
 import com.chordquiz.app.audio.NotePlayer
 import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
 
 /** Nine quarter-notes spanning from E4 (bottom treble line) to F5 (top treble line). */
 private data class GradeNote(val midi: Int, val semitone: Int, val octave: Int)
@@ -101,7 +102,7 @@ fun MusicalGradeStaff(
             launch { NotePlayer.playNote(GRADE_NOTES[i].midi, instrumentId, durationMs = 400) }
             animatable.animateTo(
                 targetValue = (i + 1).toFloat(),
-                animationSpec = tween(durationMs = 350)
+                animationSpec = tween(durationMillis = 350)
             )
         }
     }
