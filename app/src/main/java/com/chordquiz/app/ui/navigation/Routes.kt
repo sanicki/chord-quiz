@@ -50,6 +50,9 @@ data class ResultsRoute(val sessionId: String, val restartRoute: String? = null)
 object SettingsRoute
 
 @Serializable
+data class TunerRoute(val instrumentId: String)
+
+@Serializable
 data class NoteQuizModeRoute(val instrumentId: String)
 
 @Serializable

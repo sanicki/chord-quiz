@@ -20,6 +20,8 @@ import com.chordquiz.app.ui.navigation.PracticeSetupRoute
 import com.chordquiz.app.ui.navigation.PlayQuizRoute
 import com.chordquiz.app.ui.navigation.ResultsRoute
 import com.chordquiz.app.ui.navigation.SettingsRoute
+import com.chordquiz.app.ui.navigation.TunerRoute
+import com.chordquiz.app.ui.screen.tuner.TunerScreen
 import com.chordquiz.app.ui.shared.SessionStore
 import com.chordquiz.app.ui.screen.notemode.NoteQuizModeScreen
 import com.chordquiz.app.ui.screen.notedrawquiz.NoteDrawQuizScreen
@@ -46,8 +48,23 @@ fun NavGraph() {
                 onNoteInstrumentSelected = { instrumentId ->
                     navController.navigate(NoteQuizModeRoute(instrumentId))
                 },
+                onTunerInstrumentSelected = { instrumentId ->
+                    navController.navigate(TunerRoute(instrumentId))
+                },
                 onNavigateToSettings = {
                     navController.navigate(SettingsRoute)
+                }
+            )
+        }
+
+        composable<TunerRoute> { backStackEntry ->
+            val route = backStackEntry.toRoute<TunerRoute>()
+            TunerScreen(
+                instrumentId = route.instrumentId,
+                onNavigateHome = {
+                    navController.navigate(InstrumentSelectionRoute) {
+                        popUpTo(InstrumentSelectionRoute) { inclusive = true }
+                    }
                 }
             )
         }

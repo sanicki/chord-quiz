@@ -38,6 +38,7 @@ import com.chordquiz.app.ui.components.InstrumentCard
 fun InstrumentSelectionScreen(
     onChordInstrumentSelected: (String) -> Unit,
     onNoteInstrumentSelected: (String) -> Unit,
+    onTunerInstrumentSelected: (String) -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
     viewModel: InstrumentSelectionViewModel = hiltViewModel()
 ) {
@@ -61,6 +62,11 @@ fun InstrumentSelectionScreen(
                             selected = uiState.quizType == QuizType.NOTE,
                             onClick = { viewModel.onQuizTypeChanged(QuizType.NOTE) },
                             label = { Text("Note Quiz") }
+                        )
+                        FilterChip(
+                            selected = uiState.quizType == QuizType.TUNER,
+                            onClick = { viewModel.onQuizTypeChanged(QuizType.TUNER) },
+                            label = { Text("Tuner") }
                         )
                     }
                 },
@@ -104,10 +110,10 @@ fun InstrumentSelectionScreen(
                             isSelected = false,
                             onClick = {
                                 viewModel.onInstrumentSelected(instrument)
-                                if (uiState.quizType == QuizType.CHORD) {
-                                    onChordInstrumentSelected(instrument.id)
-                                } else {
-                                    onNoteInstrumentSelected(instrument.id)
+                                when (uiState.quizType) {
+                                    QuizType.CHORD -> onChordInstrumentSelected(instrument.id)
+                                    QuizType.NOTE -> onNoteInstrumentSelected(instrument.id)
+                                    QuizType.TUNER -> onTunerInstrumentSelected(instrument.id)
                                 }
                             }
                         )
