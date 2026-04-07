@@ -40,11 +40,14 @@ import com.chordquiz.app.ui.theme.StringColor
  * Tap above the nut to cycle a string: open → muted → open.
  * Drag right-to-left along a fret to draw a barre across multiple strings.
  *
+ * @param noteQuizMode             when true: disables mute/barre, treats fret=-1 as empty and
+ *                                  fret=0 as an open-string dot; above-nut area toggles fret 0
+ * @param hintPositions            (stringIndex, fret) pairs rendered as yellow hint dots
  * @param incorrectFrettedStrings  strings where the user placed a wrong-note finger (shown red)
  * @param incorrectMutedStrings    strings the user muted but shouldn't have (X shown red)
  * @param missedMuteStrings        strings that should be muted but the user left open/fretted
  *                                  (open-circle shown red as a hint)
- * @param onNoteSelected           called when a finger is placed (fret > 0) or a string opened (fret == 0)
+ * @param onNoteSelected           called when a finger is placed (fret >= 0)
  */
 @Composable
 fun InteractiveChordDiagram(
@@ -53,6 +56,8 @@ fun InteractiveChordDiagram(
     baseFret: Int = 1,
     totalFrets: Int = 21,
     initialFingering: Fingering? = null,
+    noteQuizMode: Boolean = false,
+    hintPositions: Set<Pair<Int, Int>> = emptySet(),
     incorrectFrettedStrings: Set<Int> = emptySet(),
     incorrectMutedStrings: Set<Int> = emptySet(),
     missedMuteStrings: Set<Int> = emptySet(),
@@ -119,15 +124,27 @@ fun InteractiveChordDiagram(
                     // and can be called from both the "pure tap" and "short drag" paths.
                     fun performTap() {
                         if (!touchDownInFretGrid) {
-                            // Above nut: toggle open ↔ muted
-                            val cur = positions.firstOrNull { it.stringIndex == touchDownString }?.fret ?: 0
-                            val newFret = if (cur == -1) 0 else -1
-                            positions = positions.toMutableList().also { list ->
-                                val idx = list.indexOfFirst { it.stringIndex == touchDownString }
-                                if (idx >= 0) list[idx] = StringPosition(touchDownString, newFret)
+                            if (noteQuizMode) {
+                                // Note quiz: above-nut area toggles open-string dot (fret=0) on/off
+                                val cur = positions.firstOrNull { it.stringIndex == touchDownString }?.fret ?: -1
+                                val newFret = if (cur == 0) -1 else 0
+                                positions = positions.toMutableList().also { list ->
+                                    val idx = list.indexOfFirst { it.stringIndex == touchDownString }
+                                    if (idx >= 0) list[idx] = StringPosition(touchDownString, newFret)
+                                }
+                                onFingeringChanged(Fingering(positions.toList(), null, effectiveBaseFret))
+                                if (newFret == 0) onNoteSelected?.invoke(touchDownString, 0)
+                            } else {
+                                // Chord mode: toggle open ↔ muted
+                                val cur = positions.firstOrNull { it.stringIndex == touchDownString }?.fret ?: 0
+                                val newFret = if (cur == -1) 0 else -1
+                                positions = positions.toMutableList().also { list ->
+                                    val idx = list.indexOfFirst { it.stringIndex == touchDownString }
+                                    if (idx >= 0) list[idx] = StringPosition(touchDownString, newFret)
+                                }
+                                onFingeringChanged(Fingering(positions.toList(), barre, effectiveBaseFret))
+                                if (newFret == 0) onNoteSelected?.invoke(touchDownString, 0)
                             }
-                            onFingeringChanged(Fingering(positions.toList(), barre, effectiveBaseFret))
-                            if (newFret == 0) onNoteSelected?.invoke(touchDownString, 0)
                             return
                         }
 
@@ -168,13 +185,14 @@ fun InteractiveChordDiagram(
 
                         // Regular fret tap: toggle dot on/off
                         val curPos = positions.firstOrNull { it.stringIndex == touchDownString }
-                        val newFret = if (curPos?.fret == touchDownFret) 0 else touchDownFret
+                        val emptyFret = if (noteQuizMode) -1 else 0
+                        val newFret = if (curPos?.fret == touchDownFret) emptyFret else touchDownFret
                         positions = positions.toMutableList().also { list ->
                             val idx = list.indexOfFirst { it.stringIndex == touchDownString }
                             if (idx >= 0) list[idx] = StringPosition(touchDownString, newFret)
                             else list.add(StringPosition(touchDownString, newFret))
                         }
-                        onFingeringChanged(Fingering(positions.toList(), barre, effectiveBaseFret))
+                        onFingeringChanged(Fingering(positions.toList(), if (noteQuizMode) null else barre, effectiveBaseFret))
                         if (newFret > 0) onNoteSelected?.invoke(touchDownString, newFret)
                     }
 
@@ -194,13 +212,13 @@ fun InteractiveChordDiagram(
                             kotlin.math.abs(dx) > kotlin.math.abs(dy)
                         ) {
                             gestureClassified = true
-                            if (dx < 0 && touchDownInFretGrid) {
-                                // Right-to-left drag in fret grid → barre mode
+                            if (dx < 0 && touchDownInFretGrid && !noteQuizMode) {
+                                // Right-to-left drag in fret grid → barre mode (chord mode only)
                                 isBarreDrag = true
                                 barre = null
                                 positions = basePositions.toMutableList()
                             } else {
-                                // Left-to-right drag (or above-nut drag) → let bubble to parent
+                                // Left-to-right drag, above-nut drag, or note quiz → bubble to parent
                                 break
                             }
                         }
@@ -333,24 +351,49 @@ fun InteractiveChordDiagram(
             }
         }
 
-        // Above-nut markers (open circle or muted X)
+        // Above-nut markers (open circle or muted X, or filled dot in note quiz mode)
         val symbolY = topPad - fretSpacing * 0.45f
         val symbolRadius = size.width * 0.035f
         positions.forEach { pos ->
             val x = effectiveLeftPad + pos.stringIndex * stringSpacing
-            when (pos.fret) {
-                -1 -> {
-                    // Muted X — red if incorrectly muted, gray otherwise
-                    val xColor = if (pos.stringIndex in incorrectMutedStrings) IncorrectRed else MutedGray
-                    drawLine(xColor, Offset(x - symbolRadius, symbolY - symbolRadius),
-                        Offset(x + symbolRadius, symbolY + symbolRadius), 2f)
-                    drawLine(xColor, Offset(x + symbolRadius, symbolY - symbolRadius),
-                        Offset(x - symbolRadius, symbolY + symbolRadius), 2f)
+            if (noteQuizMode) {
+                when (pos.fret) {
+                    0 -> {
+                        // Note quiz open-string dot — filled dot at nut row
+                        drawCircle(FingerDot, fretSpacing * 0.35f, Offset(x, symbolY))
+                    }
+                    // fret=-1 (empty) → draw nothing
                 }
-                0 -> {
-                    // Open circle — red if this string should have been muted or fretted, black otherwise
-                    val oColor = if (pos.stringIndex in missedMuteStrings || pos.stringIndex in incorrectFrettedStrings) IncorrectRed else Color.Black
-                    drawCircle(oColor, symbolRadius, Offset(x, symbolY), style = Stroke(2f))
+            } else {
+                when (pos.fret) {
+                    -1 -> {
+                        // Muted X — red if incorrectly muted, gray otherwise
+                        val xColor = if (pos.stringIndex in incorrectMutedStrings) IncorrectRed else MutedGray
+                        drawLine(xColor, Offset(x - symbolRadius, symbolY - symbolRadius),
+                            Offset(x + symbolRadius, symbolY + symbolRadius), 2f)
+                        drawLine(xColor, Offset(x + symbolRadius, symbolY - symbolRadius),
+                            Offset(x - symbolRadius, symbolY + symbolRadius), 2f)
+                    }
+                    0 -> {
+                        // Open circle — red if this string should have been muted or fretted, black otherwise
+                        val oColor = if (pos.stringIndex in missedMuteStrings || pos.stringIndex in incorrectFrettedStrings) IncorrectRed else Color.Black
+                        drawCircle(oColor, symbolRadius, Offset(x, symbolY), style = Stroke(2f))
+                    }
+                }
+            }
+        }
+
+        // Hint dots (yellow) — shown in note quiz mode for valid positions after wrong tap
+        if (hintPositions.isNotEmpty()) {
+            val hintColor = Color(0xFFFFCC00)
+            hintPositions.forEach { (stringIdx, fret) ->
+                val x = effectiveLeftPad + stringIdx * stringSpacing
+                if (fret == 0) {
+                    // Open-string hint dot at nut row
+                    drawCircle(hintColor, fretSpacing * 0.35f, Offset(x, symbolY))
+                } else if (fret in (effectiveBaseFret)..(effectiveBaseFret + displayedFrets - 1)) {
+                    val y = topPad + (fret - effectiveBaseFret + 0.5f) * fretSpacing
+                    drawCircle(hintColor, fretSpacing * 0.35f, Offset(x, y))
                 }
             }
         }

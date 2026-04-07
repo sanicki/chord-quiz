@@ -10,6 +10,7 @@ import javax.inject.Inject
 
 data class NoteDrawEvalResult(
     val isCorrect: Boolean,
+    val isComplete: Boolean = false,
     val missedPositions: List<StringPosition> = emptyList()
 )
 
@@ -59,7 +60,8 @@ class EvaluateNoteDrawAnswerUseCase @Inject constructor() {
                     .map { (_, _, strIdx) -> strIdx }
                     .toSet()
                 val missedPositions = allPositions.filter { it.stringIndex !in markedStrings }
-                NoteDrawEvalResult(isCorrect = missedPositions.isEmpty(), missedPositions = missedPositions)
+                val isCorrect = missedPositions.isEmpty()
+                NoteDrawEvalResult(isCorrect = isCorrect, isComplete = isCorrect, missedPositions = missedPositions)
             }
 
             NoteMode.FIND_ALL_NOTES_CORRECT_OCTAVE -> {
@@ -70,9 +72,20 @@ class EvaluateNoteDrawAnswerUseCase @Inject constructor() {
                     .map { (_, _, strIdx) -> strIdx }
                     .toSet()
                 val missedPositions = allPositions.filter { it.stringIndex !in markedPairs }
-                NoteDrawEvalResult(isCorrect = missedPositions.isEmpty(), missedPositions = missedPositions)
+                val isCorrect = missedPositions.isEmpty()
+                NoteDrawEvalResult(isCorrect = isCorrect, isComplete = isCorrect, missedPositions = missedPositions)
             }
         }
+    }
+
+    fun computeAllPositionsForQuestion(
+        instrument: Instrument,
+        question: QuizQuestion.NoteQuestion
+    ): List<StringPosition> = when (question.noteMode) {
+        NoteMode.FIND_ALL_NOTES_CORRECT_OCTAVE, NoteMode.FIND_NOTE_CORRECT_OCTAVE ->
+            computeAllPositions(instrument, question.note.semitone, question.octave)
+        else ->
+            computeAllPositions(instrument, question.note.semitone, null)
     }
 
     private fun computeAllPositions(
