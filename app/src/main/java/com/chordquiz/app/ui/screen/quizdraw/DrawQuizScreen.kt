@@ -230,7 +230,7 @@ fun DrawQuizScreen(
                     }
 
                     Text(
-                        "Tap strings/frets to place fingers\nTap above nut to toggle open/muted\nDrag right-to-left along a fret to draw a barre",
+                        "Tap strings/frets to place fingers\nTap above nut to toggle open/muted\nDrag right-to-left along a fret to draw a barre\nStrum from left-to-right to submit answer",
                         style = MaterialTheme.typography.bodySmall,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
