@@ -12,6 +12,7 @@ import com.chordquiz.app.data.model.Instrument
 import com.chordquiz.app.data.model.Note
 import com.chordquiz.app.data.model.QuizAnswer
 import com.chordquiz.app.data.model.QuizMode
+import com.chordquiz.app.data.model.QuizQuestion
 import com.chordquiz.app.data.model.QuizSession
 import com.chordquiz.app.data.preferences.UserPreferencesRepository
 import com.chordquiz.app.data.repository.ChordRepository
@@ -122,9 +123,10 @@ class PlayQuizViewModel @Inject constructor(
 
                 // If match to the current question chord, validate against difficulty
                 val question = state.session.currentQuestion
-                if (recognition != null && question != null &&
-                    recognition.chord.id == question.chordDefinition.id &&
-                    isAcceptedByDifficulty(recognition, question.chordDefinition)) {
+                val chordQuestion = question as? QuizQuestion.ChordQuestion
+                if (recognition != null && chordQuestion != null &&
+                    recognition.chord.id == chordQuestion.chordDefinition.id &&
+                    isAcceptedByDifficulty(recognition, chordQuestion.chordDefinition)) {
                     onChordDetected(newState, feedback = confidenceToFeedback(recognition.confidence))
                 } else {
                     _uiState.value = newState
@@ -156,8 +158,9 @@ class PlayQuizViewModel @Inject constructor(
     private fun onChordDetected(state: PlayQuizUiState.Active, feedback: PlayFeedback) {
         val isCorrect = feedback.isCorrect
         val question = state.session.currentQuestion ?: return
+        val chordQuestion = question as? QuizQuestion.ChordQuestion ?: return
         val answer = QuizAnswer(
-            question = question,
+            question = chordQuestion,
             isCorrect = isCorrect,
             detectedNotes = state.detectedNotes
         )
@@ -171,7 +174,7 @@ class PlayQuizViewModel @Inject constructor(
         // Play the chord back in the instrument's voice when correct
         if (isCorrect) {
             val inst = instrument
-            val fingering = question.chordDefinition.fingerings.firstOrNull()
+            val fingering = chordQuestion.chordDefinition.fingerings.firstOrNull()
             if (inst != null && fingering != null) {
                 val midis = fingering.positions
                     .filter { it.fret >= 0 }
@@ -216,7 +219,7 @@ class PlayQuizViewModel @Inject constructor(
         val state = _uiState.value as? PlayQuizUiState.Active ?: return
         val question = state.session.currentQuestion ?: return
         val answer = QuizAnswer(
-            question = question,
+            question = question as? QuizQuestion.ChordQuestion ?: return,
             isCorrect = false,
             detectedNotes = emptyList()
         )

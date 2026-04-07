@@ -4,13 +4,16 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
@@ -33,7 +36,8 @@ import com.chordquiz.app.ui.components.InstrumentCard
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InstrumentSelectionScreen(
-    onInstrumentSelected: (String) -> Unit,
+    onChordInstrumentSelected: (String) -> Unit,
+    onNoteInstrumentSelected: (String) -> Unit,
     onNavigateToSettings: () -> Unit = {},
     viewModel: InstrumentSelectionViewModel = hiltViewModel()
 ) {
@@ -43,7 +47,23 @@ fun InstrumentSelectionScreen(
     Scaffold(
         topBar = {
             LargeTopAppBar(
-                title = { Text("Chord Quiz") },
+                title = {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        FilterChip(
+                            selected = uiState.quizType == QuizType.CHORD,
+                            onClick = { viewModel.onQuizTypeChanged(QuizType.CHORD) },
+                            label = { Text("Chord Quiz") }
+                        )
+                        FilterChip(
+                            selected = uiState.quizType == QuizType.NOTE,
+                            onClick = { viewModel.onQuizTypeChanged(QuizType.NOTE) },
+                            label = { Text("Note Quiz") }
+                        )
+                    }
+                },
                 scrollBehavior = scrollBehavior,
                 actions = {
                     IconButton(onClick = onNavigateToSettings) {
@@ -84,7 +104,11 @@ fun InstrumentSelectionScreen(
                             isSelected = false,
                             onClick = {
                                 viewModel.onInstrumentSelected(instrument)
-                                onInstrumentSelected(instrument.id)
+                                if (uiState.quizType == QuizType.CHORD) {
+                                    onChordInstrumentSelected(instrument.id)
+                                } else {
+                                    onNoteInstrumentSelected(instrument.id)
+                                }
                             }
                         )
                     }

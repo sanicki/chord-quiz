@@ -1,17 +1,27 @@
 package com.chordquiz.app.data.model
 
-enum class QuizMode { DRAW, PLAY }
+enum class QuizMode { DRAW, PLAY, NOTE_DRAW, NOTE_PLAY }
 
-data class QuizQuestion(
-    val chordDefinition: ChordDefinition,
-    val targetFingeringIndex: Int = 0
-)
+sealed class QuizQuestion {
+    data class ChordQuestion(
+        val chordDefinition: ChordDefinition,
+        val targetFingeringIndex: Int = 0
+    ) : QuizQuestion()
+
+    data class NoteQuestion(
+        val note: Note,
+        val octave: Int,
+        val displayName: String,
+        val noteMode: NoteMode
+    ) : QuizQuestion()
+}
 
 data class QuizAnswer(
     val question: QuizQuestion,
     val isCorrect: Boolean,
     val userFingering: Fingering? = null,
-    val detectedNotes: List<Note> = emptyList()
+    val detectedNotes: List<Note> = emptyList(),
+    val detectedNote: Note? = null
 )
 
 data class QuizSession(

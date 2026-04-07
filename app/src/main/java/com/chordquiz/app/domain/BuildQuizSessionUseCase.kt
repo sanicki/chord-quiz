@@ -18,14 +18,14 @@ class BuildQuizSessionUseCase @Inject constructor() {
     ): QuizSession {
         val shuffled = selectedChords.shuffled()
         val questions = if (shuffled.size >= questionCount) {
-            shuffled.take(questionCount).map { QuizQuestion(it) }
+            shuffled.take(questionCount).map { QuizQuestion.ChordQuestion(it) }
         } else {
             // Repeat chords to fill question count
             val repeated = mutableListOf<ChordDefinition>()
             while (repeated.size < questionCount) {
                 repeated.addAll(shuffled.shuffled())
             }
-            repeated.take(questionCount).map { QuizQuestion(it) }
+            repeated.take(questionCount).map { QuizQuestion.ChordQuestion(it) }
         }
         return QuizSession(
             id = UUID.randomUUID().toString(),
