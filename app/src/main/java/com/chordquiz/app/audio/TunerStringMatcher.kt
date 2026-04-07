@@ -26,7 +26,7 @@ data class StringTuningState(
 object TunerStringMatcher {
 
     /** Cents range for the green "in tune" zone. */
-    private const val IN_TUNE_CENTS = 20f
+    private const val IN_TUNE_CENTS = 10f
 
     /** Cents range for the yellow zone (one semitone = 100 cents). */
     private const val YELLOW_CENTS = 100f

@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.math.max
 
 data class TunerUiState(
     val instrument: Instrument = Instrument.GUITAR,
@@ -43,6 +44,13 @@ class TunerViewModel @Inject constructor(
     private var listeningJob: Job? = null
     private var successDismissJob: Job? = null
     private var autoContinueDelaySeconds: Int = 2
+
+    /** Sliding window for median-filter smoothing of detected pitch (Hz). */
+    private val pitchWindow = ArrayDeque<Float>(MEDIAN_WINDOW)
+
+    companion object {
+        private const val MEDIAN_WINDOW = 5
+    }
 
     init {
         viewModelScope.launch {
@@ -72,7 +80,17 @@ class TunerViewModel @Inject constructor(
                 if (!state.isListening) return@collect
 
                 val amplitude = PitchDetector.computeAmplitude(buffer)
-                val detectedHz = TunerPitchDetector.detectPitch(buffer)
+
+                // While showing a success message, only update the amplitude so the
+                // waveform stays live without re-triggering detection.
+                if (state.successMessage != null) {
+                    _uiState.value = state.copy(amplitude = amplitude)
+                    return@collect
+                }
+
+                val rawHz = TunerPitchDetector.detectPitch(buffer)
+                val detectedHz = smoothPitch(rawHz)
+
                 val stringStates = TunerStringMatcher.match(detectedHz, state.instrument)
 
                 // Find the single active string (non-ambiguous, non-neutral)
@@ -99,16 +117,32 @@ class TunerViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Adds [rawHz] to the sliding window and returns the median, giving smooth
+     * pitch readings even when the FFT produces occasional outliers.
+     * Returns null when no pitch is detected (clears the window).
+     */
+    private fun smoothPitch(rawHz: Float?): Float? {
+        if (rawHz == null || rawHz <= 0f) {
+            pitchWindow.clear()
+            return null
+        }
+        if (pitchWindow.size >= MEDIAN_WINDOW) pitchWindow.removeFirst()
+        pitchWindow.addLast(rawHz)
+        val sorted = pitchWindow.sorted()
+        return sorted[sorted.size / 2]
+    }
+
     private fun onStringInTune(stringState: StringTuningState, instrument: Instrument) {
         val state = _uiState.value
         // Guard: don't re-trigger if a success message is already showing
         if (state.successMessage != null) return
 
         val message = "${stringState.openNote.displayName} string in Tune!"
+        // Keep isListening = true so the waveform stays live during the success overlay.
         _uiState.value = state.copy(
             successMessage = message,
-            guidanceText = null,
-            isListening = false
+            guidanceText = null
         )
 
         val midi = stringState.openNote.semitone + 12 * (stringState.octave + 1)
@@ -116,15 +150,18 @@ class TunerViewModel @Inject constructor(
             NotePlayer.playNote(midi, instrument.id)
         }
 
+        // Duration = 2× the user's auto-continue delay, minimum 2 000 ms.
+        val dismissDelay = max(autoContinueDelaySeconds * 2 * 1000L, 2000L)
         successDismissJob?.cancel()
         successDismissJob = viewModelScope.launch {
-            delay(autoContinueDelaySeconds * 1000L)
+            delay(dismissDelay)
             resetToIdle()
         }
     }
 
     private fun resetToIdle() {
         val inst = _uiState.value.instrument
+        pitchWindow.clear()
         _uiState.value = _uiState.value.copy(
             successMessage = null,
             guidanceText = null,

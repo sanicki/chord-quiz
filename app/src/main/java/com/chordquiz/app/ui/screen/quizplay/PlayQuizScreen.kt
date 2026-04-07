@@ -12,7 +12,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,8 +23,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -52,7 +49,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chordquiz.app.data.model.QuizQuestion
-import com.chordquiz.app.ui.components.AudioWaveform
+import com.chordquiz.app.ui.components.MicrophoneStatusCard
 import com.chordquiz.app.ui.components.chord.ChordDiagram
 import com.chordquiz.app.ui.screen.settings.SettingsViewModel
 import com.chordquiz.app.ui.theme.CorrectGreen
@@ -165,38 +162,17 @@ fun PlayQuizScreen(
                     )
 
                     // Audio feedback area
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    MicrophoneStatusCard(
+                        isListening = state.isListening,
+                        amplitude = amplitudeAnim
+                    )
+
+                    if (state.detectedNotes.isNotEmpty()) {
+                        Text(
+                            "Detected: ${state.detectedNotes.joinToString(" ") { it.displayNameFor(settings.noteDisplayMode) }}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = if (state.isListening) "🎙 Listening..." else "✓ Got it",
-                                    style = MaterialTheme.typography.titleSmall
-                                )
-                            }
-                            Spacer(Modifier.height(8.dp))
-
-                            AudioWaveform(
-                                amplitude = amplitudeAnim,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-
-                            if (state.detectedNotes.isNotEmpty()) {
-                                Spacer(Modifier.height(8.dp))
-                                Text(
-                                    "Detected: ${state.detectedNotes.joinToString(" ") { it.displayNameFor(settings.noteDisplayMode) }}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
                     }
 
                     // Feedback banner
