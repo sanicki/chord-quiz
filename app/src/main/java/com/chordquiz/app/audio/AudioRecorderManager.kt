@@ -21,7 +21,7 @@ class AudioRecorderManager @Inject constructor() {
         const val BUFFER_SIZE_FACTOR = 2
     }
 
-    private var audioRecord: AudioRecord? = null
+    @Volatile private var audioRecord: AudioRecord? = null
 
     /**
      * Emits [ShortArray] PCM buffers continuously while the flow is collected.
@@ -55,15 +55,16 @@ class AudioRecorderManager @Inject constructor() {
                 }
             }
         } finally {
-            record.stop()
-            record.release()
             audioRecord = null
+            runCatching { record.stop() }
+            runCatching { record.release() }
         }
     }.flowOn(Dispatchers.IO)
 
     fun stop() {
-        audioRecord?.stop()
-        audioRecord?.release()
+        val record = audioRecord
         audioRecord = null
+        runCatching { record?.stop() }
+        runCatching { record?.release() }
     }
 }

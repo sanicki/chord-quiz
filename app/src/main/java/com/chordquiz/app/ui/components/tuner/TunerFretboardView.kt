@@ -1,17 +1,19 @@
 package com.chordquiz.app.ui.components.tuner
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -20,20 +22,21 @@ import com.chordquiz.app.audio.StringTuningState
 import com.chordquiz.app.audio.TuningZone
 import com.chordquiz.app.data.model.Instrument
 import com.chordquiz.app.ui.theme.CorrectGreen
-import com.chordquiz.app.ui.theme.FretboardWood
 import com.chordquiz.app.ui.theme.IncorrectRed
 import com.chordquiz.app.ui.theme.NutBrown
 import com.chordquiz.app.ui.theme.SecondaryAmber
 import com.chordquiz.app.ui.theme.StringColor
 
 /**
- * Horizontal fretboard view for the Tuner screen.
+ * Vertical fretboard view for the Tuner screen.
  *
- * Strings run left-to-right (index 0 = lowest/thickest at bottom, matching physical
- * orientation when looking at the fretboard from the front). Open string note names
- * are drawn at the nut on the left. The active string glows in zone color:
- *   - Red (>1 semitone off), Yellow (within 1 semitone), Green (in tune ±20¢).
+ * Strings run top-to-bottom as vertical columns; frets are horizontal lines.
+ * String index 0 = lowest/thickest on the left, index N-1 = highest on the right
+ * (matching standard guitar tab orientation). Open string note names are drawn
+ * above the nut. The active string glows in zone color:
+ *   - Red  (>1 semitone off), Yellow (within 1 semitone), Green (in tune ±10¢).
  * Ambiguous strings glow yellow at 50% alpha.
+ * Background is white to match the Play Quiz screen style.
  */
 @Composable
 fun TunerFretboardView(
@@ -50,72 +53,83 @@ fun TunerFretboardView(
         modifier = modifier
             .fillMaxWidth()
             .height(fretboardHeight)
+            .background(Color.White)
     ) {
         val stringCount = instrument.stringCount
-        val nutWidth = 36f
-        val fretAreaStart = nutWidth + 16f
-        val fretAreaEnd = size.width - 16f
-        val fretAreaWidth = fretAreaEnd - fretAreaStart
 
-        // Vertical padding so strings don't touch the top/bottom edges
-        val verticalPad = size.height * 0.12f
-        val usableHeight = size.height - 2 * verticalPad
+        // Vertical padding so fret area doesn't touch top/bottom edges
+        val labelHeight = labelTextSize * 2f
+        val nutHeight   = 6f
+        val topPad      = labelHeight + nutHeight + 4f
+        val bottomPad   = 12f
+        val fretAreaTop    = topPad
+        val fretAreaBottom = size.height - bottomPad
+        val fretAreaHeight = fretAreaBottom - fretAreaTop
 
-        // String Y positions — index 0 at bottom (lowest/thickest), index N-1 at top
-        val stringYs = List(stringCount) { i ->
-            // Reverse: lowest string (index 0) at bottom
-            verticalPad + usableHeight * (stringCount - 1 - i) / (stringCount - 1).coerceAtLeast(1)
+        // Horizontal padding so strings don't touch the left/right edges
+        val horizontalPad = size.width * 0.06f
+        val usableWidth   = size.width - 2 * horizontalPad
+
+        // String X positions — index 0 at left (lowest/thickest), index N-1 at right
+        val stringXs = List(stringCount) { i ->
+            horizontalPad + usableWidth * i / (stringCount - 1).coerceAtLeast(1)
         }
 
-        // --- Fretboard background ---
-        drawRect(
-            color = FretboardWood,
-            topLeft = Offset(fretAreaStart, verticalPad),
-            size = androidx.compose.ui.geometry.Size(fretAreaWidth, usableHeight)
-        )
+        // --- White background (already applied via Modifier, but draw explicitly for Canvas) ---
+        drawRect(color = Color.White, topLeft = Offset.Zero, size = size)
 
-        // --- Nut ---
+        // --- Fretboard background (light wood tint between strings) ---
         drawRect(
-            color = NutBrown,
-            topLeft = Offset(fretAreaStart, verticalPad - 2f),
-            size = androidx.compose.ui.geometry.Size(6f, usableHeight + 4f)
+            color = Color(0xFFF5F0E8),
+            topLeft = Offset(horizontalPad, fretAreaTop),
+            size = Size(usableWidth, fretAreaHeight)
         )
 
         // --- Fret lines (5 visible frets) ---
         val fretCount = 5
-        for (f in 1..fretCount) {
-            val x = fretAreaStart + fretAreaWidth * f / fretCount
+        for (f in 0..fretCount) {
+            val y = fretAreaTop + fretAreaHeight * f / fretCount
             drawLine(
                 color = Color(0xFFB0BEC5),
-                start = Offset(x, verticalPad),
-                end = Offset(x, verticalPad + usableHeight),
-                strokeWidth = 1.5f
+                start = Offset(horizontalPad, y),
+                end   = Offset(horizontalPad + usableWidth, y),
+                strokeWidth = if (f == 0) 1f else 1.5f
             )
         }
+
+        // --- Nut ---
+        drawRect(
+            color = NutBrown,
+            topLeft = Offset(horizontalPad - 2f, fretAreaTop - nutHeight),
+            size = Size(usableWidth + 4f, nutHeight)
+        )
 
         // --- Strings and note labels ---
         for (i in 0 until stringCount) {
             val state = stringStates.getOrNull(i)
-            val y = stringYs[i]
+            val x = stringXs[i]
 
-            // String thickness: thicker strings at lower indices (physical guitar feel)
+            // String thickness: thicker strings at lower indices (physical feel)
             val baseThickness = 2f + (stringCount - 1 - i) * 0.5f
 
             val (strokeColor, strokeWidth, alpha) = resolveStringStyle(
-                state = state,
+                state         = state,
                 baseThickness = baseThickness
             )
 
             drawLine(
-                color = strokeColor.copy(alpha = alpha),
-                start = Offset(fretAreaStart + 6f, y),
-                end = Offset(fretAreaEnd, y),
+                color       = strokeColor.copy(alpha = alpha),
+                start       = Offset(x, fretAreaTop),
+                end         = Offset(x, fretAreaBottom),
                 strokeWidth = strokeWidth,
-                cap = StrokeCap.Round
+                cap         = StrokeCap.Round
             )
 
-            // Note label at the nut
-            val label = state?.openNote?.displayName ?: instrument.openStringNotes.getOrNull(i)?.displayName ?: ""
+            // Note label above the nut
+            val label = state?.openNote?.displayName
+                ?: instrument.openStringNotes.getOrNull(i)?.displayName
+                ?: ""
+
             val labelColor = when {
                 state?.isAmbiguous == true -> SecondaryAmber.copy(alpha = 0.7f)
                 state?.tuningZone == TuningZone.IN_TUNE -> CorrectGreen
@@ -127,12 +141,18 @@ fun TunerFretboardView(
             drawIntoCanvas { canvas ->
                 val paint = android.graphics.Paint().apply {
                     isAntiAlias = true
-                    textSize = labelTextSize
-                    color = labelColor.toArgb()
-                    textAlign = android.graphics.Paint.Align.CENTER
-                    typeface = android.graphics.Typeface.DEFAULT_BOLD
+                    textSize    = labelTextSize
+                    color       = labelColor.toArgb()
+                    textAlign   = android.graphics.Paint.Align.CENTER
+                    typeface    = android.graphics.Typeface.DEFAULT_BOLD
                 }
-                canvas.nativeCanvas.drawText(label, nutWidth / 2f, y + labelTextSize / 3f, paint)
+                // Draw label above the nut
+                canvas.nativeCanvas.drawText(
+                    label,
+                    x,
+                    fretAreaTop - nutHeight - 2f,
+                    paint
+                )
             }
         }
     }
@@ -146,12 +166,15 @@ private fun resolveStringStyle(
     if (state == null) return Triple(StringColor, baseThickness, 0.4f)
 
     return when {
-        state.isAmbiguous -> Triple(SecondaryAmber, baseThickness + 2f, 0.5f)
-        state.tuningZone == TuningZone.IN_TUNE -> Triple(CorrectGreen, baseThickness + 4f, 1f)
+        state.isAmbiguous ->
+            Triple(SecondaryAmber, baseThickness + 2f, 0.5f)
+        state.tuningZone == TuningZone.IN_TUNE ->
+            Triple(CorrectGreen, baseThickness + 4f, 1f)
         state.tuningZone == TuningZone.FLAT_YELLOW || state.tuningZone == TuningZone.SHARP_YELLOW ->
             Triple(SecondaryAmber, baseThickness + 2f, 1f)
         state.tuningZone == TuningZone.FLAT_RED || state.tuningZone == TuningZone.SHARP_RED ->
             Triple(IncorrectRed, baseThickness + 3f, 1f)
-        else -> Triple(StringColor, baseThickness, 0.5f)
+        else ->
+            Triple(StringColor, baseThickness, 0.5f)
     }
 }

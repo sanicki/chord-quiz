@@ -43,7 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.chordquiz.app.ui.components.AudioWaveform
+import com.chordquiz.app.ui.components.MicrophoneStatusCard
 import com.chordquiz.app.ui.components.tuner.TunerFretboardView
 import com.chordquiz.app.ui.theme.CorrectGreen
 
@@ -137,16 +137,9 @@ fun TunerScreen(
                 }
 
                 // Listening indicator + waveform
-                Text(
-                    text = if (uiState.isListening) "Listening..." else "",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                AudioWaveform(
-                    amplitude = amplitudeAnim,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.fillMaxWidth()
+                MicrophoneStatusCard(
+                    isListening = uiState.isListening,
+                    amplitude = amplitudeAnim
                 )
 
                 Spacer(Modifier.weight(1f))
