@@ -37,17 +37,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chordquiz.app.data.model.QuizMode
 import com.chordquiz.app.data.model.QuizQuestion
 import com.chordquiz.app.ui.components.chord.ChordDiagram
-import com.chordquiz.app.ui.components.staff.MusicStaff
-import com.chordquiz.app.ui.components.staff.StaffNote
 import com.chordquiz.app.ui.components.staff.Clef
+import com.chordquiz.app.ui.components.staff.MusicStaff
+import com.chordquiz.app.ui.components.staff.MusicalGradeStaff
+import com.chordquiz.app.ui.components.staff.StaffNote
 import com.chordquiz.app.ui.theme.CorrectGreen
 import com.chordquiz.app.ui.theme.IncorrectRed
 
@@ -75,13 +74,6 @@ fun ResultsScreen(
     val total = session.questions.size
     val correct = session.score
     val pct = if (total > 0) (correct * 100) / total else 0
-
-    val stars = when {
-        pct >= 90 -> "⭐⭐⭐"
-        pct >= 70 -> "⭐⭐"
-        pct >= 50 -> "⭐"
-        else -> ""
-    }
 
     val isNoteSession = session.mode == QuizMode.NOTE_DRAW || session.mode == QuizMode.NOTE_PLAY
 
@@ -126,10 +118,16 @@ fun ResultsScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            if (stars.isNotEmpty()) {
-                Text(stars, fontSize = 48.sp, textAlign = TextAlign.Center)
-            }
+            // Musical grade staff — replaces the old star rating
+            MusicalGradeStaff(
+                scorePercent = pct,
+                instrumentId = session.instrument.id,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
+            )
 
+            // Score card
             Card(
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
@@ -153,8 +151,11 @@ fun ResultsScreen(
             }
 
             // Answer summary chips
-            Text("REVIEW", style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.fillMaxWidth())
+            Text(
+                "REVIEW",
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.fillMaxWidth()
+            )
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(horizontal = 4.dp)
@@ -162,7 +163,7 @@ fun ResultsScreen(
                 items(session.answers) { answer ->
                     val label = when (val q = answer.question) {
                         is QuizQuestion.ChordQuestion -> q.chordDefinition.chordName
-                        is QuizQuestion.NoteQuestion -> q.displayName
+                        is QuizQuestion.NoteQuestion  -> q.displayName
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
@@ -172,33 +173,37 @@ fun ResultsScreen(
                             tint = if (answer.isCorrect) CorrectGreen else IncorrectRed,
                             modifier = Modifier.size(16.dp)
                         )
-                        Text(
-                            " $label",
-                            style = MaterialTheme.typography.bodySmall
-                        )
+                        Text(" $label", style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
 
             // Missed chords section
             if (missedChords.isNotEmpty()) {
-                Text("MISSED CHORDS", style = MaterialTheme.typography.labelLarge,
-                    modifier = Modifier.fillMaxWidth())
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(horizontal = 4.dp)
-                ) {
-                    items(missedChords) { answer ->
-                        val chordQuestion = answer.question as QuizQuestion.ChordQuestion
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            ChordDiagram(
-                                chord = chordQuestion.chordDefinition,
-                                modifier = Modifier.size(width = 80.dp, height = 100.dp)
-                            )
-                            Text(
-                                chordQuestion.chordDefinition.chordName,
-                                style = MaterialTheme.typography.labelSmall
-                            )
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            "MISSED CHORDS",
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            contentPadding = PaddingValues(horizontal = 4.dp)
+                        ) {
+                            items(missedChords) { answer ->
+                                val chordQuestion = answer.question as QuizQuestion.ChordQuestion
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    ChordDiagram(
+                                        chord = chordQuestion.chordDefinition,
+                                        modifier = Modifier.size(width = 80.dp, height = 100.dp)
+                                    )
+                                    Text(
+                                        chordQuestion.chordDefinition.chordName,
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -206,15 +211,22 @@ fun ResultsScreen(
 
             // Missed notes section
             if (missedNotes.isNotEmpty()) {
-                Text("MISSED NOTES", style = MaterialTheme.typography.labelLarge,
-                    modifier = Modifier.fillMaxWidth())
-                MusicStaff(
-                    notes = missedNotes,
-                    clef = clef,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(120.dp)
-                )
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            "MISSED NOTES",
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        MusicStaff(
+                            notes = missedNotes,
+                            clef = clef,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(120.dp)
+                        )
+                    }
+                }
             }
 
             Spacer(Modifier.height(8.dp))
