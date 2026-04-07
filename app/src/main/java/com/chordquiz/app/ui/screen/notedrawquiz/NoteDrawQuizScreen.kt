@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -84,24 +83,39 @@ fun NoteDrawQuizScreen(
             val stringCount = session.instrument.stringCount
             val autoContinueDelayMs = settings.autoContinueDelaySeconds * 1000
 
-            // Auto-advance after delay when feedback is shown
+            // Auto-advance after delay when correct feedback is shown
+            // (FIND_ALL wrong feedback clears itself without advancing)
             LaunchedEffect(state.feedback) {
-                if (state.feedback != null) {
+                if (state.feedback == NoteDrawFeedback.CORRECT) {
+                    delay(autoContinueDelayMs.toLong())
+                    viewModel.nextQuestion()
+                } else if (state.feedback == NoteDrawFeedback.INCORRECT &&
+                    (noteQuestion.noteMode == NoteMode.FIND_NOTE ||
+                     noteQuestion.noteMode == NoteMode.FIND_NOTE_CORRECT_OCTAVE)
+                ) {
+                    // Single-note wrong: auto-advance after same delay
                     delay(autoContinueDelayMs.toLong())
                     viewModel.nextQuestion()
                 }
             }
 
             val countdownProgress by animateFloatAsState(
-                targetValue = if (state.feedback != null) 0f else 1f,
-                animationSpec = if (state.feedback != null)
+                targetValue = if (state.feedback != null &&
+                    (state.feedback == NoteDrawFeedback.CORRECT ||
+                     noteQuestion.noteMode == NoteMode.FIND_NOTE ||
+                     noteQuestion.noteMode == NoteMode.FIND_NOTE_CORRECT_OCTAVE)
+                ) 0f else 1f,
+                animationSpec = if (state.feedback != null &&
+                    (state.feedback == NoteDrawFeedback.CORRECT ||
+                     noteQuestion.noteMode == NoteMode.FIND_NOTE ||
+                     noteQuestion.noteMode == NoteMode.FIND_NOTE_CORRECT_OCTAVE)
+                )
                     tween(durationMillis = autoContinueDelayMs, easing = LinearEasing)
                 else
                     snap(),
                 label = "countdown"
             )
 
-            // Build the note prompt text
             val promptText = when (noteQuestion.noteMode) {
                 NoteMode.FIND_NOTE, NoteMode.FIND_ALL_NOTES -> noteQuestion.displayName
                 NoteMode.FIND_NOTE_CORRECT_OCTAVE, NoteMode.FIND_ALL_NOTES_CORRECT_OCTAVE ->
@@ -109,11 +123,17 @@ fun NoteDrawQuizScreen(
             }
 
             val instructionText = when (noteQuestion.noteMode) {
-                NoteMode.FIND_NOTE -> "Find any position for this note"
-                NoteMode.FIND_NOTE_CORRECT_OCTAVE -> "Find this exact note and octave"
-                NoteMode.FIND_ALL_NOTES -> "Find all positions for this note"
-                NoteMode.FIND_ALL_NOTES_CORRECT_OCTAVE -> "Find all positions for this exact octave"
+                NoteMode.FIND_NOTE -> "Tap any position for this note"
+                NoteMode.FIND_NOTE_CORRECT_OCTAVE -> "Tap this exact note and octave"
+                NoteMode.FIND_ALL_NOTES -> "Tap all positions for this note"
+                NoteMode.FIND_ALL_NOTES_CORRECT_OCTAVE -> "Tap all positions for this exact octave"
             }
+
+            // Show countdown only when auto-advancing (correct or single-note wrong)
+            val showCountdown = state.feedback != null &&
+                (state.feedback == NoteDrawFeedback.CORRECT ||
+                 noteQuestion.noteMode == NoteMode.FIND_NOTE ||
+                 noteQuestion.noteMode == NoteMode.FIND_NOTE_CORRECT_OCTAVE)
 
             Scaffold(
                 topBar = {
@@ -154,7 +174,7 @@ fun NoteDrawQuizScreen(
                         color = MaterialTheme.colorScheme.primary
                     )
 
-                    key(state.displayedQuestionIndex) {
+                    key(state.displayedQuestionIndex, state.wrongTapResetKey) {
                         Box(
                             modifier = Modifier
                                 .width(220.dp)
@@ -164,27 +184,31 @@ fun NoteDrawQuizScreen(
                                 stringCount = stringCount,
                                 totalFrets = session.instrument.totalFrets,
                                 initialFingering = state.currentFingering,
-                                incorrectFrettedStrings = state.missedPositions,
+                                noteQuizMode = true,
+                                hintPositions = state.hintPositions,
+                                incorrectFrettedStrings = emptySet(),
                                 incorrectMutedStrings = emptySet(),
                                 missedMuteStrings = emptySet(),
                                 openStringNotes = session.instrument.openStringNotes,
                                 openStringOctaves = session.instrument.openStringOctaves,
                                 noteDisplayMode = settings.noteDisplayMode,
                                 onFingeringChanged = { viewModel.onFingeringChanged(it) },
-                                onNoteSelected = { _, _ -> },
+                                onNoteSelected = { stringIndex, fret ->
+                                    viewModel.onNoteSelected(stringIndex, fret)
+                                },
                                 modifier = Modifier.fillMaxSize()
                             )
                         }
                     }
 
                     Text(
-                        "Tap strings/frets to place fingers",
+                        "Tap strings/frets to mark notes",
                         style = MaterialTheme.typography.bodySmall,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    if (state.feedback != null) {
+                    if (showCountdown) {
                         LinearProgressIndicator(
                             progress = { countdownProgress },
                             modifier = Modifier.fillMaxWidth()
@@ -218,15 +242,6 @@ fun NoteDrawQuizScreen(
                     }
 
                     Spacer(Modifier.weight(1f))
-
-                    if (state.feedback == null) {
-                        Button(
-                            onClick = { viewModel.submitAnswer() },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Submit")
-                        }
-                    }
                 }
             }
         }
