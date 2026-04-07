@@ -1,9 +1,9 @@
 package com.chordquiz.app.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.chordquiz.app.ui.screen.instrument.InstrumentSelectionScreen
 import com.chordquiz.app.ui.screen.library.ChordLibraryScreen
@@ -35,9 +35,7 @@ import com.chordquiz.app.ui.screen.results.ResultsScreen
 import com.chordquiz.app.ui.screen.settings.SettingsScreen
 
 @Composable
-fun NavGraph() {
-    val navController = rememberNavController()
-
+fun NavGraph(navController: NavHostController) {
     NavHost(navController = navController, startDestination = InstrumentSelectionRoute) {
 
         composable<InstrumentSelectionRoute> {
