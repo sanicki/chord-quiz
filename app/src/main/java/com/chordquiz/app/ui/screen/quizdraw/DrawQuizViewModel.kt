@@ -72,8 +72,9 @@ class DrawQuizViewModel @Inject constructor(
 
             val session = buildSession(inst, QuizMode.DRAW, selected, questionCount, repeatMissed)
             val firstQuestion = session.questions.firstOrNull()
-            val firstBaseFret = firstQuestion?.chordDefinition?.fingerings
-                ?.getOrNull(firstQuestion.targetFingeringIndex)?.baseFret ?: 1
+            val firstChordQuestion = firstQuestion as? QuizQuestion.ChordQuestion
+            val firstBaseFret = firstChordQuestion?.chordDefinition?.fingerings
+                ?.getOrNull(firstChordQuestion.targetFingeringIndex)?.baseFret ?: 1
             _uiState.value = DrawQuizUiState.Active(
                 session = session,
                 currentFingering = emptyFingering(inst.stringCount, firstBaseFret),
