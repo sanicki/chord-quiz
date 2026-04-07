@@ -113,6 +113,8 @@ fun MusicalGradeStaff(
     // recomposes (and the Canvas redraws) on every animation frame.
     val progress = animatable.value
 
+    val inkColor = MaterialTheme.colorScheme.onSurface
+
     Canvas(modifier = modifier) {
         // Discrete fill: notes 0..(filledCount-1) are shown in colour.
         val filledCount = progress.toInt()
@@ -126,7 +128,6 @@ fun MusicalGradeStaff(
         val noteSpacing = noteArea / GRADE_NOTES.size.toFloat()
 
         // ── 5 staff lines ──────────────────────────────────────────────────────
-        val inkColor = MaterialTheme.colorScheme.onSurface
         for (i in 0..4) {
             val y = staffTop + i * lineSpacing
             drawLine(inkColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 2f)

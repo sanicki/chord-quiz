@@ -35,6 +35,8 @@ fun MusicStaff(
     val clefWidth = 48.dp
     val totalWidth = clefWidth + noteWidth * notes.size.coerceAtLeast(1)
 
+    val inkColor = MaterialTheme.colorScheme.onSurface
+
     Canvas(
         modifier = modifier
             .horizontalScroll(rememberScrollState())
@@ -43,8 +45,6 @@ fun MusicStaff(
         val lineSpacing = size.height / 8f
         val staffTop = lineSpacing * 1.5f
         val staffBottom = staffTop + lineSpacing * 4f
-
-        val inkColor = MaterialTheme.colorScheme.onSurface
 
         // Draw 5 staff lines
         for (i in 0..4) {
