@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-enum class QuizType { CHORD, NOTE }
+enum class QuizType { CHORD, NOTE, TUNER }
 
 data class InstrumentSelectionUiState(
     val instruments: List<Instrument> = emptyList(),
