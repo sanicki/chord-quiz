@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Banjo — 5-string, circular drum head + resonator ring, 2+2 headstock + 5th peg
+     Derived from Canvas drawing in InstrumentIcon.kt, normalized to 108×108 viewport. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Headstock (narrow) -->
+    <path
+        android:fillColor="#8B5A2B"
+        android:pathData="M43,0 L65,0 L65,8 L43,8 Z"/>
+
+    <!-- Neck -->
+    <path
+        android:fillColor="#8B5A2B"
+        android:pathData="M47,6 L61,6 L61,42 L47,42 Z"/>
+
+    <!-- Tuning pegs: 2 left (cx=38), 2 right (cx=70), r≈3 -->
+    <path
+        android:fillColor="#B8B8B8"
+        android:pathData="M35,1 C35,-0.7 36.3,-2 38,-2 C39.7,-2 41,-0.7 41,1 C41,2.7 39.7,4 38,4 C36.3,4 35,2.7 35,1Z
+                          M35,6 C35,4.3 36.3,3 38,3 C39.7,3 41,4.3 41,6 C41,7.7 39.7,9 38,9 C36.3,9 35,7.7 35,6Z
+                          M67,1 C67,-0.7 68.3,-2 70,-2 C71.7,-2 73,-0.7 73,1 C73,2.7 71.7,4 70,4 C68.3,4 67,2.7 67,1Z
+                          M67,6 C67,4.3 68.3,3 70,3 C71.7,3 73,4.3 73,6 C73,7.7 71.7,9 70,9 C68.3,9 67,7.7 67,6Z"/>
+
+    <!-- 5th string peg on neck side (cx=67, cy=22), r≈3 -->
+    <path
+        android:fillColor="#B8B8B8"
+        android:pathData="M64,22 C64,20.3 65.3,19 67,19 C68.7,19 70,20.3 70,22 C70,23.7 68.7,25 67,25 C65.3,25 64,23.7 64,22Z"/>
+
+    <!-- Resonator ring fill (outer drum; WoodMid) -->
+    <path
+        android:fillColor="#B07838"
+        android:pathData="M22,72 C22,54 36,40 54,40 C72,40 86,54 86,72 C86,90 72,104 54,104 C36,104 22,90 22,72 Z"/>
+
+    <!-- Resonator ring outline (WoodDark) -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#8B5A2B"
+        android:strokeWidth="3"
+        android:pathData="M22,72 C22,54 36,40 54,40 C72,40 86,54 86,72 C86,90 72,104 54,104 C36,104 22,90 22,72 Z"/>
+
+    <!-- Inner resonator ring (WoodDark stroke) -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#8B5A2B"
+        android:strokeWidth="1.5"
+        android:pathData="M26,72 C26,56 40,44 54,44 C68,44 82,56 82,72 C82,88 68,100 54,100 C40,100 26,88 26,72 Z"/>
+
+    <!-- Membrane / drum head fill (cream) -->
+    <path
+        android:fillColor="#F5EFDE"
+        android:pathData="M28,72 C28,57 40,46 54,46 C68,46 80,57 80,72 C80,87 68,98 54,98 C40,98 28,87 28,72 Z"/>
+
+    <!-- Bridge on membrane (WoodDark) -->
+    <path
+        android:fillColor="#8B5A2B"
+        android:pathData="M48,69 L60,69 L60,72 L48,72 Z"/>
+
+    <!-- Strings: 5 lines (StringCol); string 0 (5th) starts at y=22 -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#D0D0C0"
+        android:strokeWidth="0.8"
+        android:pathData="M48,22 L48,69 M51,6 L51,69 M54,6 L54,69 M57,6 L57,69 M60,6 L60,69"/>
+
+    <!-- Nut line (MetalCol) -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#B8B8B8"
+        android:strokeWidth="2"
+        android:pathData="M47,43 L61,43"/>
+
+</vector>

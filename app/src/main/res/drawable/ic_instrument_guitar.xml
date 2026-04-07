@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Acoustic Guitar — 6-string, 3+3 headstock, round sound hole
+     Derived from Canvas drawing in InstrumentIcon.kt, normalized to 108×108 viewport. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Headstock -->
+    <path
+        android:fillColor="#8B5A2B"
+        android:pathData="M38,0 L70,0 L70,14 L38,14 Z"/>
+
+    <!-- Neck -->
+    <path
+        android:fillColor="#8B5A2B"
+        android:pathData="M47,12 L61,12 L61,42 L47,42 Z"/>
+
+    <!-- Tuning pegs: 3 left (cx=35), 3 right (cx=73), r≈3 -->
+    <path
+        android:fillColor="#B8B8B8"
+        android:pathData="M32,4 C32,2.3 33.3,1 35,1 C36.7,1 38,2.3 38,4 C38,5.7 36.7,7 35,7 C33.3,7 32,5.7 32,4Z
+                          M32,9 C32,7.3 33.3,6 35,6 C36.7,6 38,7.3 38,9 C38,10.7 36.7,12 35,12 C33.3,12 32,10.7 32,9Z
+                          M32,14 C32,12.3 33.3,11 35,11 C36.7,11 38,12.3 38,14 C38,15.7 36.7,17 35,17 C33.3,17 32,15.7 32,14Z
+                          M70,4 C70,2.3 71.3,1 73,1 C74.7,1 76,2.3 76,4 C76,5.7 74.7,7 73,7 C71.3,7 70,5.7 70,4Z
+                          M70,9 C70,7.3 71.3,6 73,6 C74.7,6 76,7.3 76,9 C76,10.7 74.7,12 73,12 C71.3,12 70,10.7 70,9Z
+                          M70,14 C70,12.3 71.3,11 73,11 C74.7,11 76,12.3 76,14 C76,15.7 74.7,17 73,17 C71.3,17 70,15.7 70,14Z"/>
+
+    <!-- Guitar body fill (double-bout, WoodLight) -->
+    <path
+        android:fillColor="#D4A96A"
+        android:pathData="M54,40 C75,40 89,50 89,55 C89,62 80,66 80,69 C80,72 102,81 102,88 C102,95 78,106 54,106 C30,106 6,95 6,88 C6,81 28,72 28,69 C28,66 19,62 19,55 C19,50 33,40 54,40 Z"/>
+
+    <!-- Guitar body outline (WoodDark) -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#8B5A2B"
+        android:strokeWidth="2"
+        android:pathData="M54,40 C75,40 89,50 89,55 C89,62 80,66 80,69 C80,72 102,81 102,88 C102,95 78,106 54,106 C30,106 6,95 6,88 C6,81 28,72 28,69 C28,66 19,62 19,55 C19,50 33,40 54,40 Z"/>
+
+    <!-- Sound hole fill (HoleColor) -->
+    <path
+        android:fillColor="#3A2510"
+        android:pathData="M44,78 C44,72.5 48.5,68 54,68 C59.5,68 64,72.5 64,78 C64,83.5 59.5,88 54,88 C48.5,88 44,83.5 44,78 Z"/>
+
+    <!-- Sound hole outline (WoodDark) -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#8B5A2B"
+        android:strokeWidth="1.5"
+        android:pathData="M44,78 C44,72.5 48.5,68 54,68 C59.5,68 64,72.5 64,78 C64,83.5 59.5,88 54,88 C48.5,88 44,83.5 44,78 Z"/>
+
+    <!-- Bridge (WoodDark) -->
+    <path
+        android:fillColor="#8B5A2B"
+        android:pathData="M40,92 L68,92 L68,96 L40,96 Z"/>
+
+    <!-- Strings: 6 lines (StringCol) -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#D0D0C0"
+        android:strokeWidth="0.8"
+        android:pathData="M48,12 L48,94 M50,12 L50,94 M53,12 L53,94 M55,12 L55,94 M58,12 L58,94 M60,12 L60,94"/>
+
+    <!-- Nut line (MetalCol) -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#B8B8B8"
+        android:strokeWidth="2"
+        android:pathData="M47,43 L61,43"/>
+
+</vector>

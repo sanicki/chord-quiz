@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Acoustic Bass — 4-string, 2+2 headstock, wider body, f-holes
+     Derived from Canvas drawing in InstrumentIcon.kt, normalized to 108×108 viewport. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Headstock (wider than guitar) -->
+    <path
+        android:fillColor="#8B5A2B"
+        android:pathData="M39,0 L69,0 L69,10 L39,10 Z"/>
+
+    <!-- Neck (slightly wider) -->
+    <path
+        android:fillColor="#8B5A2B"
+        android:pathData="M45,8 L63,8 L63,44 L45,44 Z"/>
+
+    <!-- Tuning pegs: 2 left (cx=35), 2 right (cx=73), r≈3 -->
+    <path
+        android:fillColor="#B8B8B8"
+        android:pathData="M32,2 C32,0.3 33.3,-1 35,-1 C36.7,-1 38,0.3 38,2 C38,3.7 36.7,5 35,5 C33.3,5 32,3.7 32,2Z
+                          M32,7 C32,5.3 33.3,4 35,4 C36.7,4 38,5.3 38,7 C38,8.7 36.7,10 35,10 C33.3,10 32,8.7 32,7Z
+                          M70,2 C70,0.3 71.3,-1 73,-1 C74.7,-1 76,0.3 76,2 C76,3.7 74.7,5 73,5 C71.3,5 70,3.7 70,2Z
+                          M70,7 C70,5.3 71.3,4 73,4 C74.7,4 76,5.3 76,7 C76,8.7 74.7,10 73,10 C71.3,10 70,8.7 70,7Z"/>
+
+    <!-- Bass body fill (wider; WoodLight) -->
+    <path
+        android:fillColor="#D4A96A"
+        android:pathData="M54,38 C79,38 95,48 95,53 C95,60 82,64 82,67 C82,70 104,79 104,86 C104,93 79,105 54,105 C29,105 4,93 4,86 C4,79 26,70 26,67 C26,64 13,60 13,53 C13,48 29,38 54,38 Z"/>
+
+    <!-- Bass body outline (WoodDark) -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#8B5A2B"
+        android:strokeWidth="2"
+        android:pathData="M54,38 C79,38 95,48 95,53 C95,60 82,64 82,67 C82,70 104,79 104,86 C104,93 79,105 54,105 C29,105 4,93 4,86 C4,79 26,70 26,67 C26,64 13,60 13,53 C13,48 29,38 54,38 Z"/>
+
+    <!-- Left f-hole (narrow oval, HoleColor) -->
+    <path
+        android:fillColor="#3A2510"
+        android:pathData="M32,71 C32,64.5 38,64.5 38,71 C38,77.5 32,77.5 32,71 Z"/>
+
+    <!-- Left f-hole notch (WoodDark) -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#8B5A2B"
+        android:strokeWidth="1.5"
+        android:pathData="M30,71 L40,71"/>
+
+    <!-- Right f-hole (narrow oval, HoleColor) -->
+    <path
+        android:fillColor="#3A2510"
+        android:pathData="M70,71 C70,64.5 76,64.5 76,71 C76,77.5 70,77.5 70,71 Z"/>
+
+    <!-- Right f-hole notch (WoodDark) -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#8B5A2B"
+        android:strokeWidth="1.5"
+        android:pathData="M68,71 L78,71"/>
+
+    <!-- Bridge (WoodDark) -->
+    <path
+        android:fillColor="#8B5A2B"
+        android:pathData="M38,91 L70,91 L70,95 L38,95 Z"/>
+
+    <!-- Strings: 4 lines (StringCol) -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#D0D0C0"
+        android:strokeWidth="1"
+        android:pathData="M49,8 L49,93 M52,8 L52,93 M56,8 L56,93 M59,8 L59,93"/>
+
+    <!-- Nut line (MetalCol) -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#B8B8B8"
+        android:strokeWidth="2"
+        android:pathData="M45,45 L63,45"/>
+
+</vector>

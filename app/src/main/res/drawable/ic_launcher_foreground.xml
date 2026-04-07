@@ -1,24 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-    <!-- Guitar body -->
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,30 C46,30 40,36 40,44 C40,50 43,55 48,58 L44,72 C42,78 46,84 52,84 L56,84 C62,84 66,78 64,72 L60,58 C65,55 68,50 68,44 C68,36 62,30 54,30 Z"/>
-    <!-- Strings -->
-    <path
-        android:strokeColor="#1565C0"
-        android:strokeWidth="1.5"
-        android:pathData="M50,44 L50,72"/>
-    <path
-        android:strokeColor="#1565C0"
-        android:strokeWidth="1.5"
-        android:pathData="M54,44 L54,72"/>
-    <path
-        android:strokeColor="#1565C0"
-        android:strokeWidth="1.5"
-        android:pathData="M58,44 L58,72"/>
-</vector>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/ic_instrument_guitar"/>
+</layer-list>
