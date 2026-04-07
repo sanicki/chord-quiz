@@ -1,12 +1,12 @@
-package com.chordquiz.app.ui.screen.quizdraw
+package com.chordquiz.app.ui.screen.notedrawquiz
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,9 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
@@ -35,25 +33,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.chordquiz.app.data.model.NoteMode
 import com.chordquiz.app.data.model.QuizQuestion
-import com.chordquiz.app.ui.components.chord.ChordDiagram
 import com.chordquiz.app.ui.components.chord.InteractiveChordDiagram
 import com.chordquiz.app.ui.screen.settings.SettingsViewModel
 import com.chordquiz.app.ui.theme.CorrectGreen
@@ -62,64 +51,38 @@ import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DrawQuizScreen(
+fun NoteDrawQuizScreen(
     instrumentId: String,
-    selectedChordIds: List<String>,
+    noteMode: NoteMode,
     questionCount: Int,
     repeatMissed: Boolean,
     onNavigateBack: () -> Unit,
     onQuizComplete: (String) -> Unit,
-    viewModel: DrawQuizViewModel = hiltViewModel(),
+    viewModel: NoteDrawQuizViewModel = hiltViewModel(),
     settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val settings by settingsViewModel.uiState.collectAsStateWithLifecycle()
-    val hapticFeedback = LocalHapticFeedback.current
 
     LaunchedEffect(instrumentId) {
-        viewModel.initialize(instrumentId, selectedChordIds, questionCount, repeatMissed)
+        viewModel.initialize(instrumentId, noteMode, questionCount, repeatMissed)
     }
 
     when (val state = uiState) {
-        is DrawQuizUiState.Loading -> {
+        is NoteDrawQuizUiState.Loading -> {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
         }
-        is DrawQuizUiState.Complete -> {
+        is NoteDrawQuizUiState.Complete -> {
             LaunchedEffect(state.sessionId) { onQuizComplete(state.sessionId) }
         }
-        is DrawQuizUiState.Active -> {
+        is NoteDrawQuizUiState.Active -> {
             val session = state.session
-            // Use displayedQuestion so the chord name doesn't change until Next is pressed
             val question = state.displayedQuestion ?: session.currentQuestion ?: return
-            val chordQuestion = question as? QuizQuestion.ChordQuestion ?: return
+            val noteQuestion = question as? QuizQuestion.NoteQuestion ?: return
             val stringCount = session.instrument.stringCount
             val autoContinueDelayMs = settings.autoContinueDelaySeconds * 1000
-
-            // Swipe-to-submit flash state
-            var showSwipeFlash by remember { mutableStateOf(false) }
-            val flashAlpha by animateFloatAsState(
-                targetValue = if (showSwipeFlash) 0.4f else 0f,
-                animationSpec = tween(
-                    durationMillis = if (showSwipeFlash) 40 else 160,
-                    easing = LinearEasing
-                ),
-                label = "swipeFlash"
-            )
-            LaunchedEffect(showSwipeFlash) {
-                if (showSwipeFlash) {
-                    delay(80)
-                    showSwipeFlash = false
-                }
-            }
-
-            // Trigger haptic feedback on wrong answer
-            LaunchedEffect(state.feedback) {
-                if (state.feedback == AnswerFeedback.INCORRECT && settings.hapticFeedbackEnabled) {
-                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                }
-            }
 
             // Auto-advance after delay when feedback is shown
             LaunchedEffect(state.feedback) {
@@ -137,6 +100,20 @@ fun DrawQuizScreen(
                     snap(),
                 label = "countdown"
             )
+
+            // Build the note prompt text
+            val promptText = when (noteQuestion.noteMode) {
+                NoteMode.FIND_NOTE, NoteMode.FIND_ALL_NOTES -> noteQuestion.displayName
+                NoteMode.FIND_NOTE_CORRECT_OCTAVE, NoteMode.FIND_ALL_NOTES_CORRECT_OCTAVE ->
+                    "${noteQuestion.displayName}${noteQuestion.octave}"
+            }
+
+            val instructionText = when (noteQuestion.noteMode) {
+                NoteMode.FIND_NOTE -> "Find any position for this note"
+                NoteMode.FIND_NOTE_CORRECT_OCTAVE -> "Find this exact note and octave"
+                NoteMode.FIND_ALL_NOTES -> "Find all positions for this note"
+                NoteMode.FIND_ALL_NOTES_CORRECT_OCTAVE -> "Find all positions for this exact octave"
+            }
 
             Scaffold(
                 topBar = {
@@ -167,9 +144,9 @@ fun DrawQuizScreen(
 
                     Spacer(Modifier.height(8.dp))
 
-                    Text("Draw this chord:", style = MaterialTheme.typography.bodyLarge)
+                    Text(instructionText, style = MaterialTheme.typography.bodyLarge)
                     Text(
-                        text = chordQuestion.chordDefinition.displayName(settings.noteDisplayMode),
+                        text = promptText,
                         style = MaterialTheme.typography.displayLarge.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 64.sp
@@ -177,60 +154,31 @@ fun DrawQuizScreen(
                         color = MaterialTheme.colorScheme.primary
                     )
 
-                    // Reset the interactive diagram when the question changes
                     key(state.displayedQuestionIndex) {
                         Box(
                             modifier = Modifier
                                 .width(220.dp)
                                 .height(280.dp)
-                                .pointerInput(state.feedback == null) {
-                                    // Only active pre-feedback; coroutine is cancelled and re-launched
-                                    // when state.feedback changes, so no double-submit is possible
-                                    if (state.feedback != null) return@pointerInput
-
-                                    var totalDragX = 0f
-                                    detectHorizontalDragGestures(
-                                        onDragStart = { totalDragX = 0f },
-                                        onHorizontalDrag = { change, dragAmount ->
-                                            totalDragX += dragAmount
-                                            change.consume()
-                                        },
-                                        onDragEnd = {
-                                            // PointerInputScope implements Density, so dp.toPx() works directly
-                                            if (totalDragX > 80.dp.toPx()) {
-                                                showSwipeFlash = true
-                                                viewModel.submitAnswer()
-                                            }
-                                            totalDragX = 0f
-                                        },
-                                        onDragCancel = { totalDragX = 0f }
-                                    )
-                                }
-                                .drawWithContent {
-                                    drawContent()
-                                    // White wash overlay — alpha = 0 when not flashing (invisible but always present)
-                                    drawRect(Color.White, size = Size(size.width, size.height), alpha = flashAlpha)
-                                }
                         ) {
                             InteractiveChordDiagram(
                                 stringCount = stringCount,
                                 totalFrets = session.instrument.totalFrets,
                                 initialFingering = state.currentFingering,
-                                incorrectFrettedStrings = state.incorrectFrettedStrings,
-                                incorrectMutedStrings = state.incorrectMutedStrings,
-                                missedMuteStrings = state.missedMuteStrings,
+                                incorrectFrettedStrings = state.missedPositions,
+                                incorrectMutedStrings = emptySet(),
+                                missedMuteStrings = emptySet(),
                                 openStringNotes = session.instrument.openStringNotes,
                                 openStringOctaves = session.instrument.openStringOctaves,
                                 noteDisplayMode = settings.noteDisplayMode,
                                 onFingeringChanged = { viewModel.onFingeringChanged(it) },
-                                onNoteSelected = { strIdx, fret -> viewModel.onNoteSelected(strIdx, fret) },
+                                onNoteSelected = { _, _ -> },
                                 modifier = Modifier.fillMaxSize()
                             )
                         }
                     }
 
                     Text(
-                        "Tap strings/frets to place fingers\nTap above nut to toggle open/muted\nDrag right-to-left along a fret to draw a barre",
+                        "Tap strings/frets to place fingers",
                         style = MaterialTheme.typography.bodySmall,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -249,7 +197,7 @@ fun DrawQuizScreen(
                         enter = fadeIn(),
                         exit = fadeOut()
                     ) {
-                        val isCorrect = state.feedback == AnswerFeedback.CORRECT
+                        val isCorrect = state.feedback == NoteDrawFeedback.CORRECT
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -260,24 +208,12 @@ fun DrawQuizScreen(
                                 )
                                 .padding(12.dp)
                         ) {
-                            Column(Modifier.fillMaxWidth()) {
-                                Text(
-                                    text = if (isCorrect) "Correct!" else "Not quite!",
-                                    color = if (isCorrect) CorrectGreen else IncorrectRed,
-                                    fontWeight = FontWeight.Bold,
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                                if (!isCorrect) {
-                                    Spacer(Modifier.height(8.dp))
-                                    Text("Correct fingering:", style = MaterialTheme.typography.bodySmall)
-                                    ChordDiagram(
-                                        chord = chordQuestion.chordDefinition,
-                                        modifier = Modifier
-                                            .size(width = 120.dp, height = 150.dp)
-                                            .align(Alignment.CenterHorizontally)
-                                    )
-                                }
-                            }
+                            Text(
+                                text = if (isCorrect) "Correct!" else "Not quite!",
+                                color = if (isCorrect) CorrectGreen else IncorrectRed,
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleMedium
+                            )
                         }
                     }
 

@@ -42,8 +42,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.chordquiz.app.data.model.QuizSession
+import com.chordquiz.app.data.model.QuizMode
+import com.chordquiz.app.data.model.QuizQuestion
 import com.chordquiz.app.ui.components.chord.ChordDiagram
+import com.chordquiz.app.ui.components.staff.MusicStaff
+import com.chordquiz.app.ui.components.staff.StaffNote
+import com.chordquiz.app.ui.components.staff.Clef
 import com.chordquiz.app.ui.theme.CorrectGreen
 import com.chordquiz.app.ui.theme.IncorrectRed
 
@@ -79,10 +83,27 @@ fun ResultsScreen(
         else -> ""
     }
 
-    val missedChords = session.answers
-        .filter { !it.isCorrect }
-        .distinctBy { it.question.chordDefinition.id }
-        .sortedBy { it.question.chordDefinition.chordName }
+    val isNoteSession = session.mode == QuizMode.NOTE_DRAW || session.mode == QuizMode.NOTE_PLAY
+
+    val missedChords = if (!isNoteSession) {
+        session.answers
+            .filter { !it.isCorrect }
+            .filter { it.question is QuizQuestion.ChordQuestion }
+            .distinctBy { (it.question as QuizQuestion.ChordQuestion).chordDefinition.id }
+            .sortedBy { (it.question as QuizQuestion.ChordQuestion).chordDefinition.chordName }
+    } else emptyList()
+
+    val missedNotes = if (isNoteSession) {
+        session.answers
+            .filter { !it.isCorrect }
+            .filter { it.question is QuizQuestion.NoteQuestion }
+            .map { it.question as QuizQuestion.NoteQuestion }
+            .distinctBy { it.displayName }
+            .sortedWith(compareBy({ it.octave }, { it.note.semitone }))
+            .map { StaffNote(semitone = it.note.semitone, octave = it.octave, displayName = it.displayName) }
+    } else emptyList()
+
+    val clef = if (session.instrument.id == "bass_standard") Clef.BASS else Clef.TREBLE
 
     Scaffold(
         topBar = {
@@ -139,6 +160,10 @@ fun ResultsScreen(
                 contentPadding = PaddingValues(horizontal = 4.dp)
             ) {
                 items(session.answers) { answer ->
+                    val label = when (val q = answer.question) {
+                        is QuizQuestion.ChordQuestion -> q.chordDefinition.chordName
+                        is QuizQuestion.NoteQuestion -> q.displayName
+                    }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = if (answer.isCorrect) Icons.Default.CheckCircle
@@ -148,7 +173,7 @@ fun ResultsScreen(
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
-                            " ${answer.question.chordDefinition.chordName}",
+                            " $label",
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -164,18 +189,32 @@ fun ResultsScreen(
                     contentPadding = PaddingValues(horizontal = 4.dp)
                 ) {
                     items(missedChords) { answer ->
+                        val chordQuestion = answer.question as QuizQuestion.ChordQuestion
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             ChordDiagram(
-                                chord = answer.question.chordDefinition,
+                                chord = chordQuestion.chordDefinition,
                                 modifier = Modifier.size(width = 80.dp, height = 100.dp)
                             )
                             Text(
-                                answer.question.chordDefinition.chordName,
+                                chordQuestion.chordDefinition.chordName,
                                 style = MaterialTheme.typography.labelSmall
                             )
                         }
                     }
                 }
+            }
+
+            // Missed notes section
+            if (missedNotes.isNotEmpty()) {
+                Text("MISSED NOTES", style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.fillMaxWidth())
+                MusicStaff(
+                    notes = missedNotes,
+                    clef = clef,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp)
+                )
             }
 
             Spacer(Modifier.height(8.dp))

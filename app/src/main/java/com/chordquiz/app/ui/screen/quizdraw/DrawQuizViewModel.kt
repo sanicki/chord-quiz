@@ -112,9 +112,10 @@ class DrawQuizViewModel @Inject constructor(
         val state = _uiState.value as? DrawQuizUiState.Active ?: return
         val inst = instrument ?: return
         val question = state.displayedQuestion ?: state.session.currentQuestion ?: return
+        val chordQuestion = question as? QuizQuestion.ChordQuestion ?: return
 
-        val referenceFingering = question.chordDefinition.fingerings.getOrNull(question.targetFingeringIndex)
-        val isCorrect = evaluateAnswer(inst, state.currentFingering, question.chordDefinition, referenceFingering)
+        val referenceFingering = chordQuestion.chordDefinition.fingerings.getOrNull(chordQuestion.targetFingeringIndex)
+        val isCorrect = evaluateAnswer(inst, state.currentFingering, chordQuestion.chordDefinition, referenceFingering)
 
         // Compute per-string feedback for incorrect answers
         val incorrectFrettedStrings = mutableSetOf<Int>()
@@ -135,7 +136,7 @@ class DrawQuizViewModel @Inject constructor(
         }
 
         val answer = QuizAnswer(
-            question = question,
+            question = chordQuestion,
             isCorrect = isCorrect,
             userFingering = state.currentFingering
         )
@@ -176,8 +177,9 @@ class DrawQuizViewModel @Inject constructor(
             _uiState.value = DrawQuizUiState.Complete(state.session.id)
         } else {
             val nextQuestion = state.session.currentQuestion
-            val nextBaseFret = nextQuestion?.chordDefinition?.fingerings
-                ?.getOrNull(nextQuestion.targetFingeringIndex)?.baseFret ?: 1
+            val nextChordQuestion = nextQuestion as? QuizQuestion.ChordQuestion
+            val nextBaseFret = nextChordQuestion?.chordDefinition?.fingerings
+                ?.getOrNull(nextChordQuestion.targetFingeringIndex)?.baseFret ?: 1
             _uiState.value = state.copy(
                 currentFingering = emptyFingering(inst.stringCount, nextBaseFret),
                 feedback = null,
