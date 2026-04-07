@@ -119,9 +119,11 @@ fun ResultsScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Musical grade staff — replaces the old star rating
+            val gradeFeedback = if (pct == 100) "Perfect! 🎉" else null
             MusicalGradeStaff(
                 scorePercent = pct,
                 instrumentId = session.instrument.id,
+                feedback = gradeFeedback,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(120.dp)

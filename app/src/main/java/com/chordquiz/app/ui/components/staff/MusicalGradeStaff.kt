@@ -2,6 +2,10 @@ package com.chordquiz.app.ui.components.staff
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -9,6 +13,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Box
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -17,8 +23,11 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.chordquiz.app.audio.NotePlayer
+import com.chordquiz.app.ui.theme.CorrectGreen
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
@@ -90,6 +99,7 @@ private fun gradeNoteToStaffStep(note: GradeNote): Int {
 fun MusicalGradeStaff(
     scorePercent: Int,
     instrumentId: String = "guitar_standard",
+    feedback: String? = null,
     modifier: Modifier = Modifier
         .fillMaxWidth()
         .height(120.dp)
@@ -172,6 +182,36 @@ fun MusicalGradeStaff(
             val stemEndY   = if (stemUp) noteY - lineSpacing * 3.5f else noteY + lineSpacing * 3.5f
             val stemX      = if (stemUp) cx + rx else cx - rx
             drawLine(noteColor, Offset(stemX, stemStartY), Offset(stemX, stemEndY), strokeWidth = 2f)
+        }
+    }
+
+    // Success message overlay
+    if (feedback != null) {
+        AnimatedVisibility(
+            visible = feedback.isNotBlank(),
+            enter = fadeIn() + scaleIn(),
+            exit = fadeOut() + scaleOut(),
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .background(
+                        color = CorrectGreen.copy(alpha = 0.15f),
+                        shape = MaterialTheme.shapes.large
+                    )
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = feedback,
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = CorrectGreen,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
     }
 }
