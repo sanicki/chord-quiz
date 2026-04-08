@@ -76,6 +76,7 @@ fun ResultsScreen(
     val pct = if (total > 0) (correct * 100) / total else 0
 
     val isNoteSession = session.mode == QuizMode.NOTE_DRAW || session.mode == QuizMode.NOTE_PLAY
+    val formattedDuration = uiState.formattedDuration
 
     val missedChords = if (!isNoteSession) {
         session.answers
@@ -175,6 +176,25 @@ fun ResultsScreen(
                         )
                         Text(" $label", style = MaterialTheme.typography.bodySmall)
                     }
+                }
+            }
+
+            // Time section
+            if (formattedDuration.isNotEmpty()) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        "TIME",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        formattedDuration,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                 }
             }
 

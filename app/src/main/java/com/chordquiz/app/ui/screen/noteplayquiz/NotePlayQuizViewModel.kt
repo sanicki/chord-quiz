@@ -55,6 +55,7 @@ class NotePlayQuizViewModel @Inject constructor(
 
     private var listeningJob: Job? = null
     private var autoAdvanceJob: Job? = null
+    private var startTime: Long = 0L
 
     companion object {
         private const val SILENCE_THRESHOLD = 0.02f
@@ -71,6 +72,7 @@ class NotePlayQuizViewModel @Inject constructor(
         viewModelScope.launch {
             val inst = instrumentRepo.getInstrumentById(instrumentId) ?: return@launch
             val session = buildNoteSession.buildPlaySession(inst, noteMode, questionCount, repeatMissed)
+            startTime = System.currentTimeMillis()
             _uiState.value = NotePlayQuizUiState.Active(session = session)
             startListening()
         }
@@ -156,8 +158,11 @@ class NotePlayQuizViewModel @Inject constructor(
     fun nextQuestion() {
         val state = _uiState.value as? NotePlayQuizUiState.Active ?: return
         if (state.session.isComplete) {
-            SessionStore.save(state.session)
-            _uiState.value = NotePlayQuizUiState.Complete(state.session.id)
+            val finalSession = state.session.copy(
+                totalDurationMillis = System.currentTimeMillis() - startTime
+            )
+            SessionStore.save(finalSession)
+            _uiState.value = NotePlayQuizUiState.Complete(finalSession.id)
             listeningJob?.cancel()
         } else {
             _uiState.value = state.copy(

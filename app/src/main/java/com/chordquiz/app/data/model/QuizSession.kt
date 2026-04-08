@@ -31,7 +31,8 @@ data class QuizSession(
     val questions: List<QuizQuestion>,
     val answers: List<QuizAnswer> = emptyList(),
     val repeatMissed: Boolean = true,
-    val startedAt: Long = System.currentTimeMillis()
+    val startedAt: Long = System.currentTimeMillis(),
+    val totalDurationMillis: Long = 0L
 ) {
     val currentIndex: Int get() = answers.size
     val isComplete: Boolean get() = currentIndex >= questions.size
