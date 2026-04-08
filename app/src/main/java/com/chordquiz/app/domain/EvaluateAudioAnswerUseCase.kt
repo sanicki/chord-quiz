@@ -8,6 +8,23 @@ import javax.inject.Inject
 class EvaluateAudioAnswerUseCase @Inject constructor() {
 
     /**
+     * Minimum normalized RMS amplitude required for audio to be processed.
+     * Initialized to a safe default; updated by [calibrateNoise] at recorder start.
+     */
+    var dynamicSilenceThreshold: Float = 0.02f
+        private set
+
+    /**
+     * Measure the ambient noise level at recorder start and set the silence gate
+     * to 2× that level so that only genuine playing is evaluated.
+     *
+     * @param ambientRms normalized RMS amplitude (0.0–1.0) measured over quiet frames
+     */
+    fun calibrateNoise(ambientRms: Float) {
+        dynamicSilenceThreshold = (ambientRms * 2f).coerceAtLeast(0.01f).coerceAtMost(0.15f)
+    }
+
+    /**
      * Returns true if the detected notes match the target chord given the
      * selected [difficulty]. Higher difficulties raise the coverage threshold
      * and enforce that specific chord tones (root, third) are present.
