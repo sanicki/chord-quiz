@@ -283,6 +283,7 @@ private fun SpeedControl(speedPercent: Int, onMinus: () -> Unit, onPlus: () -> U
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun SlotBox(
     slot: StrumSlot,
