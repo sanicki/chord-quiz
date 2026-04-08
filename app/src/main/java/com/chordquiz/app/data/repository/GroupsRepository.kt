@@ -21,4 +21,6 @@ interface GroupsRepository {
     fun getChordIdsForGroup(groupId: Long): Flow<List<ChordDefinition>>
 
     suspend fun deleteChordsFromGroup(group: GroupEntity): Int
+
+    fun computeDifficultyGroups(instrumentId: String, chords: List<ChordDefinition>): List<GroupEntity>
 }
