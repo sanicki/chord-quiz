@@ -96,7 +96,7 @@ class NotePlayQuizViewModel @Inject constructor(
                 }
 
                 // Take the strongest (first) pitch
-                val hz = pitches.first()
+                val hz = pitches.first().frequencyHz
                 val (note, octave) = hzToNoteAndOctave(hz)
 
                 val question = state.session.currentQuestion
