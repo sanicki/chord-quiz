@@ -228,6 +228,7 @@ fun NoteDisplayModeDropdown(
 ) {
     val options = linkedMapOf(
         NoteDisplayMode.NONE to "◌  None",
+        NoteDisplayMode.OPEN_STRINGS_ONLY to "|  Only open strings",
         NoteDisplayMode.SHARP to "C#  Sharps",
         NoteDisplayMode.FLAT to "Bb  Flats",
         NoteDisplayMode.SHARP_OCTAVE to "C#4  Sharps + Octave",

@@ -221,6 +221,10 @@ fun InteractiveChordDiagram(
             incorrectMutedStrings = incorrectMutedStrings,
             missedMuteStrings = missedMuteStrings,
             incorrectFrettedStrings = incorrectFrettedStrings,
+            noteDisplayMode = noteDisplayMode,
+            openStringNotes = openStringNotes,
+            openStringOctaves = openStringOctaves,
+            textMeasurer = textMeasurer,
             onTap = { stringIndex -> handleAboveNutTap(stringIndex) },
             modifier = Modifier
                 .fillMaxWidth()
@@ -329,6 +333,10 @@ private fun AboveNutRow(
     incorrectMutedStrings: Set<Int>,
     missedMuteStrings: Set<Int>,
     incorrectFrettedStrings: Set<Int>,
+    noteDisplayMode: NoteDisplayMode = NoteDisplayMode.NONE,
+    openStringNotes: List<Note> = emptyList(),
+    openStringOctaves: List<Int> = emptyList(),
+    textMeasurer: TextMeasurer? = null,
     onTap: (stringIndex: Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -395,9 +403,28 @@ private fun AboveNutRow(
                         drawLine(col, Offset(x + symbolR, symbolY - symbolR), Offset(x - symbolR, symbolY + symbolR), 2f)
                     }
                     0 -> {
-                        val col = if (pos.stringIndex in missedMuteStrings || pos.stringIndex in incorrectFrettedStrings)
-                            IncorrectRed else onSurface
-                        drawCircle(col, symbolR, Offset(x, symbolY), style = Stroke(2f))
+                        if (noteDisplayMode.showOpenStringsOnly() && textMeasurer != null
+                            && pos.stringIndex < openStringNotes.size
+                            && pos.stringIndex < openStringOctaves.size) {
+                            // Draw note name instead of open-circle for open strings
+                            val note = openStringNotes[pos.stringIndex]
+                            val label = note.displayNameFor(noteDisplayMode)
+                            val labelStyle = TextStyle(
+                                color = onSurface.copy(alpha = 0.85f),
+                                fontSize = (symbolR * 2.2f / density).sp
+                            )
+                            val measured = textMeasurer.measure(label, style = labelStyle)
+                            drawText(
+                                textMeasurer = textMeasurer,
+                                text = label,
+                                topLeft = Offset(x - measured.size.width / 2f, symbolY - measured.size.height / 2f),
+                                style = labelStyle
+                            )
+                        } else {
+                            val col = if (pos.stringIndex in missedMuteStrings || pos.stringIndex in incorrectFrettedStrings)
+                                IncorrectRed else onSurface
+                            drawCircle(col, symbolR, Offset(x, symbolY), style = Stroke(2f))
+                        }
                     }
                 }
             }
