@@ -12,6 +12,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.io.File
@@ -109,7 +110,7 @@ class StrumMetronomeManager @Inject constructor(
         var currentSlot = 0
         var nextTickNs = System.nanoTime()
 
-        while (isActive) {
+        while (currentCoroutineContext().isActive) {
             // Handle a pending reset (note-type change or fresh start)
             if (resetRequested) {
                 resetRequested = false
