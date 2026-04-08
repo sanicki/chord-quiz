@@ -6,6 +6,8 @@ import com.chordquiz.app.data.repository.GroupsRepository
 import com.chordquiz.app.data.repository.GroupsRepositoryImpl
 import com.chordquiz.app.data.repository.InstrumentRepository
 import com.chordquiz.app.data.repository.InstrumentRepositoryImpl
+import com.chordquiz.app.data.repository.SavedPatternsRepository
+import com.chordquiz.app.data.repository.SavedPatternsRepositoryImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -27,4 +29,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindGroupsRepository(impl: GroupsRepositoryImpl): GroupsRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSavedPatternsRepository(impl: SavedPatternsRepositoryImpl): SavedPatternsRepository
 }

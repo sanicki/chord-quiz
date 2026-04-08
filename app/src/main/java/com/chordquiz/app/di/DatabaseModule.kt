@@ -9,6 +9,7 @@ import com.chordquiz.app.data.db.ChordQuizDatabase
 import com.chordquiz.app.data.db.dao.ChordDao
 import com.chordquiz.app.data.db.dao.GroupDao
 import com.chordquiz.app.data.db.dao.InstrumentDao
+import com.chordquiz.app.data.db.dao.SavedPatternDao
 import com.chordquiz.app.data.db.entity.ChordDefinitionEntity
 import com.chordquiz.app.data.db.entity.InstrumentEntity
 import com.chordquiz.app.data.model.Instrument
@@ -36,6 +37,21 @@ object DatabaseModule {
     private val MIGRATION_4_5 = object : Migration(4, 5) {
         override fun migrate(database: SupportSQLiteDatabase) {
             database.execSQL("DELETE FROM chords")
+        }
+    }
+
+    private val MIGRATION_5_6 = object : Migration(5, 6) {
+        override fun migrate(database: SupportSQLiteDatabase) {
+            database.execSQL(
+                """CREATE TABLE IF NOT EXISTS saved_patterns (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    name TEXT NOT NULL,
+                    noteType TEXT NOT NULL,
+                    slots TEXT NOT NULL,
+                    bpm INTEGER NOT NULL,
+                    createdAt INTEGER NOT NULL
+                )"""
+            )
         }
     }
 
@@ -70,7 +86,7 @@ object DatabaseModule {
             context,
             ChordQuizDatabase::class.java,
             "chord_quiz.db"
-        ).addMigrations(MIGRATION_3_4, MIGRATION_4_5)
+        ).addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
             .addCallback(callback)
             .build()
             .also { database = it }
@@ -84,4 +100,7 @@ object DatabaseModule {
 
     @Provides
     fun provideGroupDao(db: ChordQuizDatabase): GroupDao = db.groupDao()
+
+    @Provides
+    fun provideSavedPatternDao(db: ChordQuizDatabase): SavedPatternDao = db.savedPatternDao()
 }
