@@ -78,3 +78,6 @@ data class NotePlayQuizRoute(
     val questionCount: Int,
     val repeatMissed: Boolean
 )
+
+@Serializable
+object StrumPracticeRoute
