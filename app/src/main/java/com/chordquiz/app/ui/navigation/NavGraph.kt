@@ -20,7 +20,9 @@ import com.chordquiz.app.ui.navigation.PracticeSetupRoute
 import com.chordquiz.app.ui.navigation.PlayQuizRoute
 import com.chordquiz.app.ui.navigation.ResultsRoute
 import com.chordquiz.app.ui.navigation.SettingsRoute
+import com.chordquiz.app.ui.navigation.StrumPracticeRoute
 import com.chordquiz.app.ui.navigation.TunerRoute
+import com.chordquiz.app.ui.screen.strumpractice.StrumPracticeScreen
 import com.chordquiz.app.ui.screen.tuner.TunerScreen
 import com.chordquiz.app.ui.shared.SessionStore
 import com.chordquiz.app.ui.screen.notemode.NoteQuizModeScreen
@@ -49,9 +51,18 @@ fun NavGraph(navController: NavHostController) {
                 onTunerInstrumentSelected = { instrumentId ->
                     navController.navigate(TunerRoute(instrumentId))
                 },
+                onStrumPracticeSelected = {
+                    navController.navigate(StrumPracticeRoute)
+                },
                 onNavigateToSettings = {
                     navController.navigate(SettingsRoute)
                 }
+            )
+        }
+
+        composable<StrumPracticeRoute> {
+            StrumPracticeScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
