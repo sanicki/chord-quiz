@@ -69,7 +69,8 @@ class PlayQuizViewModel @Inject constructor(
     private var difficulty: Difficulty = Difficulty.DEFAULT
 
     companion object {
-        private const val SILENCE_THRESHOLD = 0.02f
+        /** Number of quiet frames sampled at recorder start to calibrate the noise floor. */
+        private const val CALIBRATION_FRAMES = 5
     }
 
     init {
@@ -100,19 +101,37 @@ class PlayQuizViewModel @Inject constructor(
 
     private fun startListening() {
         listeningJob?.cancel()
+        chordRecognizer.resetBuffer()
         listeningJob = viewModelScope.launch {
+            var calibrationCount = 0
+            var calibrationSum = 0f
+
             audioRecorder.audioBufferFlow().collect { buffer ->
+                val amplitude = PitchDetector.computeAmplitude(buffer)
+
+                // Sample the first CALIBRATION_FRAMES quiet frames to measure the ambient
+                // noise floor, then set the dynamic silence threshold to 2× that level.
+                if (calibrationCount < CALIBRATION_FRAMES) {
+                    calibrationSum += amplitude
+                    calibrationCount++
+                    if (calibrationCount == CALIBRATION_FRAMES) {
+                        evaluateAudio.calibrateNoise(calibrationSum / CALIBRATION_FRAMES)
+                    }
+                    return@collect
+                }
+
                 val state = _uiState.value as? PlayQuizUiState.Active ?: return@collect
                 if (!state.isListening) return@collect
 
-                val amplitude = PitchDetector.computeAmplitude(buffer)
-                // Gate pitch detection: ignore silent/near-silent input
-                val pitches = if (amplitude >= SILENCE_THRESHOLD) {
+                // Gate pitch detection against the dynamically-calibrated noise floor.
+                // Always call recognize() even on silence so the rolling window advances
+                // and silence correctly resets the 4-frame consistency requirement.
+                val pitches = if (amplitude >= evaluateAudio.dynamicSilenceThreshold) {
                     PitchDetector.detectPitches(buffer)
                 } else {
                     emptyList()
                 }
-                val recognition = if (pitches.isNotEmpty()) chordRecognizer.recognize(pitches) else null
+                val recognition = chordRecognizer.recognize(pitches)
                 val notes = recognition?.detectedNotes?.toList() ?: emptyList()
 
                 val newState = state.copy(

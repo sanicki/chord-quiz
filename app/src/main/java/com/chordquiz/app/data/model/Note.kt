@@ -1,6 +1,7 @@
 package com.chordquiz.app.data.model
 
 import com.chordquiz.app.domain.model.NoteDisplayMode
+import kotlin.math.roundToInt
 
 enum class Note(val semitone: Int, val displayName: String, val flatName: String? = null) {
     C(0, "C"),
@@ -27,7 +28,7 @@ enum class Note(val semitone: Int, val displayName: String, val flatName: String
         fun fromSemitone(s: Int): Note = entries[s.mod(12)]
 
         fun fromFrequency(hz: Double): Note {
-            val midi = (12.0 * Math.log(hz / 440.0) / Math.log(2.0) + 69).toInt()
+            val midi = (12.0 * Math.log(hz / 440.0) / Math.log(2.0) + 69).roundToInt()
             return fromSemitone(midi)
         }
 

@@ -40,9 +40,26 @@ object FftAnalyzer {
         val minBin = (NoteFrequencyTable.MIN_INSTRUMENT_HZ / freqResolution).toInt()
             .coerceAtLeast(1)
 
-        return (minBin..maxBin).map { bin ->
+        val rawBins = (minBin..maxBin).map { bin ->
             val magnitude = sqrt(real[bin] * real[bin] + imag[bin] * imag[bin])
             FrequencyBin(bin * freqResolution, magnitude)
+        }
+        return whiten(rawBins)
+    }
+
+    /**
+     * Spectral whitening (flattening): normalize each bin by the local mean
+     * magnitude in a ±[halfWindow]-bin window, suppressing broadband noise and
+     * equalizing energy across the frequency range so that all partials compete
+     * on equal footing regardless of the instrument's spectral tilt.
+     */
+    private fun whiten(bins: List<FrequencyBin>, halfWindow: Int = 21): List<FrequencyBin> {
+        if (bins.size < 3) return bins
+        return bins.mapIndexed { i, bin ->
+            val from = maxOf(0, i - halfWindow)
+            val to = minOf(bins.size - 1, i + halfWindow)
+            val localMean = bins.subList(from, to + 1).sumOf { it.magnitude } / (to - from + 1)
+            FrequencyBin(bin.frequencyHz, if (localMean > 0.0) bin.magnitude / localMean else bin.magnitude)
         }
     }
 

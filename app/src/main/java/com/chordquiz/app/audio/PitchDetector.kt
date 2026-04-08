@@ -10,7 +10,8 @@ import kotlin.math.sqrt
 object PitchDetector {
 
     /**
-     * Returns a list of detected fundamental frequencies (Hz) from [samples].
+     * Returns a list of detected fundamental [FrequencyBin]s from [samples],
+     * preserving magnitude for downstream log-frequency weighting.
      * Uses spectral peak-picking with harmonic suppression to find multiple pitches.
      *
      * @param samples PCM short samples
@@ -21,16 +22,15 @@ object PitchDetector {
         samples: ShortArray,
         sampleRate: Int = 44100,
         maxPitches: Int = 6
-    ): List<Double> {
+    ): List<FrequencyBin> {
         val bins = FftAnalyzer.analyze(samples, sampleRate)
         if (bins.isEmpty()) return emptyList()
 
         val peaks = FftAnalyzer.findPeaks(bins, threshold = 0.08, maxPeaks = 20)
         if (peaks.isEmpty()) return emptyList()
 
-        // Filter to instrument frequency range
-        val fundamentals = mutableListOf<Double>()
-        val suppressedFreqs = mutableSetOf<Double>()
+        // Prioritize fundamentals: suppress peaks that are harmonics of a detected pitch
+        val fundamentals = mutableListOf<FrequencyBin>()
 
         for (peak in peaks.sortedByDescending { it.magnitude }) {
             val freq = peak.frequencyHz
@@ -38,13 +38,13 @@ object PitchDetector {
 
             // Check if this frequency is already a harmonic of a detected fundamental
             val isHarmonic = fundamentals.any { f ->
-                val ratio = freq / f
+                val ratio = freq / f.frequencyHz
                 val nearestHarmonic = ratio.toInt().coerceAtLeast(1)
                 abs(ratio - nearestHarmonic) < 0.05 * nearestHarmonic
             }
 
             if (!isHarmonic) {
-                fundamentals.add(freq)
+                fundamentals.add(peak)
                 if (fundamentals.size >= maxPitches) break
             }
         }
