@@ -62,7 +62,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.chordquiz.app.data.model.ChordType
 import com.chordquiz.app.ui.components.chord.ChordDiagram
 import com.chordquiz.app.ui.screen.settings.SettingsViewModel
 import kotlinx.coroutines.delay
@@ -116,7 +115,6 @@ fun ChordLibraryScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (uiState.selectedChordIds.size >= 2
-                        && uiState.activeTypeFilter == null
                         && uiState.activeGroupFilter == null) {
                         OutlinedButton(
                             onClick = {
@@ -166,16 +164,25 @@ fun ChordLibraryScreen(
                     }
                 }
 
-                // Filter chips: All → custom groups (newest first) → preset types
+                // Filter chips: All → difficulty groups → custom groups (newest first)
                 FlowRow(
                     modifier = Modifier.padding(horizontal = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     LibraryFilterChip(
                         label = "All",
-                        selected = uiState.activeTypeFilter == null && uiState.activeGroupFilter == null,
-                        onClick = { viewModel.setTypeFilter(null) }
+                        selected = uiState.activeGroupFilter == null,
+                        onClick = { viewModel.setGroupFilter(null) }
                     )
+                    uiState.difficultyGroups.forEach { group ->
+                        key(group.id) {
+                            LibraryFilterChip(
+                                label = group.toName(),
+                                selected = uiState.activeGroupFilter?.id == group.id,
+                                onClick = { viewModel.setGroupFilter(group) }
+                            )
+                        }
+                    }
                     uiState.customGroups.forEach { group ->
                         key(group.id) {
                             LibraryFilterChip(
@@ -185,13 +192,6 @@ fun ChordLibraryScreen(
                                 onLongClick = { viewModel.requestDeleteGroup(group) }
                             )
                         }
-                    }
-                    ChordType.entries.forEach { type ->
-                        LibraryFilterChip(
-                            label = type.displayName,
-                            selected = uiState.activeTypeFilter == type,
-                            onClick = { viewModel.setTypeFilter(type) }
-                        )
                     }
                 }
 

@@ -4,10 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chordquiz.app.data.db.entity.GroupEntity
 import com.chordquiz.app.data.model.ChordDefinition
-import com.chordquiz.app.data.model.ChordType
 import com.chordquiz.app.data.model.Instrument
 import com.chordquiz.app.data.repository.GroupsRepository
 import com.chordquiz.app.data.repository.InstrumentRepository
+import com.chordquiz.app.domain.ChordDifficultyCalculator
 import com.chordquiz.app.domain.GetChordsForInstrumentUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -25,8 +25,8 @@ data class ChordLibraryUiState(
     val allChords: List<ChordDefinition> = emptyList(),
     val filteredChords: List<ChordDefinition> = emptyList(),
     val selectedChordIds: Set<String> = emptySet(),
-    val activeTypeFilter: ChordType? = null,
     val activeGroupFilter: GroupEntity? = null,
+    val difficultyGroups: List<GroupEntity> = emptyList(),
     val customGroups: List<GroupEntity> = emptyList(),
     val isLoading: Boolean = true,
     val deleteConfirmGroup: GroupEntity? = null,
@@ -48,7 +48,6 @@ class ChordLibraryViewModel @Inject constructor(
     private val _saveComplete = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val saveComplete: SharedFlow<Unit> = _saveComplete.asSharedFlow()
 
-    private val typeFilter = MutableStateFlow<ChordType?>(null)
     private val groupFilter = MutableStateFlow<GroupEntity?>(null)
 
     // Held across the async validation → save flow
@@ -61,27 +60,23 @@ class ChordLibraryViewModel @Inject constructor(
             val instrument = instrumentRepo.getInstrumentById(instrumentId) ?: return@launch
             combine(
                 getChordsForInstrument(instrumentId),
-                typeFilter,
                 groupFilter,
                 groupsRepository.getGroupsFlow(instrumentId)
-            ) { chords, typeF, groupF, groups ->
-                var filtered = chords
-                when {
-                    groupF != null -> {
-                        val groupIds = groupF.chordIdsList()
-                        filtered = chords.filter { it.id in groupIds }
-                    }
-                    typeF != null -> {
-                        filtered = chords.filter { it.chordType == typeF }
-                    }
+            ) { chords, groupF, customGroups ->
+                val difficultyGroups = groupsRepository.computeDifficultyGroups(instrumentId, chords)
+                val filtered = if (groupF != null) {
+                    val groupIds = groupF.chordIdsList()
+                    chords.filter { it.id in groupIds }
+                } else {
+                    chords
                 }
                 _uiState.value = _uiState.value.copy(
                     instrument = instrument,
                     allChords = chords,
                     filteredChords = filtered,
-                    activeTypeFilter = typeF,
                     activeGroupFilter = groupF,
-                    customGroups = groups.sortedByDescending { it.createdAt },
+                    difficultyGroups = difficultyGroups,
+                    customGroups = customGroups.sortedByDescending { it.createdAt },
                     isLoading = false
                 )
             }.collect {}
@@ -94,18 +89,8 @@ class ChordLibraryViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(selectedChordIds = current)
     }
 
-    fun setTypeFilter(type: ChordType?) {
-        val wasOnGroup = groupFilter.value != null
-        groupFilter.value = null
-        typeFilter.value = type
-        if (wasOnGroup) {
-            _uiState.value = _uiState.value.copy(selectedChordIds = emptySet())
-        }
-    }
-
     fun setGroupFilter(group: GroupEntity?) {
         val wasOnGroup = groupFilter.value != null
-        typeFilter.value = null
         groupFilter.value = group
         if (group != null) {
             val existingIds = _uiState.value.allChords.map { it.id }.toSet()
@@ -140,7 +125,9 @@ class ChordLibraryViewModel @Inject constructor(
         val trimmed = name.trim()
         if (trimmed.isBlank() || chordIds.size < 2) return
 
-        val isPreset = ChordType.entries.any { it.displayName.equals(trimmed, ignoreCase = true) }
+        val isPreset = trimmed.equals("Easy", ignoreCase = true) ||
+                trimmed.equals("Moderate", ignoreCase = true) ||
+                trimmed.equals("Difficult", ignoreCase = true)
         if (isPreset) {
             _uiState.value = _uiState.value.copy(
                 saveNameError = "This name is already used by a built-in group."
