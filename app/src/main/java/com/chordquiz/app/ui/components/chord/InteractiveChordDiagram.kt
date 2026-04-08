@@ -1,7 +1,6 @@
 package com.chordquiz.app.ui.components.chord
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
@@ -13,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,7 +44,6 @@ import com.chordquiz.app.ui.theme.FingerDot
 import com.chordquiz.app.ui.theme.IncorrectRed
 import com.chordquiz.app.ui.theme.MutedGray
 import com.chordquiz.app.ui.theme.NutBrown
-import com.chordquiz.app.ui.theme.StringColor
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
@@ -212,7 +211,7 @@ fun InteractiveChordDiagram(
     }
 
     // ── Layout ──────────────────────────────────────────────────────────────
-    Column(modifier = modifier.background(Color.White)) {
+    Column(modifier = modifier) {
 
         // Fixed above-nut row with open/muted markers (always visible, never scrolls).
         AboveNutRow(
@@ -333,6 +332,8 @@ private fun AboveNutRow(
     onTap: (stringIndex: Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val onSurface = MaterialTheme.colorScheme.onSurface
+
     Canvas(
         modifier = modifier
             .pointerInput(stringCount, noteQuizMode) {
@@ -366,7 +367,7 @@ private fun AboveNutRow(
         // String lines (above nut)
         for (s in 0 until stringCount) {
             val x = leftPad + s * strSpacing
-            drawLine(StringColor, Offset(x, 0f), Offset(x, size.height - nutThickness), 1.5f)
+            drawLine(onSurface, Offset(x, 0f), Offset(x, size.height - nutThickness), 1.5f)
         }
 
         // Nut bar
@@ -395,7 +396,7 @@ private fun AboveNutRow(
                     }
                     0 -> {
                         val col = if (pos.stringIndex in missedMuteStrings || pos.stringIndex in incorrectFrettedStrings)
-                            IncorrectRed else Color.Black
+                            IncorrectRed else onSurface
                         drawCircle(col, symbolR, Offset(x, symbolY), style = Stroke(2f))
                     }
                 }
@@ -439,6 +440,8 @@ private fun FretItem(
     onBarreDragEnd: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val onSurface = MaterialTheme.colorScheme.onSurface
+
     Box(
         modifier = modifier
             // ── Static grid (cached) ──────────────────────────────────────
@@ -452,14 +455,14 @@ private fun FretItem(
                 onDrawBehind {
                     // Fret wire at top of this row
                     drawLine(
-                        color = Color.Gray,
+                        color = onSurface.copy(alpha = 0.4f),
                         start = Offset(leftPad, 0f),
                         end = Offset(leftPad + strArea, 0f),
                         strokeWidth = 1.5f
                     )
                     // String lines (vertical, full row height)
                     for (x in strXs) {
-                        drawLine(StringColor, Offset(x, 0f), Offset(x, size.height), 1.5f)
+                        drawLine(onSurface, Offset(x, 0f), Offset(x, size.height), 1.5f)
                     }
                 }
             }
@@ -523,7 +526,7 @@ private fun FretItem(
             // Fret number label (left margin)
             val labelText  = fretNumber.toString()
             val labelStyle = TextStyle(
-                color     = Color.Gray,
+                color     = onSurface.copy(alpha = 0.6f),
                 fontSize  = (size.height * 0.32f / density).sp
             )
             val labelMeasured = textMeasurer.measure(labelText, style = labelStyle)

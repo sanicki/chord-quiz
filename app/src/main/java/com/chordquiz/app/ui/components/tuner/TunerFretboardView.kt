@@ -1,7 +1,6 @@
 package com.chordquiz.app.ui.components.tuner
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
@@ -25,7 +24,6 @@ import com.chordquiz.app.ui.theme.CorrectGreen
 import com.chordquiz.app.ui.theme.IncorrectRed
 import com.chordquiz.app.ui.theme.NutBrown
 import com.chordquiz.app.ui.theme.SecondaryAmber
-import com.chordquiz.app.ui.theme.StringColor
 
 /**
  * Vertical fretboard view for the Tuner screen.
@@ -36,7 +34,10 @@ import com.chordquiz.app.ui.theme.StringColor
  * above the nut. The active string glows in zone color:
  *   - Red  (>1 semitone off), Yellow (within 1 semitone), Green (in tune ±10¢).
  * Ambiguous strings glow yellow at 50% alpha.
- * Background is white to match the Play Quiz screen style.
+ *
+ * The background is transparent — the Tuner screen's own background shows through.
+ * All structural strokes (fret lines, inactive strings) use
+ * [MaterialTheme.colorScheme.onSurface] for light/dark-mode adaptability.
  */
 @Composable
 fun TunerFretboardView(
@@ -47,13 +48,12 @@ fun TunerFretboardView(
 ) {
     val density = LocalDensity.current
     val labelTextSize = with(density) { 12.sp.toPx() }
-    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+    val onSurface = MaterialTheme.colorScheme.onSurface
 
     Canvas(
         modifier = modifier
             .fillMaxWidth()
             .height(fretboardHeight)
-            .background(Color.White)
     ) {
         val stringCount = instrument.stringCount
 
@@ -75,22 +75,12 @@ fun TunerFretboardView(
             horizontalPad + usableWidth * i / (stringCount - 1).coerceAtLeast(1)
         }
 
-        // --- White background (already applied via Modifier, but draw explicitly for Canvas) ---
-        drawRect(color = Color.White, topLeft = Offset.Zero, size = size)
-
-        // --- Fretboard background (light wood tint between strings) ---
-        drawRect(
-            color = Color(0xFFF5F0E8),
-            topLeft = Offset(horizontalPad, fretAreaTop),
-            size = Size(usableWidth, fretAreaHeight)
-        )
-
         // --- Fret lines (5 visible frets) ---
         val fretCount = 5
         for (f in 0..fretCount) {
             val y = fretAreaTop + fretAreaHeight * f / fretCount
             drawLine(
-                color = Color(0xFFB0BEC5),
+                color = onSurface.copy(alpha = if (f == 0) 0.3f else 0.4f),
                 start = Offset(horizontalPad, y),
                 end   = Offset(horizontalPad + usableWidth, y),
                 strokeWidth = if (f == 0) 1f else 1.5f
@@ -113,8 +103,9 @@ fun TunerFretboardView(
             val baseThickness = 2f + (stringCount - 1 - i) * 0.5f
 
             val (strokeColor, strokeWidth, alpha) = resolveStringStyle(
-                state         = state,
-                baseThickness = baseThickness
+                state              = state,
+                baseThickness      = baseThickness,
+                defaultStringColor = onSurface
             )
 
             drawLine(
@@ -135,7 +126,7 @@ fun TunerFretboardView(
                 state?.tuningZone == TuningZone.IN_TUNE -> CorrectGreen
                 state?.tuningZone in listOf(TuningZone.FLAT_RED, TuningZone.SHARP_RED) -> IncorrectRed
                 state?.tuningZone in listOf(TuningZone.FLAT_YELLOW, TuningZone.SHARP_YELLOW) -> SecondaryAmber
-                else -> onSurfaceColor.copy(alpha = 0.7f)
+                else -> onSurface.copy(alpha = 0.7f)
             }
 
             drawIntoCanvas { canvas ->
@@ -161,9 +152,10 @@ fun TunerFretboardView(
 /** Returns (color, strokeWidth, alpha) for a string based on its tuning state. */
 private fun resolveStringStyle(
     state: StringTuningState?,
-    baseThickness: Float
+    baseThickness: Float,
+    defaultStringColor: Color
 ): Triple<Color, Float, Float> {
-    if (state == null) return Triple(StringColor, baseThickness, 0.4f)
+    if (state == null) return Triple(defaultStringColor, baseThickness, 0.4f)
 
     return when {
         state.isAmbiguous ->
@@ -175,6 +167,6 @@ private fun resolveStringStyle(
         state.tuningZone == TuningZone.FLAT_RED || state.tuningZone == TuningZone.SHARP_RED ->
             Triple(IncorrectRed, baseThickness + 3f, 1f)
         else ->
-            Triple(StringColor, baseThickness, 0.5f)
+            Triple(defaultStringColor, baseThickness, 0.5f)
     }
 }

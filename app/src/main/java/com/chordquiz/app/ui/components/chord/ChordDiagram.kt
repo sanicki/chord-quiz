@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -21,7 +22,6 @@ import com.chordquiz.app.ui.theme.BarreColor
 import com.chordquiz.app.ui.theme.FingerDot
 import com.chordquiz.app.ui.theme.MutedGray
 import com.chordquiz.app.ui.theme.NutBrown
-import com.chordquiz.app.ui.theme.StringColor
 
 /**
  * Displays a read-only chord diagram for a given [ChordDefinition].
@@ -45,6 +45,14 @@ fun ChordDiagram(
 /**
  * Core Canvas-based chord diagram renderer.
  * Can be used for both static display and interactive overlays.
+ *
+ * The background is transparent — callers control the surface behind this composable.
+ * All structural strokes (strings, fret wires) use [MaterialTheme.colorScheme.onSurface]
+ * so they are legible in both light and dark mode.
+ *
+ * [stringLineColor] and [openColor] default to [Color.Unspecified], which causes the
+ * implementation to fall back to [MaterialTheme.colorScheme.onSurface].  Pass explicit
+ * values only when a specific override is needed.
  */
 @Composable
 fun ChordDiagramCanvas(
@@ -53,12 +61,16 @@ fun ChordDiagramCanvas(
     modifier: Modifier = Modifier,
     displayedFrets: Int = 5,
     dotColor: Color = FingerDot,
-    stringLineColor: Color = StringColor,
+    stringLineColor: Color = Color.Unspecified,
     nutColor: Color = NutBrown,
     barreColor: Color = BarreColor,
     mutedColor: Color = MutedGray,
-    openColor: Color = Color.Black
+    openColor: Color = Color.Unspecified
 ) {
+    val onSurface = MaterialTheme.colorScheme.onSurface
+    val effectiveStringColor = if (stringLineColor == Color.Unspecified) onSurface else stringLineColor
+    val effectiveOpenColor   = if (openColor == Color.Unspecified) onSurface else openColor
+
     val textMeasurer = rememberTextMeasurer()
     Canvas(
         modifier = modifier
@@ -90,7 +102,7 @@ fun ChordDiagramCanvas(
             )
         } else {
             val labelText = "$baseFret"
-            val labelStyle = TextStyle(color = Color.Black, fontSize = (size.height * 0.07f / density).sp)
+            val labelStyle = TextStyle(color = onSurface, fontSize = (size.height * 0.07f / density).sp)
             val measured = textMeasurer.measure(labelText, style = labelStyle)
             drawText(
                 textMeasurer = textMeasurer,
@@ -107,7 +119,7 @@ fun ChordDiagramCanvas(
         for (f in 0..displayedFrets) {
             val y = topPad + f * fretSpacing
             drawLine(
-                color = Color.Gray,
+                color = onSurface.copy(alpha = 0.4f),
                 start = Offset(effectiveLeftPad, y),
                 end = Offset(effectiveLeftPad + diagramWidth, y),
                 strokeWidth = if (f == 0 && baseFret == 1) 0f else 1.5f
@@ -118,7 +130,7 @@ fun ChordDiagramCanvas(
         for (s in 0 until stringCount) {
             val x = effectiveLeftPad + s * stringSpacing
             drawLine(
-                color = stringLineColor,
+                color = effectiveStringColor,
                 start = Offset(x, topPad),
                 end = Offset(x, topPad + diagramHeight),
                 strokeWidth = 1.5f
@@ -140,7 +152,7 @@ fun ChordDiagramCanvas(
                 }
                 pos.fret == 0 -> {
                     // Open circle
-                    drawCircle(openColor, symbolRadius, Offset(x, symbolY), style =
+                    drawCircle(effectiveOpenColor, symbolRadius, Offset(x, symbolY), style =
                         androidx.compose.ui.graphics.drawscope.Stroke(width = 2f))
                 }
             }
