@@ -67,6 +67,7 @@ class PlayQuizViewModel @Inject constructor(
     private var autoAdvanceJob: Job? = null
     private var instrument: Instrument? = null
     private var difficulty: Difficulty = Difficulty.DEFAULT
+    private var startTime: Long = 0L
 
     companion object {
         /** Number of quiet frames sampled at recorder start to calibrate the noise floor. */
@@ -94,6 +95,7 @@ class PlayQuizViewModel @Inject constructor(
 
             chordRecognizer.setCandidates(selected)
             val session = buildSession(inst, QuizMode.PLAY, selected, questionCount, repeatMissed)
+            startTime = System.currentTimeMillis()
             _uiState.value = PlayQuizUiState.Active(session = session)
             startListening()
         }
@@ -219,8 +221,11 @@ class PlayQuizViewModel @Inject constructor(
     fun nextQuestion() {
         val state = _uiState.value as? PlayQuizUiState.Active ?: return
         if (state.session.isComplete) {
-            SessionStore.save(state.session)
-            _uiState.value = PlayQuizUiState.Complete(state.session.id)
+            val finalSession = state.session.copy(
+                totalDurationMillis = System.currentTimeMillis() - startTime
+            )
+            SessionStore.save(finalSession)
+            _uiState.value = PlayQuizUiState.Complete(finalSession.id)
             listeningJob?.cancel()
         } else {
             _uiState.value = state.copy(

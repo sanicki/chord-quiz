@@ -55,6 +55,7 @@ class NoteDrawQuizViewModel @Inject constructor(
     val uiState: StateFlow<NoteDrawQuizUiState> = _uiState.asStateFlow()
 
     private var instrument: Instrument? = null
+    private var startTime: Long = 0L
 
     fun initialize(
         instrumentId: String,
@@ -67,6 +68,7 @@ class NoteDrawQuizViewModel @Inject constructor(
             instrument = inst
             val session = buildNoteSession.buildDrawSession(inst, noteMode, questionCount, repeatMissed)
             val firstQuestion = session.questions.firstOrNull()
+            startTime = System.currentTimeMillis()
             _uiState.value = NoteDrawQuizUiState.Active(
                 session = session,
                 currentFingering = emptyFingering(inst.stringCount),
@@ -197,8 +199,11 @@ class NoteDrawQuizViewModel @Inject constructor(
         val state = _uiState.value as? NoteDrawQuizUiState.Active ?: return
         val inst = instrument ?: return
         if (state.session.isComplete) {
-            SessionStore.save(state.session)
-            _uiState.value = NoteDrawQuizUiState.Complete(state.session.id)
+            val finalSession = state.session.copy(
+                totalDurationMillis = System.currentTimeMillis() - startTime
+            )
+            SessionStore.save(finalSession)
+            _uiState.value = NoteDrawQuizUiState.Complete(finalSession.id)
         } else {
             val nextQuestion = state.session.currentQuestion
             _uiState.value = state.copy(

@@ -56,6 +56,7 @@ class DrawQuizViewModel @Inject constructor(
     val uiState: StateFlow<DrawQuizUiState> = _uiState.asStateFlow()
 
     private var instrument: Instrument? = null
+    private var startTime: Long = 0L
 
     fun initialize(
         instrumentId: String,
@@ -75,6 +76,7 @@ class DrawQuizViewModel @Inject constructor(
             val firstChordQuestion = firstQuestion as? QuizQuestion.ChordQuestion
             val firstBaseFret = firstChordQuestion?.chordDefinition?.fingerings
                 ?.getOrNull(firstChordQuestion.targetFingeringIndex)?.baseFret ?: 1
+            startTime = System.currentTimeMillis()
             _uiState.value = DrawQuizUiState.Active(
                 session = session,
                 currentFingering = emptyFingering(inst.stringCount, firstBaseFret),
@@ -174,8 +176,11 @@ class DrawQuizViewModel @Inject constructor(
         val state = _uiState.value as? DrawQuizUiState.Active ?: return
         val inst = instrument ?: return
         if (state.session.isComplete) {
-            SessionStore.save(state.session)
-            _uiState.value = DrawQuizUiState.Complete(state.session.id)
+            val finalSession = state.session.copy(
+                totalDurationMillis = System.currentTimeMillis() - startTime
+            )
+            SessionStore.save(finalSession)
+            _uiState.value = DrawQuizUiState.Complete(finalSession.id)
         } else {
             val nextQuestion = state.session.currentQuestion
             val nextChordQuestion = nextQuestion as? QuizQuestion.ChordQuestion
