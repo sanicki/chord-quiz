@@ -1,11 +1,16 @@
 package com.chordquiz.app.ui.components.chip
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -19,22 +24,22 @@ fun UnifiedFilterChip(
     trailingIcon: (@Composable () -> Unit)? = null,
     onLongClick: (() -> Unit)? = null
 ) {
-    FilterChip(
-        selected = selected,
-        onClick = onClick,
-        label = label,
-        enabled = enabled,
-        leadingIcon = leadingIcon,
-        trailingIcon = trailingIcon,
+    // Use Box with background and clickable for unified appearance and functionality
+    Box(
         modifier = modifier
             .height(40.dp)
-            .padding(horizontal = 12.dp, vertical = 8.dp)
-            .then(
-                if (onLongClick != null) {
-                    Modifier.clickable(onClick = onClick)
-                } else {
-                    Modifier
-                }
+            .background(
+                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
             )
-    )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        // Apply appropriate text color based on selection state
+        val contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+        val textStyle = LocalTextStyle.current.copy(color = contentColor)
+
+        // Content should be centered
+        label()
+    }
 }
