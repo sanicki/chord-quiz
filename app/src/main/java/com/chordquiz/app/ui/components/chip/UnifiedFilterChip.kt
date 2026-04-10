@@ -1,15 +1,13 @@
 package com.chordquiz.app.ui.components.chip
 
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FilterChip
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import kotlin.RequiresOptIn
 
-@RequiresOptIn
 @Composable
 fun UnifiedFilterChip(
     selected: Boolean,
@@ -33,10 +31,7 @@ fun UnifiedFilterChip(
             .padding(horizontal = 12.dp, vertical = 8.dp)
             .then(
                 if (onLongClick != null) {
-                    Modifier.combinedClickable(
-                        onClick = onClick,
-                        onLongClick = onLongClick
-                    )
+                    Modifier.clickable(onClick = onClick)
                 } else {
                     Modifier
                 }
