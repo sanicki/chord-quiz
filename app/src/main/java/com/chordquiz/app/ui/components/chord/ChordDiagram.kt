@@ -20,6 +20,7 @@ import com.chordquiz.app.data.model.ChordDefinition
 import com.chordquiz.app.data.model.Fingering
 import com.chordquiz.app.ui.theme.BarreColor
 import com.chordquiz.app.ui.theme.FingerDot
+import com.chordquiz.app.ui.theme.IncorrectRed
 import com.chordquiz.app.ui.theme.MutedGray
 import com.chordquiz.app.ui.theme.NutBrown
 
@@ -65,7 +66,8 @@ fun ChordDiagramCanvas(
     nutColor: Color = NutBrown,
     barreColor: Color = BarreColor,
     mutedColor: Color = MutedGray,
-    openColor: Color = Color.Unspecified
+    openColor: Color = Color.Unspecified,
+    incorrectFrettedStrings: Set<Int> = emptySet()
 ) {
     val onSurface = MaterialTheme.colorScheme.onSurface
     val effectiveStringColor = if (stringLineColor == Color.Unspecified) onSurface else stringLineColor
@@ -158,20 +160,6 @@ fun ChordDiagramCanvas(
             }
         }
 
-        // Draw barre
-        fingering.barre?.let { barre ->
-            val y = topPad + (barre.fret - baseFret + 0.5f) * fretSpacing
-            val x1 = effectiveLeftPad + barre.fromString * stringSpacing
-            val x2 = effectiveLeftPad + barre.toString * stringSpacing
-            val barreRadius = fretSpacing * 0.45f
-            drawRoundRect(
-                color = barreColor,
-                topLeft = Offset(x1, y - barreRadius),
-                size = Size(x2 - x1, barreRadius * 2),
-                cornerRadius = CornerRadius(barreRadius, barreRadius)
-            )
-        }
-
         // Draw finger dots
         fingering.positions
             .filter { it.fret > 0 }
@@ -180,5 +168,36 @@ fun ChordDiagramCanvas(
                 val y = topPad + (pos.fret - baseFret + 0.5f) * fretSpacing
                 drawCircle(dotColor, fretSpacing * 0.35f, Offset(x, y))
             }
+
+        // Draw barre
+        fingering.barre?.let { barre ->
+            val y = topPad + (barre.fret - baseFret + 0.5f) * fretSpacing
+            val x1 = effectiveLeftPad + barre.fromString * stringSpacing
+            val x2 = effectiveLeftPad + barre.toString * stringSpacing
+            val dotRadius = fretSpacing * 0.35f
+            // Calculate the outer edges of the barre line - encompassing the first and last finger dots
+            val startX = x1 - dotRadius
+            val endX = x2 + dotRadius
+            val barreWidth = endX - startX
+            val barreHeight = dotRadius * 2
+
+            // Check if any finger dots beneath this barre are red (incorrect)
+            val barreColorToUse = if (fingering.positions.any {
+                it.fret > 0 &&
+                it.stringIndex in barre.fromString..barre.toString &&
+                it.stringIndex in incorrectFrettedStrings
+            }) {
+                IncorrectRed
+            } else {
+                barreColor
+            }
+
+            drawRoundRect(
+                color = barreColorToUse,
+                topLeft = Offset(startX, y - dotRadius),
+                size = Size(barreWidth, barreHeight),
+                cornerRadius = CornerRadius(dotRadius, dotRadius)
+            )
+        }
     }
 }
