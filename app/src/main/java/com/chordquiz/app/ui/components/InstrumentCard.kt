@@ -34,8 +34,7 @@ fun InstrumentCard(
                 MaterialTheme.colorScheme.primaryContainer
             else
                 MaterialTheme.colorScheme.surfaceVariant
-        ),
-        shape = CardDefaults.shape
+        )
     ) {
         Column(
             modifier = Modifier
