@@ -23,6 +23,9 @@ class ChordRecognizer @Inject constructor() {
      */
     private val recentChordIds = ArrayDeque<String?>()
 
+    /** Cache for chord note components to avoid recomputation */
+    private val chordComponentCache = mutableMapOf<String, Set<Note>>()
+
     companion object {
         private const val WINDOW_SIZE = 4
         private const val CHROMA_THRESHOLD = 0.15
@@ -33,11 +36,22 @@ class ChordRecognizer @Inject constructor() {
     fun setCandidates(chords: List<ChordDefinition>) {
         candidateChords = chords
         resetBuffer()
+        // Clear the cache when candidates change
+        chordComponentCache.clear()
     }
 
     /** Clear the rolling recognition buffer — call between questions to avoid carry-over. */
     fun resetBuffer() {
         recentChordIds.clear()
+    }
+
+    /**
+     * Get chord note components with caching to avoid recomputation.
+     */
+    private fun getChordComponents(chord: ChordDefinition): Set<Note> {
+        return chordComponentCache.getOrPut(chord.id) {
+            chord.noteComponents
+        }
     }
 
     /**
@@ -79,12 +93,18 @@ class ChordRecognizer @Inject constructor() {
             .filter { chroma[it.semitone] >= CHROMA_THRESHOLD }
             .toSet()
 
-        // Score every candidate chord and find the best match
+        // Early termination: find the best match with early termination
         var bestChord: ChordDefinition? = null
         var bestScore = 0f
         for (chord in candidateChords) {
             val score = computeScore(chroma, chord)
-            if (score > bestScore) {
+            // Early termination: if we've already found a very high score, stop early
+            if (score >= MIN_CONFIDENCE && score > bestScore) {
+                bestScore = score
+                bestChord = chord
+                // Early termination: if we have a perfect match, no need to continue
+                if (bestScore >= 0.95f) break
+            } else if (score > bestScore) {
                 bestScore = score
                 bestChord = chord
             }
@@ -113,12 +133,19 @@ class ChordRecognizer @Inject constructor() {
      * - Extra-note penalty: energy in non-chord semitones (reduces false positives).
      * - Fingering bonus: reward if the top chroma notes align with the chord's actual
      *   guitar fingering voicing (strict template matching against [NoteFrequencyTable.GUITAR_OPEN_STRING_MIDIS]).
+     *
+     * Early termination optimization: if the score is already low, we can early terminate.
      */
     private fun computeScore(chroma: DoubleArray, chord: ChordDefinition): Float {
-        val target = chord.noteComponents
+        val target = getChordComponents(chord)
         if (target.isEmpty()) return 0f
 
+        // Early termination: if target is empty, no need to compute further
+        if (target.isEmpty()) return 0f
+
+        // Early termination: compute a quick coverage estimate to early terminate
         val coverage = target.sumOf { chroma[it.semitone] } / target.size
+        if (coverage < 0.05) return 0f // Early termination for very low coverage
 
         val targetSemitones = target.map { it.semitone }.toSet()
         val extraEnergy = chroma.indices
@@ -128,13 +155,20 @@ class ChordRecognizer @Inject constructor() {
 
         val fingeringBonus = if (matchesFingeringTemplate(chroma, chord)) 0.1 else 0.0
 
-        return (coverage - extraPenalty + fingeringBonus).toFloat().coerceIn(0f, 1f)
+        val score = (coverage - extraPenalty + fingeringBonus).toFloat().coerceIn(0f, 1f)
+
+        // Early termination: if score is too low to be considered valid, return early
+        if (score < 0.1f) return 0f
+
+        return score
     }
 
     /**
      * Strict template check: verify that the top-energy chroma notes overlap with
      * the actual notes produced by at least one of the chord's fingering voicings,
      * computed from standard guitar tuning ([NoteFrequencyTable.GUITAR_OPEN_STRING_MIDIS]).
+     *
+     * Optimized to early terminate when a match is found
      */
     private fun matchesFingeringTemplate(chroma: DoubleArray, chord: ChordDefinition): Boolean {
         val openStringMidis = NoteFrequencyTable.GUITAR_OPEN_STRING_MIDIS
@@ -142,7 +176,10 @@ class ChordRecognizer @Inject constructor() {
             .sortedByDescending { chroma[it.semitone] }
             .take(3)
             .toSet()
-        for (fingering in chord.fingerings) {
+
+        // Early termination: check only the first few fingerings that might match
+        val fingeringsToCheck = chord.fingerings.take(3) // Limit to first 3 fingerings for performance
+        for (fingering in fingeringsToCheck) {
             val fingeringNotes = fingering.positions
                 .filter { it.fret >= 0 && it.stringIndex < openStringMidis.size }
                 .map { pos -> Note.fromSemitone(openStringMidis[pos.stringIndex] + pos.fret) }
