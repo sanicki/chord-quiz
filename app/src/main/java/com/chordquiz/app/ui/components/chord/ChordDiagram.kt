@@ -158,6 +158,15 @@ fun ChordDiagramCanvas(
             }
         }
 
+        // Draw finger dots
+        fingering.positions
+            .filter { it.fret > 0 }
+            .forEach { pos ->
+                val x = effectiveLeftPad + pos.stringIndex * stringSpacing
+                val y = topPad + (pos.fret - baseFret + 0.5f) * fretSpacing
+                drawCircle(dotColor, fretSpacing * 0.35f, Offset(x, y))
+            }
+
         // Draw barre
         fingering.barre?.let { barre ->
             val y = topPad + (barre.fret - baseFret + 0.5f) * fretSpacing
@@ -176,14 +185,5 @@ fun ChordDiagramCanvas(
                 cornerRadius = CornerRadius(dotRadius, dotRadius)
             )
         }
-
-        // Draw finger dots
-        fingering.positions
-            .filter { it.fret > 0 }
-            .forEach { pos ->
-                val x = effectiveLeftPad + pos.stringIndex * stringSpacing
-                val y = topPad + (pos.fret - baseFret + 0.5f) * fretSpacing
-                drawCircle(dotColor, fretSpacing * 0.35f, Offset(x, y))
-            }
     }
 }
