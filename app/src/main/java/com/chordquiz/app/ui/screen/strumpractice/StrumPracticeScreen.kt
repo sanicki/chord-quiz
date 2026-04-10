@@ -164,6 +164,7 @@ fun StrumPracticeScreen(
                         UnifiedFilterChip(
                             selected = false,
                             onClick = { viewModel.loadPattern(pattern) },
+                            onLongClick = { viewModel.requestDeletePattern(pattern) },
                             label = { Text(pattern.toName()) }
                         )
                     }
