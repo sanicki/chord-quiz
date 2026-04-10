@@ -163,7 +163,7 @@ fun ChordDiagramCanvas(
             val y = topPad + (barre.fret - baseFret + 0.5f) * fretSpacing
             val x1 = effectiveLeftPad + barre.fromString * stringSpacing
             val x2 = effectiveLeftPad + barre.toString * stringSpacing
-            val barreRadius = fretSpacing * 0.35f
+            val barreRadius = fretSpacing * 0.45f
             drawRoundRect(
                 color = barreColor,
                 topLeft = Offset(x1, y - barreRadius),
