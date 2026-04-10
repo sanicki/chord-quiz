@@ -16,6 +16,7 @@ data class RecognitionResult(
 class ChordRecognizer @Inject constructor() {
 
     private var candidateChords: List<ChordDefinition> = emptyList()
+    private val chordComponentCache = mutableMapOf<String, Set<Note>>()
 
     /**
      * Rolling window of the last [WINDOW_SIZE] recognized chord IDs (null = no match).
@@ -33,6 +34,7 @@ class ChordRecognizer @Inject constructor() {
     fun setCandidates(chords: List<ChordDefinition>) {
         candidateChords = chords
         resetBuffer()
+        chordComponentCache.clear() // Clear cache when candidates change
     }
 
     /** Clear the rolling recognition buffer — call between questions to avoid carry-over. */
@@ -84,6 +86,8 @@ class ChordRecognizer @Inject constructor() {
         var bestScore = 0f
         for (chord in candidateChords) {
             val score = computeScore(chroma, chord)
+            // Early termination: if score is below minimum acceptable, skip to next chord
+            if (score < bestScore && score < MIN_CONFIDENCE) continue
             if (score > bestScore) {
                 bestScore = score
                 bestChord = chord
@@ -115,10 +119,14 @@ class ChordRecognizer @Inject constructor() {
      *   guitar fingering voicing (strict template matching against [NoteFrequencyTable.GUITAR_OPEN_STRING_MIDIS]).
      */
     private fun computeScore(chroma: DoubleArray, chord: ChordDefinition): Float {
-        val target = chord.noteComponents
+        val target = getChordComponents(chord)
         if (target.isEmpty()) return 0f
 
-        val coverage = target.sumOf { chroma[it.semitone] } / target.size
+        // Early termination check - if there's no coverage, return early
+        val totalCoverage = target.sumOf { chroma[it.semitone] }
+        if (totalCoverage <= 0.0) return 0f
+
+        val coverage = totalCoverage / target.size
 
         val targetSemitones = target.map { it.semitone }.toSet()
         val extraEnergy = chroma.indices
@@ -132,6 +140,15 @@ class ChordRecognizer @Inject constructor() {
     }
 
     /**
+     * Cache chord components to avoid recomputing for the same chord
+     */
+    private fun getChordComponents(chord: ChordDefinition): Set<Note> {
+        return chordComponentCache.getOrPut(chord.id) {
+            chord.noteComponents
+        }
+    }
+
+    /**
      * Strict template check: verify that the top-energy chroma notes overlap with
      * the actual notes produced by at least one of the chord's fingering voicings,
      * computed from standard guitar tuning ([NoteFrequencyTable.GUITAR_OPEN_STRING_MIDIS]).
@@ -142,13 +159,19 @@ class ChordRecognizer @Inject constructor() {
             .sortedByDescending { chroma[it.semitone] }
             .take(3)
             .toSet()
+
+        // Early termination: check if we already have enough matches from previous checks
         for (fingering in chord.fingerings) {
             val fingeringNotes = fingering.positions
                 .filter { it.fret >= 0 && it.stringIndex < openStringMidis.size }
                 .map { pos -> Note.fromSemitone(openStringMidis[pos.stringIndex] + pos.fret) }
                 .toSet()
+
             if (fingeringNotes.isEmpty()) continue
-            if (topNotes.intersect(fingeringNotes).size >= 2) return true
+
+            // Early termination: if we already have a good match, return early
+            val intersection = topNotes.intersect(fingeringNotes)
+            if (intersection.size >= 2) return true
         }
         return false
     }
