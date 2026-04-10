@@ -178,8 +178,20 @@ fun ChordDiagramCanvas(
             val endX = x2 + dotRadius
             val barreWidth = endX - startX
             val barreHeight = dotRadius * 2
+
+            // Check if any finger dots beneath this barre are red (incorrect)
+            val barreColorToUse = if (fingering.positions.any {
+                it.fret > 0 &&
+                it.stringIndex in barre.fromString..barre.toString &&
+                it.stringIndex in incorrectFrettedStrings
+            }) {
+                IncorrectRed
+            } else {
+                barreColor
+            }
+
             drawRoundRect(
-                color = barreColor,
+                color = barreColorToUse,
                 topLeft = Offset(startX, y - dotRadius),
                 size = Size(barreWidth, barreHeight),
                 cornerRadius = CornerRadius(dotRadius, dotRadius)

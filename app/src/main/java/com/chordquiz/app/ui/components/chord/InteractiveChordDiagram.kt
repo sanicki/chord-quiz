@@ -588,8 +588,20 @@ private fun FretItem(
                 // Calculate the outer edges of the barre line - encompassing the first and last finger dots
                 val startX = x1 - dotRadius
                 val endX = x2 + dotRadius
+
+                // Check if any finger dots beneath this barre are red (incorrect)
+                val barreColorToUse = if (positions.any {
+                    it.fret == fretNumber &&
+                    it.stringIndex in b.fromString..b.toString &&
+                    it.stringIndex in incorrectFrettedStrings
+                }) {
+                    IncorrectRed
+                } else {
+                    BarreColor
+                }
+
                 drawRoundRect(
-                    color      = BarreColor,
+                    color      = barreColorToUse,
                     topLeft    = Offset(startX, midY - dotRadius),
                     size       = Size(endX - startX, dotRadius * 2),
                     cornerRadius = CornerRadius(dotRadius, dotRadius)
