@@ -20,6 +20,7 @@ import com.chordquiz.app.data.model.ChordDefinition
 import com.chordquiz.app.data.model.Fingering
 import com.chordquiz.app.ui.theme.BarreColor
 import com.chordquiz.app.ui.theme.FingerDot
+import com.chordquiz.app.ui.theme.IncorrectRed
 import com.chordquiz.app.ui.theme.MutedGray
 import com.chordquiz.app.ui.theme.NutBrown
 
@@ -65,7 +66,8 @@ fun ChordDiagramCanvas(
     nutColor: Color = NutBrown,
     barreColor: Color = BarreColor,
     mutedColor: Color = MutedGray,
-    openColor: Color = Color.Unspecified
+    openColor: Color = Color.Unspecified,
+    incorrectFrettedStrings: Set<Int> = emptySet()
 ) {
     val onSurface = MaterialTheme.colorScheme.onSurface
     val effectiveStringColor = if (stringLineColor == Color.Unspecified) onSurface else stringLineColor
