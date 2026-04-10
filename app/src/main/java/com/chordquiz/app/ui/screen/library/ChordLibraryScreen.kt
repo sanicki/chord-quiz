@@ -44,6 +44,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.FilterChip
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -62,6 +63,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.chordquiz.app.ui.components.chip.UnifiedFilterChip
 import com.chordquiz.app.ui.components.chord.ChordDiagram
 import com.chordquiz.app.ui.screen.settings.SettingsViewModel
 import kotlinx.coroutines.delay
@@ -167,29 +169,29 @@ fun ChordLibraryScreen(
                 // Filter chips: All → difficulty groups → custom groups (newest first)
                 FlowRow(
                     modifier = Modifier.padding(horizontal = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    LibraryFilterChip(
-                        label = "All",
+                    UnifiedFilterChip(
                         selected = uiState.activeGroupFilter == null,
-                        onClick = { viewModel.setGroupFilter(null) }
+                        onClick = { viewModel.setGroupFilter(null) },
+                        label = { Text("All") }
                     )
                     uiState.difficultyGroups.forEach { group ->
                         key(group.id) {
-                            LibraryFilterChip(
-                                label = group.toName(),
+                            UnifiedFilterChip(
                                 selected = uiState.activeGroupFilter?.id == group.id,
-                                onClick = { viewModel.setGroupFilter(group) }
+                                onClick = { viewModel.setGroupFilter(group) },
+                                label = { Text(group.toName()) }
                             )
                         }
                     }
                     uiState.customGroups.forEach { group ->
                         key(group.id) {
-                            LibraryFilterChip(
-                                label = group.toName(),
+                            UnifiedFilterChip(
                                 selected = uiState.activeGroupFilter?.id == group.id,
                                 onClick = { viewModel.setGroupFilter(group) },
-                                onLongClick = { viewModel.requestDeleteGroup(group) }
+                                label = { Text(group.toName()) }
                             )
                         }
                     }
@@ -359,56 +361,3 @@ fun ChordLibraryScreen(
     }
 }
 
-/**
- * A custom chip component using [combinedClickable] for consistent tap/long-press support.
- * Replaces FilterChip to ensure identical rendering and consistent tap behavior for
- * All, custom groups, and preset types.
- */
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun LibraryFilterChip(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    onLongClick: () -> Unit = {},
-    modifier: Modifier = Modifier
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val selectedColor = MaterialTheme.colorScheme.primaryContainer
-    val unselectedColor = MaterialTheme.colorScheme.surfaceVariant
-    val selectedTextColor = MaterialTheme.colorScheme.onPrimaryContainer
-    val unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-    val selectedBorderColor = MaterialTheme.colorScheme.primaryContainer
-    val unselectedBorderColor = MaterialTheme.colorScheme.outline
-
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(if (selected) selectedColor else unselectedColor)
-            .border(
-                width = 1.dp,
-                color = if (selected) selectedBorderColor else unselectedBorderColor,
-                shape = RoundedCornerShape(8.dp)
-            )
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick
-            )
-            .indication(
-                interactionSource = interactionSource,
-                indication = ripple(
-                    bounded = false,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                )
-            )
-            .minimumInteractiveComponentSize()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = if (selected) selectedTextColor else unselectedTextColor
-        )
-    }
-}

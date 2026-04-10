@@ -90,7 +90,8 @@ fun InstrumentSelectionScreen(
                 // Quiz type chip selector — FlowRow in the body gives full screen width
                 // and allows proper wrapping so all chips are always visible.
                 FlowRow(
-                    horizontalArrangement = Arrangement.Center,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp, vertical = 4.dp)

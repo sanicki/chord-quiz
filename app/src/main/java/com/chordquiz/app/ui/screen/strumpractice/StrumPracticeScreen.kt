@@ -65,6 +65,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chordquiz.app.data.db.entity.SavedPatternEntity
+import com.chordquiz.app.ui.components.chip.UnifiedFilterChip
 import com.chordquiz.app.ui.components.strum.StrumNoteSymbol
 import kotlinx.coroutines.delay
 
@@ -153,18 +154,17 @@ fun StrumPracticeScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     // Save chip (always first)
-                    StrumChip(
-                        label = "Save",
+                    UnifiedFilterChip(
                         selected = false,
-                        onClick = { viewModel.showSaveDialog() }
+                        onClick = { viewModel.showSaveDialog() },
+                        label = { Text("Save") }
                     )
                     // Saved pattern chips
                     uiState.savedPatterns.forEach { pattern ->
-                        StrumChip(
-                            label = pattern.toName(),
+                        UnifiedFilterChip(
                             selected = false,
                             onClick = { viewModel.loadPattern(pattern) },
-                            onLongClick = { viewModel.requestDeletePattern(pattern) }
+                            label = { Text(pattern.toName()) }
                         )
                     }
                 }
@@ -322,39 +322,6 @@ private fun SlotBox(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun StrumChip(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    onLongClick: () -> Unit = {}
-) {
-    val interactionSource  = remember { MutableInteractionSource() }
-    val bgColor            = if (selected) MaterialTheme.colorScheme.primaryContainer
-                             else MaterialTheme.colorScheme.surfaceVariant
-    val textColor          = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
-                             else MaterialTheme.colorScheme.onSurfaceVariant
-    val borderColor        = if (selected) MaterialTheme.colorScheme.primaryContainer
-                             else MaterialTheme.colorScheme.outline
-
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(bgColor)
-            .border(width = 1.dp, color = borderColor, shape = RoundedCornerShape(8.dp))
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-            .indication(
-                interactionSource = interactionSource,
-                indication = ripple(bounded = false, color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
-            )
-            .minimumInteractiveComponentSize()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-    ) {
-        Text(text = label, style = MaterialTheme.typography.labelLarge, color = textColor)
-    }
-}
 
 @Composable
 private fun SavePatternDialog(
