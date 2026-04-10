@@ -50,7 +50,7 @@ class ChordRecognizer @Inject constructor() {
      */
     private fun getChordComponents(chord: ChordDefinition): Set<Note> {
         return chordComponentCache.getOrPut(chord.id) {
-            chord.noteComponents
+            chord.noteComponents.toSet()
         }
     }
 
