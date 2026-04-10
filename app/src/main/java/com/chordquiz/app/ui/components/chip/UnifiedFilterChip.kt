@@ -7,7 +7,9 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlin.RequiresOptIn
 
+@RequiresOptIn
 @Composable
 fun UnifiedFilterChip(
     selected: Boolean,
