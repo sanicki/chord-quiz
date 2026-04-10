@@ -3,6 +3,7 @@ package com.chordquiz.app.ui.theme
 import androidx.compose.ui.graphics.Color
 
 val PrimaryBlue = Color(0xFF1976D2)
+val PrimaryDark = Color(0xFF0D47A1)
 val SecondaryAmber = Color(0xFFFFA000)
 val BackgroundLight = Color(0xFFF5F5F5)
 val BackgroundDark = Color(0xFF121212)
