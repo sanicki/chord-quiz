@@ -30,7 +30,8 @@ fun MicrophoneStatusCard(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        ),
+        shape = CardDefaults.shape
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
