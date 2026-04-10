@@ -573,23 +573,27 @@ private fun FretItem(
                 drawCircle(Color.Gray.copy(alpha = 0.10f), dotRadius, Offset(cx, midY))
             }
 
-            // Barre (drawn before finger dots so dots render on top)
-            barre?.takeIf { it.fret == fretNumber }?.let { b ->
-                val x1 = leftPad + b.fromString * strSpacing
-                val x2 = leftPad + b.toString  * strSpacing
-                drawRoundRect(
-                    color      = BarreColor,
-                    topLeft    = Offset(x1, midY - dotRadius),
-                    size       = Size(x2 - x1, dotRadius * 2),
-                    cornerRadius = CornerRadius(dotRadius, dotRadius)
-                )
-            }
-
             // Finger dots
             positions.filter { it.fret == fretNumber }.forEach { pos ->
                 val x        = leftPad + pos.stringIndex * strSpacing
                 val dotColor = if (pos.stringIndex in incorrectFrettedStrings) IncorrectRed else FingerDot
                 drawCircle(dotColor, dotRadius, Offset(x, midY))
+            }
+
+            // Barre (drawn after finger dots so barre covers them)
+            barre?.takeIf { it.fret == fretNumber }?.let { b ->
+                val x1 = leftPad + b.fromString * strSpacing
+                val x2 = leftPad + b.toString  * strSpacing
+                val dotRadius = size.height * 0.33f
+                // Calculate the outer edges of the barre line - encompassing the first and last finger dots
+                val startX = x1 - dotRadius
+                val endX = x2 + dotRadius
+                drawRoundRect(
+                    color      = BarreColor,
+                    topLeft    = Offset(startX, midY - dotRadius),
+                    size       = Size(endX - startX, dotRadius * 2),
+                    cornerRadius = CornerRadius(dotRadius, dotRadius)
+                )
             }
 
             // Hint dots (yellow)

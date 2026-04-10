@@ -163,12 +163,17 @@ fun ChordDiagramCanvas(
             val y = topPad + (barre.fret - baseFret + 0.5f) * fretSpacing
             val x1 = effectiveLeftPad + barre.fromString * stringSpacing
             val x2 = effectiveLeftPad + barre.toString * stringSpacing
-            val barreRadius = fretSpacing * 0.45f
+            val dotRadius = fretSpacing * 0.35f
+            // Calculate the outer edges of the barre line - encompassing the first and last finger dots
+            val startX = x1 - dotRadius
+            val endX = x2 + dotRadius
+            val barreWidth = endX - startX
+            val barreHeight = dotRadius * 2
             drawRoundRect(
                 color = barreColor,
-                topLeft = Offset(x1, y - barreRadius),
-                size = Size(x2 - x1, barreRadius * 2),
-                cornerRadius = CornerRadius(barreRadius, barreRadius)
+                topLeft = Offset(startX, y - dotRadius),
+                size = Size(barreWidth, barreHeight),
+                cornerRadius = CornerRadius(dotRadius, dotRadius)
             )
         }
 
