@@ -2,6 +2,7 @@ package com.chordquiz.app.ui.screen.library
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -36,8 +37,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.minimumInteractiveComponentSize
-import androidx.compose.material3.ripple
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -164,33 +163,37 @@ fun ChordLibraryScreen(
                     }
                 }
 
-                // Filter chips: All → difficulty groups → custom groups (newest first)
+                // Filter buttons: All → difficulty groups → custom groups (newest first)
+                @OptIn(ExperimentalFoundationApi::class)
                 FlowRow(
                     modifier = Modifier.padding(horizontal = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    LibraryFilterChip(
-                        label = "All",
-                        selected = uiState.activeGroupFilter == null,
+                    OutlinedButton(
                         onClick = { viewModel.setGroupFilter(null) }
-                    )
+                    ) {
+                        Text("All")
+                    }
                     uiState.difficultyGroups.forEach { group ->
                         key(group.id) {
-                            LibraryFilterChip(
-                                label = group.toName(),
-                                selected = uiState.activeGroupFilter?.id == group.id,
+                            OutlinedButton(
                                 onClick = { viewModel.setGroupFilter(group) }
-                            )
+                            ) {
+                                Text(group.toName())
+                            }
                         }
                     }
                     uiState.customGroups.forEach { group ->
                         key(group.id) {
-                            LibraryFilterChip(
-                                label = group.toName(),
-                                selected = uiState.activeGroupFilter?.id == group.id,
+                            OutlinedButton(
                                 onClick = { viewModel.setGroupFilter(group) },
-                                onLongClick = { viewModel.requestDeleteGroup(group) }
-                            )
+                                modifier = Modifier.combinedClickable(
+                                    onClick = { viewModel.setGroupFilter(group) },
+                                    onLongClick = { viewModel.requestDeleteGroup(group) }
+                                )
+                            ) {
+                                Text(group.toName())
+                            }
                         }
                     }
                 }
@@ -356,59 +359,5 @@ fun ChordLibraryScreen(
                 }
             )
         }
-    }
-}
-
-/**
- * A custom chip component using [combinedClickable] for consistent tap/long-press support.
- * Replaces FilterChip to ensure identical rendering and consistent tap behavior for
- * All, custom groups, and preset types.
- */
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun LibraryFilterChip(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    onLongClick: () -> Unit = {},
-    modifier: Modifier = Modifier
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val selectedColor = MaterialTheme.colorScheme.primaryContainer
-    val unselectedColor = MaterialTheme.colorScheme.surfaceVariant
-    val selectedTextColor = MaterialTheme.colorScheme.onPrimaryContainer
-    val unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-    val selectedBorderColor = MaterialTheme.colorScheme.primaryContainer
-    val unselectedBorderColor = MaterialTheme.colorScheme.outline
-
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(if (selected) selectedColor else unselectedColor)
-            .border(
-                width = 1.dp,
-                color = if (selected) selectedBorderColor else unselectedBorderColor,
-                shape = RoundedCornerShape(8.dp)
-            )
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick
-            )
-            .indication(
-                interactionSource = interactionSource,
-                indication = ripple(
-                    bounded = false,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                )
-            )
-            .minimumInteractiveComponentSize()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = if (selected) selectedTextColor else unselectedTextColor
-        )
     }
 }
