@@ -96,29 +96,29 @@ fun InstrumentSelectionScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
-                    Button(
+                    QuizTypeButton(
+                        label = "Chord Quiz",
+                        isSelected = uiState.quizType == QuizType.CHORD,
                         onClick = { viewModel.onQuizTypeChanged(QuizType.CHORD) }
-                    ) {
-                        Text("Chord Quiz")
-                    }
-                    OutlinedButton(
+                    )
+                    QuizTypeButton(
+                        label = "Note Quiz",
+                        isSelected = uiState.quizType == QuizType.NOTE,
                         onClick = { viewModel.onQuizTypeChanged(QuizType.NOTE) }
-                    ) {
-                        Text("Note Quiz")
-                    }
-                    OutlinedButton(
+                    )
+                    QuizTypeButton(
+                        label = "Strum Practice",
+                        isSelected = strumPracticeSelected,
                         onClick = {
                             strumPracticeSelected = true
                             onStrumPracticeSelected()
                         }
-                    ) {
-                        Text("Strum Practice")
-                    }
-                    OutlinedButton(
+                    )
+                    QuizTypeButton(
+                        label = "Tuner",
+                        isSelected = uiState.quizType == QuizType.TUNER,
                         onClick = { viewModel.onQuizTypeChanged(QuizType.TUNER) }
-                    ) {
-                        Text("Tuner")
-                    }
+                    )
                 }
 
                 Text(
@@ -148,6 +148,23 @@ fun InstrumentSelectionScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun QuizTypeButton(
+    label: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    if (isSelected) {
+        Button(onClick = onClick) {
+            Text(label)
+        }
+    } else {
+        OutlinedButton(onClick = onClick) {
+            Text(label)
         }
     }
 }
