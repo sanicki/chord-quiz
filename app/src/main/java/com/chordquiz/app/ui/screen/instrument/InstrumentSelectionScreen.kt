@@ -14,10 +14,11 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilledButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -90,34 +91,34 @@ fun InstrumentSelectionScreen(
                 // Quiz type chip selector — FlowRow in the body gives full screen width
                 // and allows proper wrapping so all chips are always visible.
                 FlowRow(
-                    horizontalArrangement = Arrangement.Center,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
-                    FilterChip(
-                        selected = uiState.quizType == QuizType.CHORD,
-                        onClick = { viewModel.onQuizTypeChanged(QuizType.CHORD) },
-                        label = { Text("Chord Quiz") }
-                    )
-                    FilterChip(
-                        selected = uiState.quizType == QuizType.NOTE,
-                        onClick = { viewModel.onQuizTypeChanged(QuizType.NOTE) },
-                        label = { Text("Note Quiz") }
-                    )
-                    FilterChip(
-                        selected = strumPracticeSelected,
+                    FilledButton(
+                        onClick = { viewModel.onQuizTypeChanged(QuizType.CHORD) }
+                    ) {
+                        Text("Chord Quiz")
+                    }
+                    OutlinedButton(
+                        onClick = { viewModel.onQuizTypeChanged(QuizType.NOTE) }
+                    ) {
+                        Text("Note Quiz")
+                    }
+                    OutlinedButton(
                         onClick = {
                             strumPracticeSelected = true
                             onStrumPracticeSelected()
-                        },
-                        label = { Text("Strum Practice") }
-                    )
-                    FilterChip(
-                        selected = uiState.quizType == QuizType.TUNER,
-                        onClick = { viewModel.onQuizTypeChanged(QuizType.TUNER) },
-                        label = { Text("Tuner") }
-                    )
+                        }
+                    ) {
+                        Text("Strum Practice")
+                    }
+                    OutlinedButton(
+                        onClick = { viewModel.onQuizTypeChanged(QuizType.TUNER) }
+                    ) {
+                        Text("Tuner")
+                    }
                 }
 
                 Text(

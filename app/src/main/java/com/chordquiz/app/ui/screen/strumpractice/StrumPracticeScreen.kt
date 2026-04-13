@@ -1,11 +1,8 @@
 package com.chordquiz.app.ui.screen.strumpractice
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.indication
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,18 +30,16 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.minimumInteractiveComponentSize
-import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -119,15 +114,15 @@ fun StrumPracticeScreen(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Note Type", style = MaterialTheme.typography.labelLarge)
                 FlowRow(
-                    horizontalArrangement = Arrangement.Center,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     StrumNote.entries.forEach { note ->
-                        FilterChip(
-                            selected = note == uiState.noteType,
-                            onClick = { viewModel.onNoteTypeChanged(note) },
-                            label = { StrumNoteSymbol(noteType = note) }
-                        )
+                        OutlinedButton(
+                            onClick = { viewModel.onNoteTypeChanged(note) }
+                        ) {
+                            StrumNoteSymbol(noteType = note)
+                        }
                     }
                 }
             }
@@ -149,23 +144,26 @@ fun StrumPracticeScreen(
 
                 // ── Saved patterns FlowRow ───────────────────────────────────
                 FlowRow(
-                    horizontalArrangement = Arrangement.Center,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    // Save chip (always first)
-                    StrumChip(
-                        label = "Save",
-                        selected = false,
+                    // Save button (always first)
+                    OutlinedButton(
                         onClick = { viewModel.showSaveDialog() }
-                    )
-                    // Saved pattern chips
+                    ) {
+                        Text("Save")
+                    }
+                    // Saved pattern buttons
                     uiState.savedPatterns.forEach { pattern ->
-                        StrumChip(
-                            label = pattern.toName(),
-                            selected = false,
+                        OutlinedButton(
                             onClick = { viewModel.loadPattern(pattern) },
-                            onLongClick = { viewModel.requestDeletePattern(pattern) }
-                        )
+                            modifier = Modifier.combinedClickable(
+                                onClick = { viewModel.loadPattern(pattern) },
+                                onLongClick = { viewModel.requestDeletePattern(pattern) }
+                            )
+                        ) {
+                            Text(pattern.toName())
+                        }
                     }
                 }
             }
@@ -319,40 +317,6 @@ private fun SlotBox(
             fontWeight = FontWeight.Bold,
             color = contentColor
         )
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun StrumChip(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    onLongClick: () -> Unit = {}
-) {
-    val interactionSource  = remember { MutableInteractionSource() }
-    val bgColor            = if (selected) MaterialTheme.colorScheme.primaryContainer
-                             else MaterialTheme.colorScheme.surfaceVariant
-    val textColor          = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
-                             else MaterialTheme.colorScheme.onSurfaceVariant
-    val borderColor        = if (selected) MaterialTheme.colorScheme.primaryContainer
-                             else MaterialTheme.colorScheme.outline
-
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(bgColor)
-            .border(width = 1.dp, color = borderColor, shape = RoundedCornerShape(8.dp))
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-            .indication(
-                interactionSource = interactionSource,
-                indication = ripple(bounded = false, color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
-            )
-            .minimumInteractiveComponentSize()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-    ) {
-        Text(text = label, style = MaterialTheme.typography.labelLarge, color = textColor)
     }
 }
 
