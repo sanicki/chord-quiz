@@ -1,5 +1,6 @@
 package com.chordquiz.app.ui.screen.strumpractice
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
@@ -143,6 +144,7 @@ fun StrumPracticeScreen(
                 }
 
                 // ── Saved patterns FlowRow ───────────────────────────────────
+                @OptIn(ExperimentalFoundationApi::class)
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()

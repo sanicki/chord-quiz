@@ -2,6 +2,7 @@ package com.chordquiz.app.ui.screen.library
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -163,6 +164,7 @@ fun ChordLibraryScreen(
                 }
 
                 // Filter buttons: All → difficulty groups → custom groups (newest first)
+                @OptIn(ExperimentalFoundationApi::class)
                 FlowRow(
                     modifier = Modifier.padding(horizontal = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
