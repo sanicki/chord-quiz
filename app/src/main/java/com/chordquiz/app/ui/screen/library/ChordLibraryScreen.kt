@@ -187,10 +187,12 @@ fun ChordLibraryScreen(
                         key(group.id) {
                             OutlinedButton(
                                 onClick = { viewModel.setGroupFilter(group) },
-                                modifier = Modifier.combinedClickable(
-                                    onClick = { viewModel.setGroupFilter(group) },
-                                    onLongClick = { viewModel.requestDeleteGroup(group) }
-                                )
+                                modifier = Modifier
+                                    .indication(interactionSource = remember { MutableInteractionSource() }, indication = {})
+                                    .combinedClickable(
+                                        onClick = { viewModel.setGroupFilter(group) },
+                                        onLongClick = { viewModel.requestDeleteGroup(group) }
+                                    )
                             ) {
                                 Text(group.toName())
                             }
