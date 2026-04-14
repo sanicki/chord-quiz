@@ -172,7 +172,7 @@ fun StrumPracticeScreen(
             // ── Delete and Play buttons ──────────────────────────────────────
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Center),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (uiState.selectedPatternId != null) {
