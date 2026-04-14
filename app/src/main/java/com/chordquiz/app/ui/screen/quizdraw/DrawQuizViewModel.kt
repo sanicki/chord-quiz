@@ -111,7 +111,7 @@ class DrawQuizViewModel @Inject constructor(
         }
     }
 
-    fun submitAnswer() {
+    fun skipQuestion() {
         val state = _uiState.value as? DrawQuizUiState.Active ?: return
         val inst = instrument ?: return
         val question = state.displayedQuestion ?: state.session.currentQuestion ?: return

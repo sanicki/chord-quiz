@@ -186,7 +186,7 @@ fun DrawQuizScreen(
                                             // PointerInputScope implements Density, so dp.toPx() works directly
                                             if (totalDragX > 80.dp.toPx()) {
                                                 showSwipeFlash = true
-                                                viewModel.submitAnswer()
+                                                viewModel.skipQuestion()
                                             }
                                             totalDragX = 0f
                                         },
@@ -263,10 +263,10 @@ fun DrawQuizScreen(
 
                     if (state.feedback == null) {
                         Button(
-                            onClick = { viewModel.submitAnswer() },
+                            onClick = { viewModel.skipQuestion() },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Submit")
+                            Text("Skip")
                         }
                     }
                 }
