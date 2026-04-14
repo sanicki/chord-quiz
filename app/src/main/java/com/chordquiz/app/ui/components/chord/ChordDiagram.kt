@@ -32,8 +32,7 @@ import com.chordquiz.app.ui.theme.NutBrown
 fun ChordDiagram(
     chord: ChordDefinition,
     modifier: Modifier = Modifier,
-    fingeringIndex: Int = 0,
-    showChordName: Boolean = false
+    fingeringIndex: Int = 0
 ) {
     val fingering = chord.fingerings.getOrElse(fingeringIndex) { chord.fingerings.first() }
     ChordDiagramCanvas(
