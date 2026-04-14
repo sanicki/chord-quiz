@@ -159,11 +159,11 @@ private fun QuizTypeButton(
     onClick: () -> Unit
 ) {
     if (isSelected) {
-        Button(onClick = onClick) {
+        Button(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
             Text(label)
         }
     } else {
-        OutlinedButton(onClick = onClick) {
+        OutlinedButton(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
             Text(label)
         }
     }

@@ -119,7 +119,8 @@ fun ChordLibraryScreen(
                             onClick = {
                                 dialogInitialName = ""
                                 showSaveDialog = true
-                            }
+                            },
+                            modifier = Modifier.weight(1f)
                         ) {
                             Text("Save")
                         }
@@ -127,7 +128,8 @@ fun ChordLibraryScreen(
                     Button(
                         onClick = {
                             onStartPractice(instrumentId, uiState.selectedChordIds.toList())
-                        }
+                        },
+                        modifier = Modifier.weight(1f)
                     ) {
                         Text("Start →")
                     }
@@ -157,27 +159,40 @@ fun ChordLibraryScreen(
                         text = "${uiState.selectedChordIds.size} selected",
                         style = MaterialTheme.typography.bodyMedium
                     )
-                    Row {
-                        TextButton(onClick = { viewModel.selectAll() }) { Text("All") }
-                        TextButton(onClick = { viewModel.clearSelection() }) { Text("None") }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        TextButton(
+                            onClick = { viewModel.selectAll() },
+                            modifier = Modifier.weight(1f)
+                        ) { Text("All") }
+                        TextButton(
+                            onClick = { viewModel.clearSelection() },
+                            modifier = Modifier.weight(1f)
+                        ) { Text("None") }
                     }
                 }
 
                 // Filter buttons: All → difficulty groups → custom groups (newest first)
                 @OptIn(ExperimentalFoundationApi::class)
                 FlowRow(
-                    modifier = Modifier.padding(horizontal = 12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     OutlinedButton(
-                        onClick = { viewModel.setGroupFilter(null) }
+                        onClick = { viewModel.setGroupFilter(null) },
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("All")
                     }
                     uiState.difficultyGroups.forEach { group ->
                         key(group.id) {
                             OutlinedButton(
-                                onClick = { viewModel.setGroupFilter(group) }
+                                onClick = { viewModel.setGroupFilter(group) },
+                                modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(group.toName())
                             }
@@ -187,6 +202,7 @@ fun ChordLibraryScreen(
                         key(group.id) {
                             Box(
                                 modifier = Modifier
+                                    .fillMaxWidth()
                                     .pointerInput(group.id) {
                                         detectTapGestures(
                                             onLongPress = {
@@ -196,7 +212,8 @@ fun ChordLibraryScreen(
                                     }
                             ) {
                                 OutlinedButton(
-                                    onClick = { viewModel.setGroupFilter(group) }
+                                    onClick = { viewModel.setGroupFilter(group) },
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Text(group.toName())
                                 }
@@ -307,16 +324,20 @@ fun ChordLibraryScreen(
                                 groupName, instrumentId, uiState.selectedChordIds.toList()
                             )
                         },
+                        modifier = Modifier.fillMaxWidth(),
                         enabled = groupName.isNotBlank() && uiState.selectedChordIds.size >= 2
                     ) {
                         Text("Save")
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = {
-                        showSaveDialog = false
-                        viewModel.clearSaveNameError()
-                    }) {
+                    TextButton(
+                        onClick = {
+                            showSaveDialog = false
+                            viewModel.clearSaveNameError()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Text("Cancel")
                     }
                 }
@@ -334,15 +355,21 @@ fun ChordLibraryScreen(
                     )
                 },
                 confirmButton = {
-                    Button(onClick = {
-                        viewModel.confirmReplaceGroup()
-                        showSaveDialog = false
-                    }) {
+                    Button(
+                        onClick = {
+                            viewModel.confirmReplaceGroup()
+                            showSaveDialog = false
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Text("Yes")
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { viewModel.cancelReplaceGroup() }) {
+                    TextButton(
+                        onClick = { viewModel.cancelReplaceGroup() },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Text("No")
                     }
                 }
@@ -355,12 +382,18 @@ fun ChordLibraryScreen(
                 onDismissRequest = { viewModel.cancelDeleteGroup() },
                 title = { Text("Delete group ${group.toName()}?") },
                 confirmButton = {
-                    Button(onClick = { viewModel.confirmDeleteGroup() }) {
+                    Button(
+                        onClick = { viewModel.confirmDeleteGroup() },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Text("Delete")
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { viewModel.cancelDeleteGroup() }) {
+                    TextButton(
+                        onClick = { viewModel.cancelDeleteGroup() },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Text("Cancel")
                     }
                 }
