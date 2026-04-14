@@ -104,14 +104,11 @@ fun ChordDiagramCanvas(
         } else {
             val labelText = "$baseFret"
             val labelStyle = TextStyle(color = onSurface, fontSize = (size.height * 0.07f / density).sp)
-            val measured = textMeasurer.measure(labelText, style = labelStyle)
-            drawText(
+            drawCenteredText(
                 textMeasurer = textMeasurer,
                 text = labelText,
-                topLeft = Offset(
-                    x = effectiveLeftPad - size.width * 0.12f,
-                    y = topPad - measured.size.height / 2f
-                ),
+                centerX = effectiveLeftPad - size.width * 0.12f,
+                centerY = topPad,
                 style = labelStyle
             )
         }

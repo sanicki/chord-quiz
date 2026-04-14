@@ -478,15 +478,12 @@ private fun FretItem(
                     color     = onSurface.copy(alpha = 0.6f),
                     fontSize  = (size.height * 0.32f / density).sp
                 )
-                val labelMeasured = textMeasurer.measure(labelText, style = labelStyle)
-                drawText(
+                drawCenteredText(
                     textMeasurer = textMeasurer,
                     text          = labelText,
-                    topLeft       = Offset(
-                        x = (leftPad - labelMeasured.size.width) / 2f,
-                        y = midY - labelMeasured.size.height / 2f
-                    ),
-                    style = labelStyle
+                    centerX       = leftPad / 2f,
+                    centerY       = midY,
+                    style         = labelStyle
                 )
             }
 
@@ -551,11 +548,11 @@ private fun FretItem(
                                     color = col.copy(alpha = 0.85f),
                                     fontSize = (dotRadius * 2.2f / density).sp
                                 )
-                                val measured = textMeasurer.measure(label, style = labelStyle)
-                                drawText(
+                                drawCenteredText(
                                     textMeasurer = textMeasurer,
                                     text = label,
-                                    topLeft = Offset(x - measured.size.width / 2f, midY - measured.size.height / 2f),
+                                    centerX = x,
+                                    centerY = midY,
                                     style = labelStyle
                                 )
                             } else {
@@ -593,11 +590,11 @@ private fun FretItem(
                     )
                     val style   = if (hasFingerDot || isInBarre) styleOnDark else styleOnLight
                     val cx      = leftPad + s * strSpacing
-                    val measured = textMeasurer.measure(label, style = style)
-                    drawText(
+                    drawCenteredText(
                         textMeasurer = textMeasurer,
                         text          = label,
-                        topLeft       = Offset(cx - measured.size.width / 2f, midY - measured.size.height / 2f),
+                        centerX       = cx,
+                        centerY       = midY,
                         style         = style
                     )
                 }
