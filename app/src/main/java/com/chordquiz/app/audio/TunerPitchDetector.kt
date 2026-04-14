@@ -9,7 +9,6 @@ package com.chordquiz.app.audio
  */
 object TunerPitchDetector {
 
-    private const val SILENCE_THRESHOLD = 0.02f
     private const val YIN_THRESHOLD = 0.15f
     private const val YIN_FALLBACK_THRESHOLD = 0.35
 
@@ -28,7 +27,7 @@ object TunerPitchDetector {
         samples: ShortArray,
         sampleRate: Int = AudioRecorderManager.SAMPLE_RATE
     ): Float? {
-        if (PitchDetector.computeAmplitude(samples) < SILENCE_THRESHOLD) return null
+        if (PitchDetector.computeAmplitude(samples) < AudioConstants.SILENCE_THRESHOLD) return null
 
         // Clamp buffer to 4096 samples for consistent performance
         val n = minOf(samples.size, 4096)

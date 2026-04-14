@@ -1,5 +1,6 @@
 package com.chordquiz.app.domain
 
+import com.chordquiz.app.audio.AudioConstants
 import com.chordquiz.app.data.model.ChordDefinition
 import com.chordquiz.app.data.model.Note
 import com.chordquiz.app.domain.model.Difficulty
@@ -11,7 +12,7 @@ class EvaluateAudioAnswerUseCase @Inject constructor() {
      * Minimum normalized RMS amplitude required for audio to be processed.
      * Initialized to a safe default; updated by [calibrateNoise] at recorder start.
      */
-    var dynamicSilenceThreshold: Float = 0.02f
+    var dynamicSilenceThreshold: Float = AudioConstants.SILENCE_THRESHOLD
         private set
 
     /**
