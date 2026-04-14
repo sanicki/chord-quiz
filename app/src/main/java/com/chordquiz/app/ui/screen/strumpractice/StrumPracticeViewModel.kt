@@ -35,6 +35,7 @@ data class StrumPracticeUiState(
     val slots: List<StrumSlot> = defaultSlotsFor(StrumNote.EIGHTH),
     val activeSlotIndex: Int = -1,
     val savedPatterns: List<SavedPatternEntity> = emptyList(),
+    val selectedPatternId: Long? = null,
     val showSaveDialog: Boolean = false,
     val saveNameError: String? = null,
     val showReplaceDialog: Boolean = false,
@@ -177,7 +178,7 @@ class StrumPracticeViewModel @Inject constructor(
         val noteType = runCatching { StrumNote.valueOf(pattern.noteType) }.getOrNull() ?: return
         val slots = pattern.slotList().mapNotNull { runCatching { StrumSlot.valueOf(it) }.getOrNull() }
         if (slots.size != noteType.slotCount) return
-        _uiState.update { it.copy(noteType = noteType, slots = slots, bpm = pattern.bpm, activeSlotIndex = -1) }
+        _uiState.update { it.copy(noteType = noteType, slots = slots, bpm = pattern.bpm, activeSlotIndex = -1, selectedPatternId = pattern.id) }
         metronome.updateNoteType(noteType.slotCount, noteType.subdivisionsPerBeat)
         metronome.updateBpm(pattern.bpm)
     }

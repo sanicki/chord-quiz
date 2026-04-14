@@ -4,10 +4,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -125,6 +121,16 @@ fun ChordLibraryScreen(
                             Text("Save")
                         }
                     }
+                    if (uiState.activeGroupFilter?.isCustom() == true) {
+                        OutlinedButton(
+                            onClick = {
+                                viewModel.requestDeleteGroup(uiState.activeGroupFilter!!)
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Delete?")
+                        }
+                    }
                     Button(
                         onClick = {
                             onStartPractice(instrumentId, uiState.selectedChordIds.toList())
@@ -200,23 +206,11 @@ fun ChordLibraryScreen(
                     }
                     uiState.customGroups.forEach { group ->
                         key(group.id) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .pointerInput(group.id) {
-                                        detectTapGestures(
-                                            onLongPress = {
-                                                viewModel.requestDeleteGroup(group)
-                                            }
-                                        )
-                                    }
+                            OutlinedButton(
+                                onClick = { viewModel.setGroupFilter(group) },
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                OutlinedButton(
-                                    onClick = { viewModel.setGroupFilter(group) },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text(group.toName())
-                                }
+                                Text(group.toName())
                             }
                         }
                     }
