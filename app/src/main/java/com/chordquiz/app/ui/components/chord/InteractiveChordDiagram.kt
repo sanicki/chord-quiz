@@ -60,6 +60,9 @@ private val NUT_AREA_HEIGHT = 36.dp
 private const val LEFT_PAD_FRAC = 0.12f   // space for fret-number label
 private const val RIGHT_PAD_FRAC = 0.04f
 
+// Fraction of row height used as the dot/symbol radius — shared by FretItem for all rows.
+private const val DOT_RADIUS_FRAC = 0.33f
+
 /** Returns the x-centre pixel of [stringIndex] for a composable of [width] px. */
 private fun stringX(stringIndex: Int, width: Float, stringCount: Int): Float {
     val leftPad = width * LEFT_PAD_FRAC
@@ -213,19 +216,25 @@ fun InteractiveChordDiagram(
     // ── Layout ──────────────────────────────────────────────────────────────
     Column(modifier = modifier) {
 
-        // Fixed above-nut row with open/muted markers (always visible, never scrolls).
-        AboveNutRow(
+        // Fixed nut row (fret 0) with open/muted markers (always visible, never scrolls).
+        FretItem(
+            fretNumber = 0,
             stringCount = stringCount,
             positions = positions,
-            noteQuizMode = noteQuizMode,
+            barre = null,
+            hintPositions = emptySet(),
+            incorrectFrettedStrings = incorrectFrettedStrings,
             incorrectMutedStrings = incorrectMutedStrings,
             missedMuteStrings = missedMuteStrings,
-            incorrectFrettedStrings = incorrectFrettedStrings,
+            noteQuizMode = noteQuizMode,
             noteDisplayMode = noteDisplayMode,
             openStringNotes = openStringNotes,
             openStringOctaves = openStringOctaves,
             textMeasurer = textMeasurer,
             onTap = { stringIndex -> handleAboveNutTap(stringIndex) },
+            onBarreDragStart = {},
+            onBarreDragUpdate = {},
+            onBarreDragEnd = {},
             modifier = Modifier
                 .fillMaxWidth()
                 .height(NUT_AREA_HEIGHT)
@@ -321,118 +330,6 @@ fun InteractiveChordDiagram(
 // ── Private composables ──────────────────────────────────────────────────────
 
 /**
- * Fixed-height row drawn above the nut.  Shows open-circle / muted-X / open-dot markers
- * and the nut bar.  Handles taps for open↔muted toggling (chord mode) or open-dot
- * toggling (note-quiz mode).
- */
-@Composable
-private fun AboveNutRow(
-    stringCount: Int,
-    positions: List<StringPosition>,
-    noteQuizMode: Boolean,
-    incorrectMutedStrings: Set<Int>,
-    missedMuteStrings: Set<Int>,
-    incorrectFrettedStrings: Set<Int>,
-    noteDisplayMode: NoteDisplayMode = NoteDisplayMode.NONE,
-    openStringNotes: List<Note> = emptyList(),
-    openStringOctaves: List<Int> = emptyList(),
-    textMeasurer: TextMeasurer? = null,
-    onTap: (stringIndex: Int) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val onSurface = MaterialTheme.colorScheme.onSurface
-
-    Canvas(
-        modifier = modifier
-            .pointerInput(stringCount, noteQuizMode) {
-                awaitEachGesture {
-                    val down = awaitFirstDown(requireUnconsumed = false)
-                    val startX = down.position.x
-                    val startY = down.position.y
-                    var moved = false
-                    while (true) {
-                        val event = awaitPointerEvent()
-                        val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                        val dx = change.position.x - startX
-                        val dy = change.position.y - startY
-                        if (sqrt((dx * dx + dy * dy).toDouble()).toFloat() > viewConfiguration.touchSlop) {
-                            moved = true
-                            break
-                        }
-                        if (!change.pressed) {
-                            if (!moved) onTap(stringIndexAt(startX, size.width.toFloat(), stringCount))
-                            break
-                        }
-                    }
-                }
-            }
-    ) {
-        val leftPad = size.width * LEFT_PAD_FRAC
-        val strArea = size.width * (1f - LEFT_PAD_FRAC - RIGHT_PAD_FRAC)
-        val strSpacing = strArea / (stringCount - 1).coerceAtLeast(1)
-        val nutThickness = 5f
-
-        // String lines (above nut)
-        for (s in 0 until stringCount) {
-            val x = leftPad + s * strSpacing
-            drawLine(onSurface, Offset(x, 0f), Offset(x, size.height - nutThickness), 1.5f)
-        }
-
-        // Nut bar
-        drawRect(
-            color = NutBrown,
-            topLeft = Offset(leftPad, size.height - nutThickness),
-            size = Size(strArea, nutThickness)
-        )
-
-        // Open/muted/dot markers
-        val symbolY = size.height * 0.38f
-        val symbolR = minOf(size.width * 0.028f, size.height * 0.28f)
-
-        positions.forEach { pos ->
-            val x = leftPad + pos.stringIndex * strSpacing
-            if (noteQuizMode) {
-                if (pos.fret == 0) {
-                    drawCircle(FingerDot, symbolR, Offset(x, symbolY))
-                }
-            } else {
-                when (pos.fret) {
-                    -1 -> {
-                        val col = if (pos.stringIndex in incorrectMutedStrings) IncorrectRed else MutedGray
-                        drawLine(col, Offset(x - symbolR, symbolY - symbolR), Offset(x + symbolR, symbolY + symbolR), 2f)
-                        drawLine(col, Offset(x + symbolR, symbolY - symbolR), Offset(x - symbolR, symbolY + symbolR), 2f)
-                    }
-                    0 -> {
-                        if (noteDisplayMode.showOpenStringsOnly() && textMeasurer != null
-                            && pos.stringIndex < openStringNotes.size
-                            && pos.stringIndex < openStringOctaves.size) {
-                            // Draw note name instead of open-circle for open strings
-                            val note = openStringNotes[pos.stringIndex]
-                            val label = note.displayNameFor(noteDisplayMode)
-                            val labelStyle = TextStyle(
-                                color = onSurface.copy(alpha = 0.85f),
-                                fontSize = (symbolR * 2.2f / density).sp
-                            )
-                            val measured = textMeasurer.measure(label, style = labelStyle)
-                            drawText(
-                                textMeasurer = textMeasurer,
-                                text = label,
-                                topLeft = Offset(x - measured.size.width / 2f, symbolY - measured.size.height / 2f),
-                                style = labelStyle
-                            )
-                        } else {
-                            val col = if (pos.stringIndex in missedMuteStrings || pos.stringIndex in incorrectFrettedStrings)
-                                IncorrectRed else onSurface
-                            drawCircle(col, symbolR, Offset(x, symbolY), style = Stroke(2f))
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
  * One horizontal fret band in the LazyColumn.
  *
  * Static grid (fret wire + string lines) is drawn with [drawWithCache] so the geometry
@@ -456,6 +353,8 @@ private fun FretItem(
     barre: BarreSegment?,
     hintPositions: Set<Pair<Int, Int>>,
     incorrectFrettedStrings: Set<Int>,
+    incorrectMutedStrings: Set<Int> = emptySet(),
+    missedMuteStrings: Set<Int> = emptySet(),
     noteQuizMode: Boolean,
     noteDisplayMode: NoteDisplayMode,
     openStringNotes: List<Note>,
@@ -480,16 +379,30 @@ private fun FretItem(
                 val strXs = List(stringCount) { s -> leftPad + s * strSpacing }
 
                 onDrawBehind {
-                    // Fret wire at top of this row
-                    drawLine(
-                        color = onSurface.copy(alpha = 0.4f),
-                        start = Offset(leftPad, 0f),
-                        end = Offset(leftPad + strArea, 0f),
-                        strokeWidth = 1.5f
-                    )
-                    // String lines (vertical, full row height)
-                    for (x in strXs) {
-                        drawLine(onSurface, Offset(x, 0f), Offset(x, size.height), 1.5f)
+                    if (fretNumber == 0) {
+                        // String lines stop at nut bar
+                        val nutY = size.height - 5f
+                        for (x in strXs) {
+                            drawLine(onSurface, Offset(x, 0f), Offset(x, nutY), 1.5f)
+                        }
+                        // Nut bar drawn on top of strings
+                        drawRect(
+                            color = NutBrown,
+                            topLeft = Offset(leftPad, nutY),
+                            size = Size(strArea, 5f)
+                        )
+                    } else {
+                        // Fret wire at top of this row
+                        drawLine(
+                            color = onSurface.copy(alpha = 0.4f),
+                            start = Offset(leftPad, 0f),
+                            end = Offset(leftPad + strArea, 0f),
+                            strokeWidth = 1.5f
+                        )
+                        // String lines (vertical, full row height)
+                        for (x in strXs) {
+                            drawLine(onSurface, Offset(x, 0f), Offset(x, size.height), 1.5f)
+                        }
                     }
                 }
             }
@@ -517,7 +430,7 @@ private fun FretItem(
                             val isHorizontal = abs(dx) >= abs(dy)
                             when {
                                 !isHorizontal -> break  // vertical → LazyColumn scrolls
-                                dx < 0 && !noteQuizMode -> {
+                                dx < 0 && !noteQuizMode && fretNumber > 0 -> {
                                     // Right-to-left horizontal → barre drag
                                     barreDragActive = true
                                     onBarreDragStart(startString)
@@ -533,7 +446,15 @@ private fun FretItem(
 
                         if (!change.pressed) {
                             when {
-                                !classified     -> onTap(startString)  // pure tap (≤ touchSlop)
+                                !classified -> {
+                                    val cx = stringX(startString, size.width.toFloat(), stringCount)
+                                    val dotR = size.height * DOT_RADIUS_FRAC
+                                    val midY = size.height / 2f
+                                    val tapDist = sqrt(
+                                        ((startX - cx) * (startX - cx) + (startY - midY) * (startY - midY)).toDouble()
+                                    ).toFloat()
+                                    if (tapDist <= dotR) onTap(startString)
+                                }
                                 barreDragActive -> onBarreDragEnd()
                             }
                             break
@@ -548,24 +469,26 @@ private fun FretItem(
             val strArea    = size.width * (1f - LEFT_PAD_FRAC - RIGHT_PAD_FRAC)
             val strSpacing = strArea / (stringCount - 1).coerceAtLeast(1)
             val midY       = size.height / 2f
-            val dotRadius  = size.height * 0.33f
+            val dotRadius  = size.height * DOT_RADIUS_FRAC
 
-            // Fret number label (left margin)
-            val labelText  = fretNumber.toString()
-            val labelStyle = TextStyle(
-                color     = onSurface.copy(alpha = 0.6f),
-                fontSize  = (size.height * 0.32f / density).sp
-            )
-            val labelMeasured = textMeasurer.measure(labelText, style = labelStyle)
-            drawText(
-                textMeasurer = textMeasurer,
-                text          = labelText,
-                topLeft       = Offset(
-                    x = (leftPad - labelMeasured.size.width) / 2f,
-                    y = midY - labelMeasured.size.height / 2f
-                ),
-                style = labelStyle
-            )
+            // Fret number label (left margin) — hidden for fret 0 (nut row)
+            if (fretNumber > 0) {
+                val labelText  = fretNumber.toString()
+                val labelStyle = TextStyle(
+                    color     = onSurface.copy(alpha = 0.6f),
+                    fontSize  = (size.height * 0.32f / density).sp
+                )
+                val labelMeasured = textMeasurer.measure(labelText, style = labelStyle)
+                drawText(
+                    textMeasurer = textMeasurer,
+                    text          = labelText,
+                    topLeft       = Offset(
+                        x = (leftPad - labelMeasured.size.width) / 2f,
+                        y = midY - labelMeasured.size.height / 2f
+                    ),
+                    style = labelStyle
+                )
+            }
 
             // Tap-target hint circles (very light, behind dots)
             for (s in 0 until stringCount) {
@@ -573,8 +496,8 @@ private fun FretItem(
                 drawCircle(Color.Gray.copy(alpha = 0.10f), dotRadius, Offset(cx, midY))
             }
 
-            // Finger dots
-            positions.filter { it.fret == fretNumber }.forEach { pos ->
+            // Finger dots (for fretted notes; fret 0 in chord mode uses open/muted markers below)
+            positions.filter { it.fret == fretNumber && (fretNumber > 0 || noteQuizMode) }.forEach { pos ->
                 val x        = leftPad + pos.stringIndex * strSpacing
                 val dotColor = if (pos.stringIndex in incorrectFrettedStrings) IncorrectRed else FingerDot
                 drawCircle(dotColor, dotRadius, Offset(x, midY))
@@ -584,7 +507,6 @@ private fun FretItem(
             barre?.takeIf { it.fret == fretNumber }?.let { b ->
                 val x1 = leftPad + b.fromString * strSpacing
                 val x2 = leftPad + b.toString  * strSpacing
-                val dotRadius = size.height * 0.33f
                 // Calculate the outer edges of the barre line - encompassing the first and last finger dots
                 val startX = x1 - dotRadius
                 val endX = x2 + dotRadius
@@ -606,6 +528,43 @@ private fun FretItem(
                     size       = Size(endX - startX, dotRadius * 2),
                     cornerRadius = CornerRadius(dotRadius, dotRadius)
                 )
+            }
+
+            // Open/muted markers for fret 0 row in chord mode (open circle, muted X)
+            if (fretNumber == 0 && !noteQuizMode) {
+                positions.forEach { pos ->
+                    val x = leftPad + pos.stringIndex * strSpacing
+                    when (pos.fret) {
+                        -1 -> {
+                            val col = if (pos.stringIndex in incorrectMutedStrings) IncorrectRed else MutedGray
+                            drawLine(col, Offset(x - dotRadius, midY - dotRadius), Offset(x + dotRadius, midY + dotRadius), 2f)
+                            drawLine(col, Offset(x + dotRadius, midY - dotRadius), Offset(x - dotRadius, midY + dotRadius), 2f)
+                        }
+                        0 -> {
+                            val col = if (pos.stringIndex in missedMuteStrings || pos.stringIndex in incorrectFrettedStrings)
+                                IncorrectRed else onSurface
+                            if (noteDisplayMode.showOpenStringsOnly()
+                                && pos.stringIndex < openStringNotes.size
+                                && pos.stringIndex < openStringOctaves.size) {
+                                val note = openStringNotes[pos.stringIndex]
+                                val label = note.displayNameFor(noteDisplayMode)
+                                val labelStyle = TextStyle(
+                                    color = col.copy(alpha = 0.85f),
+                                    fontSize = (dotRadius * 2.2f / density).sp
+                                )
+                                val measured = textMeasurer.measure(label, style = labelStyle)
+                                drawText(
+                                    textMeasurer = textMeasurer,
+                                    text = label,
+                                    topLeft = Offset(x - measured.size.width / 2f, midY - measured.size.height / 2f),
+                                    style = labelStyle
+                                )
+                            } else {
+                                drawCircle(col, dotRadius, Offset(x, midY), style = Stroke(2f))
+                            }
+                        }
+                    }
+                }
             }
 
             // Hint dots (yellow)
