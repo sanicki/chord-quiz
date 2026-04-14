@@ -1,5 +1,8 @@
 package com.chordquiz.app.ui.screen.setup
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -10,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chordquiz.app.data.model.QuizMode
@@ -39,14 +43,14 @@ fun PracticeSetupScreen(
             )
         }
     ) { innerPadding ->
-        androidx.compose.foundation.layout.Box(
-            modifier = androidx.compose.ui.Modifier
+        Box(
+            modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
             PracticeSetupContent(
                 headerText = {
-                    androidx.compose.material3.Text(
+                    Text(
                         "${selectedChordIds.size} chords selected",
                         style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
                         color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant

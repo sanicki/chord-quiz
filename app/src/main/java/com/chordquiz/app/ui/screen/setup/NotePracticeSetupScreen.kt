@@ -1,5 +1,8 @@
 package com.chordquiz.app.ui.screen.setup
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -10,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -44,14 +48,14 @@ fun NotePracticeSetupScreen(
             )
         }
     ) { innerPadding ->
-        androidx.compose.foundation.layout.Box(
-            modifier = androidx.compose.ui.Modifier
+        Box(
+            modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
             PracticeSetupContent(
                 headerText = {
-                    androidx.compose.material3.Text(
+                    Text(
                         buildAnnotatedString {
                             withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
                                 append(noteMode.displayName)
