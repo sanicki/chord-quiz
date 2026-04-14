@@ -2,12 +2,10 @@ package com.chordquiz.app.ui.screen.library
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.indication
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -186,11 +184,17 @@ fun ChordLibraryScreen(
                     uiState.customGroups.forEach { group ->
                         key(group.id) {
                             OutlinedButton(
-                                onClick = { /* disabled - handled by combinedClickable */ },
-                                modifier = Modifier.combinedClickable(
-                                    onClick = { viewModel.setGroupFilter(group) },
-                                    onLongClick = { viewModel.requestDeleteGroup(group) }
-                                )
+                                onClick = { /* disabled - handled by pointerInput */ },
+                                modifier = Modifier.pointerInput(group.id) {
+                                    detectTapGestures(
+                                        onTap = {
+                                            viewModel.setGroupFilter(group)
+                                        },
+                                        onLongPress = {
+                                            viewModel.requestDeleteGroup(group)
+                                        }
+                                    )
+                                }
                             ) {
                                 Text(group.toName())
                             }
