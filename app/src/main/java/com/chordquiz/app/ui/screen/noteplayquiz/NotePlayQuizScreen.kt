@@ -3,34 +3,22 @@ package com.chordquiz.app.ui.screen.noteplayquiz
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.scaleIn
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,8 +36,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chordquiz.app.data.model.NoteMode
 import com.chordquiz.app.data.model.QuizQuestion
 import com.chordquiz.app.ui.components.AudioWaveform
-import com.chordquiz.app.ui.theme.CorrectGreen
-import com.chordquiz.app.ui.theme.IncorrectRed
+import com.chordquiz.app.ui.components.QuizFeedbackBanner
+import com.chordquiz.app.ui.components.QuizProgressBar
+import com.chordquiz.app.ui.components.QuizTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -112,20 +101,11 @@ fun NotePlayQuizScreen(
 
             Scaffold(
                 topBar = {
-                    TopAppBar(
-                        title = {
-                            Text("Question ${session.currentIndex + 1} / ${session.questions.size}")
-                        },
-                        navigationIcon = {
-                            IconButton(onClick = onNavigateBack) {
-                                Icon(Icons.Default.Close, "Exit quiz")
-                            }
-                        },
-                        actions = {
-                            IconButton(onClick = { viewModel.skipQuestion() }) {
-                                Icon(Icons.Default.SkipNext, "Skip")
-                            }
-                        }
+                    QuizTopBar(
+                        currentIndex = session.currentIndex,
+                        totalCount = session.questions.size,
+                        onBack = onNavigateBack,
+                        onSkip = { viewModel.skipQuestion() }
                     )
                 }
             ) { innerPadding ->
@@ -137,9 +117,9 @@ fun NotePlayQuizScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    LinearProgressIndicator(
-                        progress = { session.currentIndex.toFloat() / session.questions.size },
-                        modifier = Modifier.fillMaxWidth()
+                    QuizProgressBar(
+                        currentIndex = session.currentIndex,
+                        totalCount = session.questions.size
                     )
 
                     Text("Pluck this note:", style = MaterialTheme.typography.bodyLarge)
@@ -173,35 +153,16 @@ fun NotePlayQuizScreen(
                     }
 
                     // Feedback banner
-                    AnimatedVisibility(
+                    QuizFeedbackBanner(
+                        isCorrect = state.feedback?.isCorrect == true,
+                        message = when (state.feedback) {
+                            NotePlayFeedback.CORRECT -> "✓ Correct!"
+                            NotePlayFeedback.INCORRECT -> "✗ Skipped"
+                            null -> ""
+                        },
                         visible = state.feedback != null,
-                        enter = fadeIn() + scaleIn()
-                    ) {
-                        val isCorrect = state.feedback?.isCorrect == true
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(
-                                    if (isCorrect) CorrectGreen.copy(alpha = 0.15f)
-                                    else IncorrectRed.copy(alpha = 0.15f),
-                                    MaterialTheme.shapes.medium
-                                )
-                                .padding(16.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = when (state.feedback) {
-                                    NotePlayFeedback.CORRECT -> "✓ Correct!"
-                                    NotePlayFeedback.INCORRECT -> "✗ Skipped"
-                                    null -> ""
-                                },
-                                color = if (isCorrect) CorrectGreen else IncorrectRed,
-                                fontWeight = FontWeight.Bold,
-                                style = MaterialTheme.typography.titleMedium,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
+                        animate = true
+                    )
 
                     Spacer(Modifier.weight(1f))
 
