@@ -39,29 +39,13 @@ class BuildNoteQuizSessionUseCase @Inject constructor() {
     ): QuizSession {
         val pool = buildNotePool(instrument)
 
-        val shuffled = pool.shuffled()
-        val questions = if (shuffled.size >= questionCount) {
-            shuffled.take(questionCount).map { entry ->
-                QuizQuestion.NoteQuestion(
-                    note = entry.note,
-                    octave = entry.octave,
-                    displayName = entry.displayName,
-                    noteMode = noteMode
-                )
-            }
-        } else {
-            val repeated = mutableListOf<PoolEntry>()
-            while (repeated.size < questionCount) {
-                repeated.addAll(shuffled.shuffled())
-            }
-            repeated.take(questionCount).map { entry ->
-                QuizQuestion.NoteQuestion(
-                    note = entry.note,
-                    octave = entry.octave,
-                    displayName = entry.displayName,
-                    noteMode = noteMode
-                )
-            }
+        val questions = buildQuestionList(pool, questionCount).map { entry ->
+            QuizQuestion.NoteQuestion(
+                note = entry.note,
+                octave = entry.octave,
+                displayName = entry.displayName,
+                noteMode = noteMode
+            )
         }
 
         return QuizSession(
