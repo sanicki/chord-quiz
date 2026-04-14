@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -183,20 +185,21 @@ fun ChordLibraryScreen(
                     }
                     uiState.customGroups.forEach { group ->
                         key(group.id) {
-                            OutlinedButton(
-                                onClick = { /* disabled - handled by pointerInput */ },
-                                modifier = Modifier.pointerInput(group.id) {
-                                    detectTapGestures(
-                                        onTap = {
-                                            viewModel.setGroupFilter(group)
-                                        },
-                                        onLongPress = {
-                                            viewModel.requestDeleteGroup(group)
-                                        }
-                                    )
-                                }
+                            Box(
+                                modifier = Modifier
+                                    .pointerInput(group.id) {
+                                        detectTapGestures(
+                                            onLongPress = {
+                                                viewModel.requestDeleteGroup(group)
+                                            }
+                                        )
+                                    }
                             ) {
-                                Text(group.toName())
+                                OutlinedButton(
+                                    onClick = { viewModel.setGroupFilter(group) }
+                                ) {
+                                    Text(group.toName())
+                                }
                             }
                         }
                     }
