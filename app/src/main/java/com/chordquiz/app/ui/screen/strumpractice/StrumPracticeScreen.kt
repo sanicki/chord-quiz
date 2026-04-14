@@ -158,7 +158,7 @@ fun StrumPracticeScreen(
                     // Saved pattern buttons
                     uiState.savedPatterns.forEach { pattern ->
                         OutlinedButton(
-                            onClick = { viewModel.loadPattern(pattern) },
+                            onClick = { /* disabled - handled by combinedClickable */ },
                             modifier = Modifier.combinedClickable(
                                 onClick = { viewModel.loadPattern(pattern) },
                                 onLongClick = { viewModel.requestDeletePattern(pattern) }

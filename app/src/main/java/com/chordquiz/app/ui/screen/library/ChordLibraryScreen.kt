@@ -186,8 +186,7 @@ fun ChordLibraryScreen(
                     uiState.customGroups.forEach { group ->
                         key(group.id) {
                             OutlinedButton(
-                                onClick = { viewModel.setGroupFilter(group) },
-                                interactionSource = remember { MutableInteractionSource() },
+                                onClick = { /* disabled - handled by combinedClickable */ },
                                 modifier = Modifier.combinedClickable(
                                     onClick = { viewModel.setGroupFilter(group) },
                                     onLongClick = { viewModel.requestDeleteGroup(group) }
