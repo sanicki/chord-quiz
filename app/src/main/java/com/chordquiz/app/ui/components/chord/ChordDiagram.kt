@@ -145,16 +145,10 @@ fun ChordDiagramCanvas(
             val x = effectiveLeftPad + pos.stringIndex * stringSpacing
             when {
                 pos.fret == -1 -> {
-                    // Muted X
-                    drawLine(mutedColor, Offset(x - symbolRadius, symbolY - symbolRadius),
-                        Offset(x + symbolRadius, symbolY + symbolRadius), 2f)
-                    drawLine(mutedColor, Offset(x + symbolRadius, symbolY - symbolRadius),
-                        Offset(x - symbolRadius, symbolY + symbolRadius), 2f)
+                    drawMutedX(Offset(x, symbolY), symbolRadius, mutedColor)
                 }
                 pos.fret == 0 -> {
-                    // Open circle
-                    drawCircle(effectiveOpenColor, symbolRadius, Offset(x, symbolY), style =
-                        androidx.compose.ui.graphics.drawscope.Stroke(width = 2f))
+                    drawOpenCircle(Offset(x, symbolY), symbolRadius, effectiveOpenColor)
                 }
             }
         }

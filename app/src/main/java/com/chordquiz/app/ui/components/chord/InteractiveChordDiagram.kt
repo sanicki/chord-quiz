@@ -537,8 +537,7 @@ private fun FretItem(
                     when (pos.fret) {
                         -1 -> {
                             val col = if (pos.stringIndex in incorrectMutedStrings) IncorrectRed else MutedGray
-                            drawLine(col, Offset(x - dotRadius, midY - dotRadius), Offset(x + dotRadius, midY + dotRadius), 2f)
-                            drawLine(col, Offset(x + dotRadius, midY - dotRadius), Offset(x - dotRadius, midY + dotRadius), 2f)
+                            drawMutedX(Offset(x, midY), dotRadius, col)
                         }
                         0 -> {
                             val col = if (pos.stringIndex in missedMuteStrings || pos.stringIndex in incorrectFrettedStrings)
@@ -560,7 +559,7 @@ private fun FretItem(
                                     style = labelStyle
                                 )
                             } else {
-                                drawCircle(col, dotRadius, Offset(x, midY), style = Stroke(2f))
+                                drawOpenCircle(Offset(x, midY), dotRadius, col)
                             }
                         }
                     }
