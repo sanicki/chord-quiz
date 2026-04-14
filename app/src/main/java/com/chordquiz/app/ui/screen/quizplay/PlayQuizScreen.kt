@@ -176,14 +176,14 @@ fun PlayQuizScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             val isLast = session.currentIndex + 1 >= session.questions.size
-                            Text(if (isLast) "Finish" else "Next  →")
+                            Text(if (isLast) "Finish" else "Next")
                         }
                     } else {
                         OutlinedButton(
                             onClick = { viewModel.skipQuestion() },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Skip  ⏭")
+                            Text("Skip")
                         }
                     }
                 }
