@@ -55,17 +55,32 @@ data class ChordDefinitionEntity(
                 "${f.baseFret}|$barre|$positions"
             }
 
-        fun deserializeFingerings(json: String): List<Fingering> =
-            json.split(";").map { part ->
-                val sections = part.split("|")
-                val baseFret = sections[0].toInt()
-                val barre = if (sections[1] == "null") null else {
-                    val b = sections[1].split(",")
-                    BarreSegment(b[0].toInt(), b[1].toInt(), b[2].toInt())
-                }
-                val frets = sections[2].split(",").map { it.toInt() }
-                val positions = frets.mapIndexed { idx, fret -> StringPosition(idx, fret) }
-                Fingering(positions = positions, barre = barre, baseFret = baseFret)
+        fun deserializeFingerings(json: String): List<Fingering> {
+            if (json.isBlank()) return emptyList()
+            return json.split(";").mapNotNull { part ->
+                runCatching {
+                    val sections = part.split("|")
+                    if (sections.size < 3) return@runCatching null
+
+                    val baseFret = sections[0].toInt()
+
+                    val barre = if (sections[1] == "null") {
+                        null
+                    } else {
+                        val barreComponents = sections[1].split(",")
+                        if (barreComponents.size != 3) return@runCatching null
+                        BarreSegment(
+                            fret = barreComponents[0].toInt(),
+                            fromString = barreComponents[1].toInt(),
+                            toString = barreComponents[2].toInt()
+                        )
+                    }
+
+                    val frets = sections[2].split(",").map { it.toInt() }
+                    val positions = frets.mapIndexed { idx, fret -> StringPosition(idx, fret) }
+                    Fingering(positions = positions, barre = barre, baseFret = baseFret)
+                }.getOrNull()
             }
+        }
     }
 }
