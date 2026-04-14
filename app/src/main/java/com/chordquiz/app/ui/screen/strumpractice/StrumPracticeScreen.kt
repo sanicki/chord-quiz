@@ -160,13 +160,8 @@ fun StrumPracticeScreen(
                     // Saved pattern buttons
                     uiState.savedPatterns.forEach { pattern ->
                         OutlinedButton(
-                            onClick = { /* disabled - handled by combinedClickable */ },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .combinedClickable(
-                                    onClick = { viewModel.loadPattern(pattern) },
-                                    onLongClick = { viewModel.requestDeletePattern(pattern) }
-                                )
+                            onClick = { viewModel.loadPattern(pattern) },
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(pattern.toName())
                         }
@@ -174,8 +169,23 @@ fun StrumPracticeScreen(
                 }
             }
 
-            // ── Play / Stop button ───────────────────────────────────────────
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            // ── Delete and Play buttons ──────────────────────────────────────
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (uiState.selectedPatternId != null) {
+                    OutlinedButton(
+                        onClick = {
+                            uiState.savedPatterns.find { it.id == uiState.selectedPatternId }?.let {
+                                viewModel.requestDeletePattern(it)
+                            }
+                        }
+                    ) {
+                        Text("Delete?")
+                    }
+                }
                 FilledIconButton(
                     onClick = viewModel::togglePlay,
                     modifier = Modifier.size(64.dp)
