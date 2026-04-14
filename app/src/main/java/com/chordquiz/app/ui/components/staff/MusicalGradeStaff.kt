@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import com.chordquiz.app.audio.NotePlayer
+import com.chordquiz.app.domain.semitoneToDiatonic
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
@@ -48,21 +49,6 @@ private val NOTE_COLORS: List<Color> = run {
     (0..8).map { i ->
         if (i <= 4) lerp(red, yellow, i / 4f) else lerp(yellow, green, (i - 4) / 4f)
     }
-}
-
-/**
- * Converts a semitone value (0 = C) to a diatonic step within the octave (0 = C … 6 = B).
- * Accidentals are mapped to the nearest diatonic position (same logic as MusicStaff.kt).
- */
-private fun semitoneToDiatonic(semitone: Int): Int = when (semitone % 12) {
-    0, 1  -> 0   // C, C#
-    2     -> 1   // D
-    3, 4  -> 2   // Eb/D#, E
-    5, 6  -> 3   // F, F#
-    7, 8  -> 4   // G, G#
-    9, 10 -> 5   // A, Bb
-    11    -> 6   // B
-    else  -> 0
 }
 
 /**
