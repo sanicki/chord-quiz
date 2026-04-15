@@ -32,7 +32,6 @@ class ChordRecognizer @Inject constructor() {
 
     companion object {
         private const val WINDOW_SIZE = 4
-        private const val MIN_CONFIDENCE = 0.4f
     }
 
     /** Configure the recognizer with difficulty-specific settings. */
@@ -102,24 +101,20 @@ class ChordRecognizer @Inject constructor() {
             .filter { chroma[it.semitone] >= AudioConstants.CHROMA_THRESHOLD }
             .toSet()
 
-        // Early termination: find the best match with early termination
+        // Find the best matching chord
         var bestChord: ChordDefinition? = null
         var bestScore = 0f
         for (chord in candidateChords) {
             val score = computeScore(chroma, chord)
-            // Early termination: if we've already found a very high score, stop early
-            if (score >= MIN_CONFIDENCE && score > bestScore) {
+            if (score > bestScore) {
                 bestScore = score
                 bestChord = chord
                 // Early termination: if we have a perfect match, no need to continue
                 if (bestScore >= 0.95f) break
-            } else if (score > bestScore) {
-                bestScore = score
-                bestChord = chord
             }
         }
 
-        val matchId = if (bestScore >= MIN_CONFIDENCE) bestChord?.id else null
+        val matchId = bestChord?.id
         pushWindow(matchId)
 
         // Require consistent detection across all [windowSize] frames
