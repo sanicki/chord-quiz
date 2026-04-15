@@ -85,7 +85,7 @@ fun ChordPreviewScreen(
             ) {
                 Button(
                     onClick = onBegin,
-                    modifier = Modifier.align(Alignment.CenterEnd)
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Begin  →")
                 }

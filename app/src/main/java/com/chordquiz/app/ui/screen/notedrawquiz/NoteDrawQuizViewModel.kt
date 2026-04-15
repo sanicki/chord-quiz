@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 import javax.inject.Inject
 
 sealed class NoteDrawQuizUiState {
@@ -56,6 +57,7 @@ class NoteDrawQuizViewModel @Inject constructor(
 
     private var instrument: Instrument? = null
     private var startTime: Long = 0L
+    private var autoAdvanceJob: Job? = null
 
     fun initialize(
         instrumentId: String,
@@ -192,6 +194,27 @@ class NoteDrawQuizViewModel @Inject constructor(
         val midi = openNote.semitone + 12 * (openOctave + 1) + fret
         viewModelScope.launch {
             NotePlayer.playNote(midi, inst.id)
+        }
+    }
+
+    fun skipQuestion() {
+        val state = _uiState.value as? NoteDrawQuizUiState.Active ?: return
+        val question = state.displayedQuestion ?: state.session.currentQuestion ?: return
+        val noteQuestion = question as? QuizQuestion.NoteQuestion ?: return
+        val answer = QuizAnswer(
+            question = noteQuestion,
+            isCorrect = false,
+            userFingering = state.currentFingering
+        )
+        val newSession = state.session.copy(answers = state.session.answers + answer)
+        _uiState.value = state.copy(
+            session = newSession,
+            feedback = NoteDrawFeedback.INCORRECT
+        )
+        autoAdvanceJob?.cancel()
+        autoAdvanceJob = viewModelScope.launch {
+            delay(1500)
+            nextQuestion()
         }
     }
 

@@ -4,8 +4,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -111,21 +109,32 @@ fun ChordLibraryScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (uiState.selectedChordIds.size >= 2
-                        && uiState.activeGroupFilter == null) {
+                    if (uiState.selectedChordIds.size >= 2) {
                         OutlinedButton(
                             onClick = {
                                 dialogInitialName = ""
                                 showSaveDialog = true
-                            }
+                            },
+                            modifier = Modifier.weight(1f)
                         ) {
                             Text("Save")
+                        }
+                    }
+                    if (uiState.activeGroupFilter?.isCustom() == true) {
+                        OutlinedButton(
+                            onClick = {
+                                viewModel.requestDeleteGroup(uiState.activeGroupFilter!!)
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Delete?")
                         }
                     }
                     Button(
                         onClick = {
                             onStartPractice(instrumentId, uiState.selectedChordIds.toList())
-                        }
+                        },
+                        modifier = Modifier.weight(1f)
                     ) {
                         Text("Start →")
                     }
@@ -155,46 +164,40 @@ fun ChordLibraryScreen(
                         text = "${uiState.selectedChordIds.size} selected",
                         style = MaterialTheme.typography.bodyMedium
                     )
-                    Row {
-                        TextButton(onClick = { viewModel.selectAll() }) { Text("All") }
-                        TextButton(onClick = { viewModel.clearSelection() }) { Text("None") }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        TextButton(
+                            onClick = { viewModel.selectAll() },
+                            modifier = Modifier.weight(1f)
+                        ) { Text("All") }
+                        TextButton(
+                            onClick = { viewModel.clearSelection() },
+                            modifier = Modifier.weight(1f)
+                        ) { Text("None") }
                     }
                 }
 
                 // Filter buttons: All → difficulty groups → custom groups (newest first)
                 @OptIn(ExperimentalFoundationApi::class)
                 FlowRow(
-                    modifier = Modifier.padding(horizontal = 12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     OutlinedButton(
-                        onClick = { viewModel.setGroupFilter(null) }
+                        onClick = { viewModel.setGroupFilter(null) },
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("All")
-                    }
-                    uiState.difficultyGroups.forEach { group ->
-                        key(group.id) {
-                            OutlinedButton(
-                                onClick = { viewModel.setGroupFilter(group) }
-                            ) {
-                                Text(group.toName())
-                            }
-                        }
                     }
                     uiState.customGroups.forEach { group ->
                         key(group.id) {
                             OutlinedButton(
-                                onClick = { /* disabled - handled by pointerInput */ },
-                                modifier = Modifier.pointerInput(group.id) {
-                                    detectTapGestures(
-                                        onTap = {
-                                            viewModel.setGroupFilter(group)
-                                        },
-                                        onLongPress = {
-                                            viewModel.requestDeleteGroup(group)
-                                        }
-                                    )
-                                }
+                                onClick = { viewModel.setGroupFilter(group) },
+                                modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(group.toName())
                             }
@@ -304,16 +307,20 @@ fun ChordLibraryScreen(
                                 groupName, instrumentId, uiState.selectedChordIds.toList()
                             )
                         },
+                        modifier = Modifier.fillMaxWidth(),
                         enabled = groupName.isNotBlank() && uiState.selectedChordIds.size >= 2
                     ) {
                         Text("Save")
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = {
-                        showSaveDialog = false
-                        viewModel.clearSaveNameError()
-                    }) {
+                    TextButton(
+                        onClick = {
+                            showSaveDialog = false
+                            viewModel.clearSaveNameError()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Text("Cancel")
                     }
                 }
@@ -331,15 +338,21 @@ fun ChordLibraryScreen(
                     )
                 },
                 confirmButton = {
-                    Button(onClick = {
-                        viewModel.confirmReplaceGroup()
-                        showSaveDialog = false
-                    }) {
+                    Button(
+                        onClick = {
+                            viewModel.confirmReplaceGroup()
+                            showSaveDialog = false
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Text("Yes")
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { viewModel.cancelReplaceGroup() }) {
+                    TextButton(
+                        onClick = { viewModel.cancelReplaceGroup() },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Text("No")
                     }
                 }
@@ -352,12 +365,18 @@ fun ChordLibraryScreen(
                 onDismissRequest = { viewModel.cancelDeleteGroup() },
                 title = { Text("Delete group ${group.toName()}?") },
                 confirmButton = {
-                    Button(onClick = { viewModel.confirmDeleteGroup() }) {
+                    Button(
+                        onClick = { viewModel.confirmDeleteGroup() },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Text("Delete")
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { viewModel.cancelDeleteGroup() }) {
+                    TextButton(
+                        onClick = { viewModel.cancelDeleteGroup() },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Text("Cancel")
                     }
                 }

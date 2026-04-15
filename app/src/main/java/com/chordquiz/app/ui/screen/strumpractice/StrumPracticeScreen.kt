@@ -120,7 +120,8 @@ fun StrumPracticeScreen(
                 ) {
                     StrumNote.entries.forEach { note ->
                         OutlinedButton(
-                            onClick = { viewModel.onNoteTypeChanged(note) }
+                            onClick = { viewModel.onNoteTypeChanged(note) },
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             StrumNoteSymbol(noteType = note)
                         }
@@ -151,18 +152,16 @@ fun StrumPracticeScreen(
                 ) {
                     // Save button (always first)
                     OutlinedButton(
-                        onClick = { viewModel.showSaveDialog() }
+                        onClick = { viewModel.showSaveDialog() },
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Save")
                     }
                     // Saved pattern buttons
                     uiState.savedPatterns.forEach { pattern ->
                         OutlinedButton(
-                            onClick = { /* disabled - handled by combinedClickable */ },
-                            modifier = Modifier.combinedClickable(
-                                onClick = { viewModel.loadPattern(pattern) },
-                                onLongClick = { viewModel.requestDeletePattern(pattern) }
-                            )
+                            onClick = { viewModel.loadPattern(pattern) },
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(pattern.toName())
                         }
@@ -170,8 +169,23 @@ fun StrumPracticeScreen(
                 }
             }
 
-            // ── Play / Stop button ───────────────────────────────────────────
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            // ── Delete and Play buttons ──────────────────────────────────────
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (uiState.selectedPatternId != null) {
+                    OutlinedButton(
+                        onClick = {
+                            uiState.savedPatterns.find { it.id == uiState.selectedPatternId }?.let {
+                                viewModel.requestDeletePattern(it)
+                            }
+                        }
+                    ) {
+                        Text("Delete?")
+                    }
+                }
                 FilledIconButton(
                     onClick = viewModel::togglePlay,
                     modifier = Modifier.size(64.dp)
@@ -209,10 +223,16 @@ fun StrumPracticeScreen(
                 Text("A pattern named \"${uiState.replacePatternName}\" already exists. Replace it?")
             },
             confirmButton = {
-                Button(onClick = { viewModel.confirmReplacePattern() }) { Text("Yes") }
+                Button(
+                    onClick = { viewModel.confirmReplacePattern() },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Yes") }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.cancelReplacePattern() }) { Text("No") }
+                TextButton(
+                    onClick = { viewModel.cancelReplacePattern() },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("No") }
             }
         )
     }
@@ -223,10 +243,16 @@ fun StrumPracticeScreen(
             onDismissRequest = { viewModel.cancelDeletePattern() },
             title = { Text("Delete pattern ${pattern.toName()}?") },
             confirmButton = {
-                Button(onClick = { viewModel.confirmDeletePattern() }) { Text("Delete") }
+                Button(
+                    onClick = { viewModel.confirmDeletePattern() },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Delete") }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.cancelDeletePattern() }) { Text("Cancel") }
+                TextButton(
+                    onClick = { viewModel.cancelDeletePattern() },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Cancel") }
             }
         )
     }
@@ -358,10 +384,17 @@ private fun SavePatternDialog(
             )
         },
         confirmButton = {
-            Button(onClick = { onSave(name) }, enabled = name.isNotBlank()) { Text("Save") }
+            Button(
+                onClick = { onSave(name) },
+                enabled = name.isNotBlank(),
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("Save") }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("Cancel") }
         }
     )
 }

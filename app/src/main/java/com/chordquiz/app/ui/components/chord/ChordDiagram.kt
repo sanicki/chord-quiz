@@ -32,8 +32,7 @@ import com.chordquiz.app.ui.theme.NutBrown
 fun ChordDiagram(
     chord: ChordDefinition,
     modifier: Modifier = Modifier,
-    fingeringIndex: Int = 0,
-    showChordName: Boolean = false
+    fingeringIndex: Int = 0
 ) {
     val fingering = chord.fingerings.getOrElse(fingeringIndex) { chord.fingerings.first() }
     ChordDiagramCanvas(
@@ -105,14 +104,11 @@ fun ChordDiagramCanvas(
         } else {
             val labelText = "$baseFret"
             val labelStyle = TextStyle(color = onSurface, fontSize = (size.height * 0.07f / density).sp)
-            val measured = textMeasurer.measure(labelText, style = labelStyle)
-            drawText(
+            drawCenteredText(
                 textMeasurer = textMeasurer,
                 text = labelText,
-                topLeft = Offset(
-                    x = effectiveLeftPad - size.width * 0.12f,
-                    y = topPad - measured.size.height / 2f
-                ),
+                centerX = effectiveLeftPad - size.width * 0.12f,
+                centerY = topPad,
                 style = labelStyle
             )
         }
@@ -146,16 +142,10 @@ fun ChordDiagramCanvas(
             val x = effectiveLeftPad + pos.stringIndex * stringSpacing
             when {
                 pos.fret == -1 -> {
-                    // Muted X
-                    drawLine(mutedColor, Offset(x - symbolRadius, symbolY - symbolRadius),
-                        Offset(x + symbolRadius, symbolY + symbolRadius), 2f)
-                    drawLine(mutedColor, Offset(x + symbolRadius, symbolY - symbolRadius),
-                        Offset(x - symbolRadius, symbolY + symbolRadius), 2f)
+                    drawMutedX(Offset(x, symbolY), symbolRadius, mutedColor)
                 }
                 pos.fret == 0 -> {
-                    // Open circle
-                    drawCircle(effectiveOpenColor, symbolRadius, Offset(x, symbolY), style =
-                        androidx.compose.ui.graphics.drawscope.Stroke(width = 2f))
+                    drawOpenCircle(Offset(x, symbolY), symbolRadius, effectiveOpenColor)
                 }
             }
         }

@@ -1,13 +1,9 @@
 package com.chordquiz.app.ui.screen.quizdraw
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,18 +15,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -53,11 +44,12 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chordquiz.app.data.model.QuizQuestion
+import com.chordquiz.app.ui.components.QuizFeedbackBanner
+import com.chordquiz.app.ui.components.QuizProgressBar
+import com.chordquiz.app.ui.components.QuizTopBar
 import com.chordquiz.app.ui.components.chord.ChordDiagram
 import com.chordquiz.app.ui.components.chord.InteractiveChordDiagram
 import com.chordquiz.app.ui.screen.settings.SettingsViewModel
-import com.chordquiz.app.ui.theme.CorrectGreen
-import com.chordquiz.app.ui.theme.IncorrectRed
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -140,15 +132,10 @@ fun DrawQuizScreen(
 
             Scaffold(
                 topBar = {
-                    TopAppBar(
-                        title = {
-                            Text("Question ${state.displayedQuestionIndex + 1} / ${session.questions.size}")
-                        },
-                        navigationIcon = {
-                            IconButton(onClick = onNavigateBack) {
-                                Icon(Icons.Default.Close, "Exit quiz")
-                            }
-                        }
+                    QuizTopBar(
+                        currentIndex = state.displayedQuestionIndex,
+                        totalCount = session.questions.size,
+                        onBack = onNavigateBack
                     )
                 }
             ) { innerPadding ->
@@ -160,9 +147,9 @@ fun DrawQuizScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    LinearProgressIndicator(
-                        progress = { state.displayedQuestionIndex.toFloat() / session.questions.size },
-                        modifier = Modifier.fillMaxWidth()
+                    QuizProgressBar(
+                        currentIndex = state.displayedQuestionIndex,
+                        totalCount = session.questions.size
                     )
 
                     Spacer(Modifier.height(8.dp))
@@ -199,7 +186,7 @@ fun DrawQuizScreen(
                                             // PointerInputScope implements Density, so dp.toPx() works directly
                                             if (totalDragX > 80.dp.toPx()) {
                                                 showSwipeFlash = true
-                                                viewModel.submitAnswer()
+                                                viewModel.skipQuestion()
                                             }
                                             totalDragX = 0f
                                         },
@@ -244,30 +231,21 @@ fun DrawQuizScreen(
                     }
 
                     // Feedback banner
-                    AnimatedVisibility(
+                    val isCorrect = state.feedback == AnswerFeedback.CORRECT
+                    QuizFeedbackBanner(
+                        isCorrect = isCorrect,
+                        message = if (isCorrect) "Correct!" else "Not quite!",
                         visible = state.feedback != null,
-                        enter = fadeIn(),
-                        exit = fadeOut()
-                    ) {
-                        val isCorrect = state.feedback == AnswerFeedback.CORRECT
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(
-                                    if (isCorrect) CorrectGreen.copy(alpha = 0.15f)
-                                    else IncorrectRed.copy(alpha = 0.15f),
-                                    MaterialTheme.shapes.medium
-                                )
-                                .padding(12.dp)
-                        ) {
-                            Column(Modifier.fillMaxWidth()) {
-                                Text(
-                                    text = if (isCorrect) "Correct!" else "Not quite!",
-                                    color = if (isCorrect) CorrectGreen else IncorrectRed,
-                                    fontWeight = FontWeight.Bold,
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                                if (!isCorrect) {
+                        animate = false,
+                        content = if (!isCorrect) {
+                            {
+                                Column(Modifier.fillMaxWidth()) {
+                                    Text(
+                                        text = "Not quite!",
+                                        color = MaterialTheme.colorScheme.error,
+                                        fontWeight = FontWeight.Bold,
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
                                     Spacer(Modifier.height(8.dp))
                                     Text("Correct fingering:", style = MaterialTheme.typography.bodySmall)
                                     ChordDiagram(
@@ -278,17 +256,17 @@ fun DrawQuizScreen(
                                     )
                                 }
                             }
-                        }
-                    }
+                        } else null
+                    )
 
                     Spacer(Modifier.weight(1f))
 
                     if (state.feedback == null) {
                         Button(
-                            onClick = { viewModel.submitAnswer() },
+                            onClick = { viewModel.skipQuestion() },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Submit")
+                            Text("Skip")
                         }
                     }
                 }

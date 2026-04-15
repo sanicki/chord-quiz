@@ -31,7 +31,7 @@ class ChordRecognizer @Inject constructor() {
     private var windowSize: Int = Difficulty.DEFAULT.windowSize
 
     companion object {
-        private const val CHROMA_THRESHOLD = 0.15
+        private const val WINDOW_SIZE = 4
         private const val MIN_CONFIDENCE = 0.4f
     }
 
@@ -99,7 +99,7 @@ class ChordRecognizer @Inject constructor() {
 
         // Detected note set: chroma bins whose normalized energy exceeds the threshold
         val detectedNotes = Note.entries
-            .filter { chroma[it.semitone] >= CHROMA_THRESHOLD }
+            .filter { chroma[it.semitone] >= AudioConstants.CHROMA_THRESHOLD }
             .toSet()
 
         // Early termination: find the best match with early termination

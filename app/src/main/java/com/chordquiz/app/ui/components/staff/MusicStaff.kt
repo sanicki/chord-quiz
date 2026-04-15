@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
+import com.chordquiz.app.domain.semitoneToDiatonic
 
 data class StaffNote(val semitone: Int, val octave: Int, val displayName: String)
 
@@ -155,28 +156,6 @@ private fun noteToStaffStep(semitone: Int, octave: Int, clef: Clef): Int {
     val absoluteStep = octave * 7 + diatonicStep
     // Middle C (C4) is at absolute step = 4*7 + 0 = 28
     return absoluteStep - 28
-}
-
-/**
- * Converts semitone (0=C) to diatonic step (0=C, 1=D, 2=E, 3=F, 4=G, 5=A, 6=B).
- * For accidentals (sharps/flats), rounds to nearest diatonic note.
- */
-private fun semitoneToDiatonic(semitone: Int): Int {
-    return when (semitone % 12) {
-        0 -> 0   // C
-        1 -> 0   // C#/Db → use C position (accidental drawn separately)
-        2 -> 1   // D
-        3 -> 2   // D#/Eb → use E position
-        4 -> 2   // E
-        5 -> 3   // F
-        6 -> 3   // F#/Gb → use F position
-        7 -> 4   // G
-        8 -> 4   // G#/Ab → use G position
-        9 -> 5   // A
-        10 -> 5  // A#/Bb → use A position
-        11 -> 6  // B
-        else -> 0
-    }
 }
 
 /**
