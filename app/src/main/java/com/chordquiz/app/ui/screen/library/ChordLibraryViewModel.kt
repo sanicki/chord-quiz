@@ -7,7 +7,6 @@ import com.chordquiz.app.data.model.ChordDefinition
 import com.chordquiz.app.data.model.Instrument
 import com.chordquiz.app.data.repository.GroupsRepository
 import com.chordquiz.app.data.repository.InstrumentRepository
-import com.chordquiz.app.domain.ChordDifficultyCalculator
 import com.chordquiz.app.domain.GetChordsForInstrumentUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -26,7 +25,6 @@ data class ChordLibraryUiState(
     val filteredChords: List<ChordDefinition> = emptyList(),
     val selectedChordIds: Set<String> = emptySet(),
     val activeGroupFilter: GroupEntity? = null,
-    val difficultyGroups: List<GroupEntity> = emptyList(),
     val customGroups: List<GroupEntity> = emptyList(),
     val isLoading: Boolean = true,
     val deleteConfirmGroup: GroupEntity? = null,
@@ -63,7 +61,6 @@ class ChordLibraryViewModel @Inject constructor(
                 groupFilter,
                 groupsRepository.getGroupsFlow(instrumentId)
             ) { chords, groupF, customGroups ->
-                val difficultyGroups = groupsRepository.computeDifficultyGroups(instrumentId, chords)
                 val filtered = if (groupF != null) {
                     val groupIds = groupF.chordIdsList()
                     chords.filter { it.id in groupIds }
@@ -75,7 +72,6 @@ class ChordLibraryViewModel @Inject constructor(
                     allChords = chords,
                     filteredChords = filtered,
                     activeGroupFilter = groupF,
-                    difficultyGroups = difficultyGroups,
                     customGroups = customGroups.sortedByDescending { it.createdAt },
                     isLoading = false
                 )
@@ -90,15 +86,7 @@ class ChordLibraryViewModel @Inject constructor(
     }
 
     fun setGroupFilter(group: GroupEntity?) {
-        val wasOnGroup = groupFilter.value != null
         groupFilter.value = group
-        if (group != null) {
-            val existingIds = _uiState.value.allChords.map { it.id }.toSet()
-            val selected = group.chordIdsList().filter { it in existingIds }.toSet()
-            _uiState.value = _uiState.value.copy(selectedChordIds = selected)
-        } else if (wasOnGroup) {
-            _uiState.value = _uiState.value.copy(selectedChordIds = emptySet())
-        }
     }
 
     fun requestDeleteGroup(group: GroupEntity) {
@@ -124,16 +112,6 @@ class ChordLibraryViewModel @Inject constructor(
     fun requestSaveGroup(name: String, instrumentId: String, chordIds: List<String>) {
         val trimmed = name.trim()
         if (trimmed.isBlank() || chordIds.size < 2) return
-
-        val isPreset = trimmed.equals("Easy", ignoreCase = true) ||
-                trimmed.equals("Moderate", ignoreCase = true) ||
-                trimmed.equals("Difficult", ignoreCase = true)
-        if (isPreset) {
-            _uiState.value = _uiState.value.copy(
-                saveNameError = "This name is already used by a built-in group."
-            )
-            return
-        }
 
         pendingSaveName = trimmed
         pendingSaveInstrumentId = instrumentId

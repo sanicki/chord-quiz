@@ -4,7 +4,6 @@ import com.chordquiz.app.data.db.dao.ChordDao
 import com.chordquiz.app.data.db.dao.GroupDao
 import com.chordquiz.app.data.db.entity.GroupEntity
 import com.chordquiz.app.data.model.ChordDefinition
-import com.chordquiz.app.domain.ChordDifficultyCalculator
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
@@ -52,7 +51,4 @@ class GroupsRepositoryImpl @Inject constructor(
         if (chordIdsToRemove.isEmpty()) return 0
         return chordDao.deleteChordsById(chordIdsToRemove)
     }
-
-    override fun computeDifficultyGroups(instrumentId: String, chords: List<ChordDefinition>): List<GroupEntity> =
-        ChordDifficultyCalculator.buildDifficultyGroups(instrumentId, chords)
 }

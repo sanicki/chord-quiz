@@ -109,8 +109,7 @@ fun ChordLibraryScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (uiState.selectedChordIds.size >= 2
-                        && uiState.activeGroupFilter == null) {
+                    if (uiState.selectedChordIds.size >= 2) {
                         OutlinedButton(
                             onClick = {
                                 dialogInitialName = ""
@@ -193,16 +192,6 @@ fun ChordLibraryScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("All")
-                    }
-                    uiState.difficultyGroups.forEach { group ->
-                        key(group.id) {
-                            OutlinedButton(
-                                onClick = { viewModel.setGroupFilter(group) },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text(group.toName())
-                            }
-                        }
                     }
                     uiState.customGroups.forEach { group ->
                         key(group.id) {
