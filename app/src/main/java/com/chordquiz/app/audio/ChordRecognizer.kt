@@ -30,6 +30,9 @@ class ChordRecognizer @Inject constructor() {
     /** Window size for chord consistency checking, configurable by difficulty */
     private var windowSize: Int = Difficulty.DEFAULT.windowSize
 
+    /** Extra penalty factor for non-chord energy, configurable by difficulty */
+    private var extraPenaltyFactor: Double = Difficulty.DEFAULT.extraPenaltyFactor
+
     companion object {
         private const val WINDOW_SIZE = 4
     }
@@ -37,6 +40,7 @@ class ChordRecognizer @Inject constructor() {
     /** Configure the recognizer with difficulty-specific settings. */
     fun configure(difficulty: Difficulty) {
         windowSize = difficulty.windowSize
+        extraPenaltyFactor = difficulty.extraPenaltyFactor
         resetBuffer()
     }
 
@@ -140,7 +144,7 @@ class ChordRecognizer @Inject constructor() {
      *
      * Early termination optimization: if the score is already low, we can early terminate.
      */
-    private fun computeScore(chroma: DoubleArray, chord: ChordDefinition): Float {
+    internal fun computeScore(chroma: DoubleArray, chord: ChordDefinition): Float {
         val target = getChordComponents(chord)
         if (target.isEmpty()) return 0f
 
@@ -155,7 +159,7 @@ class ChordRecognizer @Inject constructor() {
         val extraEnergy = chroma.indices
             .filter { it !in targetSemitones }
             .sumOf { chroma[it] }
-        val extraPenalty = (extraEnergy / 12.0 * 0.4).coerceAtMost(0.25)
+        val extraPenalty = (extraEnergy / 12.0 * extraPenaltyFactor).coerceAtMost(extraPenaltyFactor * 0.625)
 
         val fingeringBonus = if (matchesFingeringTemplate(chroma, chord)) 0.1 else 0.0
 
