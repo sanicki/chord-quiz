@@ -2,6 +2,7 @@ package com.chordquiz.app.audio
 
 import com.chordquiz.app.data.model.ChordDefinition
 import com.chordquiz.app.data.model.Note
+import com.chordquiz.app.domain.model.Difficulty
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.ln
@@ -18,7 +19,7 @@ class ChordRecognizer @Inject constructor() {
     private var candidateChords: List<ChordDefinition> = emptyList()
 
     /**
-     * Rolling window of the last [WINDOW_SIZE] recognized chord IDs (null = no match).
+     * Rolling window of the last [windowSize] recognized chord IDs (null = no match).
      * A result is only emitted when all frames in the window agree on the same chord.
      */
     private val recentChordIds = ArrayDeque<String?>()
@@ -26,10 +27,18 @@ class ChordRecognizer @Inject constructor() {
     /** Cache for chord note components to avoid recomputation */
     private val chordComponentCache = mutableMapOf<String, Set<Note>>()
 
+    /** Window size for chord consistency checking, configurable by difficulty */
+    private var windowSize: Int = Difficulty.DEFAULT.windowSize
+
     companion object {
-        private const val WINDOW_SIZE = 4
         private const val CHROMA_THRESHOLD = 0.15
         private const val MIN_CONFIDENCE = 0.4f
+    }
+
+    /** Configure the recognizer with difficulty-specific settings. */
+    fun configure(difficulty: Difficulty) {
+        windowSize = difficulty.windowSize
+        resetBuffer()
     }
 
     /** Set the pool of chords to match against (the selected quiz chords). Resets the buffer. */
@@ -58,7 +67,7 @@ class ChordRecognizer @Inject constructor() {
      * Given a list of detected frequency bins (frequency + whitened magnitude from [PitchDetector]),
      * return the best-matching chord from [candidateChords] using a log-frequency-weighted chroma
      * vector. A result is only returned when the same chord is detected consistently across a
-     * [WINDOW_SIZE]-frame sliding window.
+     * [windowSize]-frame sliding window.
      *
      * Pass an empty list to indicate silence; this advances the window with a null entry so that
      * silence correctly resets the consistency requirement.
@@ -113,8 +122,8 @@ class ChordRecognizer @Inject constructor() {
         val matchId = if (bestScore >= MIN_CONFIDENCE) bestChord?.id else null
         pushWindow(matchId)
 
-        // Require consistent detection across all [WINDOW_SIZE] frames
-        if (recentChordIds.size < WINDOW_SIZE) return null
+        // Require consistent detection across all [windowSize] frames
+        if (recentChordIds.size < windowSize) return null
         val consistentId = recentChordIds.first()
         if (consistentId == null || recentChordIds.any { it != consistentId }) return null
 
@@ -192,6 +201,6 @@ class ChordRecognizer @Inject constructor() {
 
     private fun pushWindow(id: String?) {
         recentChordIds.addLast(id)
-        if (recentChordIds.size > WINDOW_SIZE) recentChordIds.removeFirst()
+        if (recentChordIds.size > windowSize) recentChordIds.removeFirst()
     }
 }
