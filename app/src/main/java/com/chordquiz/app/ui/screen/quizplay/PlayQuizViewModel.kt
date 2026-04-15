@@ -76,7 +76,10 @@ class PlayQuizViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            userPreferencesRepository.difficulty.collect { difficulty = it }
+            userPreferencesRepository.difficulty.collect {
+                difficulty = it
+                chordRecognizer.configure(it)
+            }
         }
     }
 
@@ -93,6 +96,8 @@ class PlayQuizViewModel @Inject constructor(
             val selected = allChords.filter { it.id in selectedChordIds }
             if (selected.isEmpty()) return@launch
 
+            val currentDifficulty = userPreferencesRepository.difficulty.first()
+            chordRecognizer.configure(currentDifficulty)
             chordRecognizer.setCandidates(selected)
             val session = buildSession(inst, QuizMode.PLAY, selected, questionCount, repeatMissed)
             startTime = System.currentTimeMillis()
