@@ -98,10 +98,7 @@ class ChordLibraryViewModel @Inject constructor(
         viewModelScope.launch {
             groupsRepository.deleteGroup(group.id)
             groupFilter.value = null
-            _uiState.value = _uiState.value.copy(
-                deleteConfirmGroup = null,
-                selectedChordIds = emptySet()
-            )
+            _uiState.value = _uiState.value.copy(deleteConfirmGroup = null)
         }
     }
 
@@ -154,8 +151,11 @@ class ChordLibraryViewModel @Inject constructor(
     }
 
     fun selectAll() {
-        val ids = _uiState.value.filteredChords.map { it.id }.toSet()
-        _uiState.value = _uiState.value.copy(selectedChordIds = ids)
+        val toAdd = _uiState.value.filteredChords.map { it.id }.toSet()
+        if (toAdd.isEmpty()) return
+        _uiState.value = _uiState.value.copy(
+            selectedChordIds = _uiState.value.selectedChordIds + toAdd
+        )
     }
 
     fun clearSelection() {
