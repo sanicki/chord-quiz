@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import com.chordquiz.app.audio.NotePlayer
 import com.chordquiz.app.domain.semitoneToDiatonic
 import kotlin.math.roundToInt
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 /** Nine quarter-notes spanning from E4 (bottom treble line) to F5 (top treble line). */
@@ -85,13 +86,17 @@ fun MusicalGradeStaff(
 
     LaunchedEffect(targetFilled) {
         animatable.snapTo(0f)
-        for (i in 0 until targetFilled) {
-            // Fire audio concurrently with the visual animation for this note.
-            launch { NotePlayer.playNote(GRADE_NOTES[i].midi, instrumentId, durationMs = 400) }
-            animatable.animateTo(
-                targetValue = (i + 1).toFloat(),
-                animationSpec = tween(durationMillis = 350)
-            )
+        // coroutineScope ensures all launched audio jobs (including the final note)
+        // complete before the block exits, preventing the last note from being cancelled.
+        coroutineScope {
+            for (i in 0 until targetFilled) {
+                // Fire audio concurrently with the visual animation for this note.
+                launch { NotePlayer.playNote(GRADE_NOTES[i].midi, instrumentId, durationMs = 400) }
+                animatable.animateTo(
+                    targetValue = (i + 1).toFloat(),
+                    animationSpec = tween(durationMillis = 350)
+                )
+            }
         }
     }
 
