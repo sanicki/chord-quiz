@@ -87,6 +87,7 @@ object DatabaseModule {
             ChordQuizDatabase::class.java,
             "chord_quiz.db"
         ).addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+            .setJournalMode(RoomDatabase.JournalMode.TRUNCATE)
             .addCallback(callback)
             .build()
             .also { database = it }
