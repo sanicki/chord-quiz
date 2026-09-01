@@ -241,6 +241,18 @@
             border-color: var(--text-muted);
         }
 
+        .setup-bottom-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .setup-bottom-row .btn-sm {
+            flex: 1;
+            padding: 10px 12px;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
         /* 3 Columns Layout for Chords */
         .chord-grid {
             display: grid;
@@ -522,7 +534,11 @@
         <div id="setup-error" class="error-msg"></div>
 
         <button class="btn btn-primary" id="start-quiz-btn">Start Quiz</button>
-        <button class="btn-sm" id="setup-save-quiz-btn">Save Quiz</button>
+        <div class="setup-bottom-row">
+            <button class="btn-sm" id="setup-save-quiz-btn">Save Quiz</button>
+            <button class="btn-sm" id="setup-share-quiz-btn">Share Quiz</button>
+        </div>
+        <div id="setup-toast" class="toast-msg"></div>
     </div>
 
     <!-- Active Quiz Screen -->
@@ -1312,8 +1328,13 @@
     document.getElementById('setup-save-quiz-btn').addEventListener('click', handleSaveQuiz);
 
     // Share Quiz functionality
-    document.getElementById('share-quiz-btn').addEventListener('click', () => {
-        const toast = document.getElementById('results-toast');
+    function handleShareQuiz() {
+        const errorEl = document.getElementById('setup-error');
+        if (selectedChordNames.size === 0) {
+            if (errorEl) errorEl.textContent = 'Please select at least 1 chord to share.';
+            return;
+        }
+
         const chordsArray = Array.from(selectedChordNames).join(',');
         const url = new URL(window.location.href);
         url.search = ''; // Clear existing query params
@@ -1323,12 +1344,24 @@
         url.searchParams.set('chords', chordsArray);
 
         navigator.clipboard.writeText(url.toString()).then(() => {
-            toast.textContent = 'Quiz URL copied to clipboard!';
-            setTimeout(() => { toast.textContent = ''; }, 3000);
+            const setupToast = document.getElementById('setup-toast');
+            const resultsToast = document.getElementById('results-toast');
+            
+            if (setupToast) setupToast.textContent = 'Quiz URL copied to clipboard!';
+            if (resultsToast) resultsToast.textContent = 'Quiz URL copied to clipboard!';
+            if (errorEl) errorEl.textContent = '';
+            
+            setTimeout(() => { 
+                if (setupToast) setupToast.textContent = ''; 
+                if (resultsToast) resultsToast.textContent = '';
+            }, 3000);
         }).catch(() => {
-            toast.textContent = 'Failed to copy URL.';
+            if (errorEl) errorEl.textContent = 'Failed to copy URL.';
         });
-    });
+    }
+
+    document.getElementById('share-quiz-btn').addEventListener('click', handleShareQuiz);
+    document.getElementById('setup-share-quiz-btn').addEventListener('click', handleShareQuiz);
 
     const strumZone = document.getElementById('strum-zone');
     let startX = 0;
