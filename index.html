@@ -213,6 +213,7 @@
             cursor: pointer;
             transition: all 0.2s ease;
             white-space: nowrap;
+            touch-action: manipulation;
         }
 
         .chord-toggle.active {
@@ -431,7 +432,7 @@
     <!-- Setup Screen -->
     <div id="setup-ui" class="setup-container">
         <h2 class="setup-title">Select Quiz Chords</h2>
-        <p class="instructions">Choose which chords to include. Hover over any chord for 2s to reveal its fingering.</p>
+        <p class="instructions">Tap to select/deselect. Long-press any chord button to toggle between its name and fingering.</p>
         
         <div class="setup-actions">
             <button class="btn-sm" id="select-all-btn">Select All</button>
@@ -454,7 +455,7 @@
 
         <div class="target-chord-container">
             <div class="target-chord" id="target-chord-name">Em</div>
-            <div id="hint-badge" class="hint-badge" style="display: none;">First Encounter - Study</div>
+            <div id="hint-badge" class="hint-badge" style="display: none;">First Encounter — Study</div>
         </div>
 
         <p class="instructions">Tap top row to toggle Open (O) / Mute (X). Tap fretboard to place fingers. Swipe across the strum box to submit.</p>
@@ -470,7 +471,7 @@
 
         <div class="strum-zone" id="strum-zone">
             <svg class="strum-icon" viewBox="0 0 24 24">
-                <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,24M11,6V18H13V6H11Z"/>
+                <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 12,24M11,6V18H13V6H11Z"/>
             </svg>
             <span class="strum-text">Swipe here to strum & submit</span>
         </div>
@@ -582,6 +583,7 @@
     ];
 
     let selectedChordNames = new Set();
+    let revealedChordNames = new Set(); // Tracks buttons toggled to show fingering
     let activeDatabase = [];
     let quizQueue = [];
     let currentStep = 0;
@@ -609,37 +611,60 @@
 
         chordDatabase.forEach(chord => {
             const btn = document.createElement('div');
-            btn.className = `chord-toggle ${selectedChordNames.has(chord.name) ? 'active' : ''}`;
-            btn.textContent = chord.name;
+            const isSelected = selectedChordNames.has(chord.name);
+            const isRevealed = revealedChordNames.has(chord.name);
 
-            let hoverTimer = null;
+            btn.className = `chord-toggle ${isSelected ? 'active' : ''} ${isRevealed ? 'revealed' : ''}`;
+            btn.textContent = isRevealed ? formatChordPattern(chord.frets) : chord.name;
 
-            btn.addEventListener('mouseenter', () => {
-                hoverTimer = setTimeout(() => {
-                    btn.textContent = formatChordPattern(chord.frets);
-                    btn.classList.add('revealed');
-                }, 2000);
-            });
+            let longPressTimer = null;
+            let isLongPress = false;
 
-            btn.addEventListener('mouseleave', () => {
-                if (hoverTimer) {
-                    clearTimeout(hoverTimer);
-                    hoverTimer = null;
+            const startPress = () => {
+                isLongPress = false;
+                longPressTimer = setTimeout(() => {
+                    isLongPress = true;
+                    // Toggle revealed state
+                    if (revealedChordNames.has(chord.name)) {
+                        revealedChordNames.delete(chord.name);
+                        btn.textContent = chord.name;
+                        btn.classList.remove('revealed');
+                    } else {
+                        revealedChordNames.add(chord.name);
+                        btn.textContent = formatChordPattern(chord.frets);
+                        btn.classList.add('revealed');
+                    }
+                }, 500); // 500ms long press duration
+            };
+
+            const cancelPress = () => {
+                if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
                 }
-                btn.textContent = chord.name;
-                btn.classList.remove('revealed');
-            });
+            };
 
-            btn.addEventListener('click', () => {
-                if (selectedChordNames.has(chord.name)) {
-                    selectedChordNames.delete(chord.name);
-                    btn.classList.remove('active');
-                } else {
-                    selectedChordNames.add(chord.name);
-                    btn.classList.add('active');
+            // Touch / Mouse event handlers for long-press & click separation
+            btn.addEventListener('pointerdown', startPress);
+            btn.addEventListener('pointerup', (e) => {
+                cancelPress();
+                if (!isLongPress) {
+                    // Regular tap/click to select/deselect chord
+                    if (selectedChordNames.has(chord.name)) {
+                        selectedChordNames.delete(chord.name);
+                        btn.classList.remove('active');
+                    } else {
+                        selectedChordNames.add(chord.name);
+                        btn.classList.add('active');
+                    }
+                    document.getElementById('setup-error').textContent = '';
                 }
-                document.getElementById('setup-error').textContent = '';
             });
+            btn.addEventListener('pointerleave', cancelPress);
+            btn.addEventListener('pointercancel', cancelPress);
+
+            // Prevent context menu on long press
+            btn.addEventListener('contextmenu', (e) => e.preventDefault());
 
             grid.appendChild(btn);
         });
