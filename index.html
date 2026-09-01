@@ -501,6 +501,7 @@
         </svg>
     </button>
 
+    <!-- Setup Screen -->
     <div id="setup-ui" class="setup-container">
         <h2 class="setup-title">Select Quiz Chords</h2>
         <p class="instructions">Tap to select/deselect. Long-press any chord button to toggle between its name and fingering.</p>
@@ -524,6 +525,7 @@
         <button class="btn-sm" id="setup-save-quiz-btn">Save Quiz</button>
     </div>
 
+    <!-- Active Quiz Screen -->
     <div id="quiz-ui" style="display: none; flex-direction: column; gap: 10px;">
         <header>
             <span class="progress-text" id="progress-indicator">Chord 1/0</span>
@@ -559,6 +561,7 @@
         </div>
     </div>
 
+    <!-- Results Screen -->
     <div id="results-ui" class="results-container">
         <h2>Quiz Complete!</h2>
         <div class="grade-badge" id="grade-display">A+</div>
@@ -840,7 +843,9 @@
         dropdown.appendChild(placeholder);
 
         const presets = getStoredPresets();
-        Object.keys(presets).forEach(name => {
+        const sortedPresetNames = Object.keys(presets).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+        
+        sortedPresetNames.forEach(name => {
             const opt = document.createElement('option');
             opt.value = name;
             opt.textContent = name;
