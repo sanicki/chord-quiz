@@ -248,7 +248,7 @@
             gap: 8px;
             margin-top: 0;
             margin-bottom: 0;
-            max-height: 380px;
+            max-height: calc((41px * 7) + (8px * 6));
             overflow-y: auto;
             padding-right: 4px;
         }
@@ -501,7 +501,6 @@
         </svg>
     </button>
 
-    <!-- Setup Screen -->
     <div id="setup-ui" class="setup-container">
         <h2 class="setup-title">Select Quiz Chords</h2>
         <p class="instructions">Tap to select/deselect. Long-press any chord button to toggle between its name and fingering.</p>
@@ -522,9 +521,9 @@
         <div id="setup-error" class="error-msg"></div>
 
         <button class="btn btn-primary" id="start-quiz-btn">Start Quiz</button>
+        <button class="btn-sm" id="setup-save-quiz-btn">Save Quiz</button>
     </div>
 
-    <!-- Active Quiz Screen -->
     <div id="quiz-ui" style="display: none; flex-direction: column; gap: 10px;">
         <header>
             <span class="progress-text" id="progress-indicator">Chord 1/0</span>
@@ -560,7 +559,6 @@
         </div>
     </div>
 
-    <!-- Results Screen -->
     <div id="results-ui" class="results-container">
         <h2>Quiz Complete!</h2>
         <div class="grade-badge" id="grade-display">A+</div>
@@ -1283,18 +1281,30 @@
     }
 
     // Save Quiz functionality
-    document.getElementById('save-quiz-btn').addEventListener('click', () => {
-        const toast = document.getElementById('results-toast');
+    function handleSaveQuiz() {
+        if (selectedChordNames.size === 0) {
+            document.getElementById('setup-error').textContent = 'Please select at least 1 chord to save.';
+            return;
+        }
         const presetName = prompt('Enter a name for this chord preset:', activePresetName || 'My Custom Quiz');
         if (presetName && presetName.trim() !== '') {
             const presets = getStoredPresets();
             presets[presetName.trim()] = Array.from(selectedChordNames);
             saveStoredPresets(presets);
             activePresetName = presetName.trim();
-            toast.textContent = `Saved preset "${activePresetName}"!`;
-            setTimeout(() => { toast.textContent = ''; }, 3000);
+            populateSavedQuizDropdown();
+            document.getElementById('setup-error').textContent = '';
+            
+            const resultsToast = document.getElementById('results-toast');
+            if (resultsToast) {
+                resultsToast.textContent = `Saved preset "${activePresetName}"!`;
+                setTimeout(() => { resultsToast.textContent = ''; }, 3000);
+            }
         }
-    });
+    }
+
+    document.getElementById('save-quiz-btn').addEventListener('click', handleSaveQuiz);
+    document.getElementById('setup-save-quiz-btn').addEventListener('click', handleSaveQuiz);
 
     // Share Quiz functionality
     document.getElementById('share-quiz-btn').addEventListener('click', () => {
