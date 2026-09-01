@@ -70,7 +70,7 @@
             background-color: var(--card-bg);
             border-radius: 16px;
             padding: 24px;
-            max-width: 480px;
+            max-width: 520px;
             width: 100%;
             box-shadow: 0 10px 30px rgba(0,0,0,0.08);
             border: 1px solid var(--border);
@@ -175,7 +175,53 @@
         .setup-actions {
             display: flex;
             justify-content: space-between;
-            gap: 10px;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dropdown-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 0;
+        }
+
+        .select-dropdown {
+            flex: 1;
+            width: 100%;
+            min-width: 0;
+            padding: 6px 8px;
+            font-size: 0.8rem;
+            border-radius: 6px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+            text-overflow: ellipsis;
+        }
+
+        .select-dropdown:focus {
+            border-color: var(--accent);
+        }
+
+        .btn-delete-sm {
+            padding: 6px 10px;
+            font-size: 0.8rem;
+            border-radius: 6px;
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 700;
+            white-space: nowrap;
+            transition: background-color 0.2s;
+        }
+
+        .btn-delete-sm:hover {
+            background-color: var(--accent-hover);
         }
 
         .btn-sm {
@@ -187,6 +233,7 @@
             color: var(--text-muted);
             cursor: pointer;
             font-weight: 600;
+            white-space: nowrap;
         }
 
         .btn-sm:hover {
@@ -194,21 +241,25 @@
             border-color: var(--text-muted);
         }
 
+        /* 3 Columns Layout for Chords */
         .chord-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
             margin: 10px 0;
+            max-height: 380px;
+            overflow-y: auto;
+            padding-right: 4px;
         }
 
         .chord-toggle {
             background: var(--strum-bg);
             border: 1px solid var(--border);
             border-radius: 8px;
-            padding: 12px 4px;
+            padding: 10px 2px;
             text-align: center;
             font-weight: 700;
-            font-size: 1.1rem;
+            font-size: 0.95rem;
             color: var(--text-muted);
             cursor: pointer;
             transition: all 0.2s ease;
@@ -224,13 +275,21 @@
         }
 
         .chord-toggle.revealed {
-            font-size: 0.72rem;
+            font-size: 0.65rem;
             font-weight: 800;
             letter-spacing: -0.02em;
         }
 
         .error-msg {
             color: var(--muted-x);
+            font-size: 0.85rem;
+            text-align: center;
+            min-height: 1.2em;
+            font-weight: 600;
+        }
+
+        .toast-msg {
+            color: var(--open-o);
             font-size: 0.85rem;
             text-align: center;
             min-height: 1.2em;
@@ -272,6 +331,14 @@
 
         .status-x { fill: var(--muted-x); }
         .status-o { fill: var(--open-o); }
+
+        .fret-number-text {
+            font-size: 14px;
+            font-weight: bold;
+            fill: var(--text);
+            text-anchor: middle;
+            dominant-baseline: central;
+        }
 
         .strum-zone {
             background: var(--strum-bg);
@@ -348,7 +415,7 @@
         .results-container {
             display: none;
             flex-direction: column;
-            gap: 20px;
+            gap: 12px;
             padding: 20px 0;
         }
 
@@ -365,6 +432,7 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
+            margin-bottom: 8px;
         }
 
         .stat-card {
@@ -436,6 +504,12 @@
         
         <div class="setup-actions">
             <button class="btn-sm" id="select-all-btn">Select All</button>
+            <div class="dropdown-container">
+                <select class="select-dropdown" id="saved-quiz-select">
+                    <option value="" disabled id="placeholder-option">Select saved Quiz</option>
+                </select>
+                <button class="btn-delete-sm" id="delete-preset-btn" style="display: none;">Delete</button>
+            </div>
             <button class="btn-sm" id="clear-all-btn">Clear All</button>
         </div>
 
@@ -461,7 +535,7 @@
         <p class="instructions">Tap top row to toggle Open (O) / Mute (X). Tap fretboard to place fingers. Swipe across the strum box to submit.</p>
 
         <div class="interactive-area">
-            <svg id="fretboard" width="280" height="340" viewBox="0 0 280 340"></svg>
+            <svg id="fretboard" width="300" height="340" viewBox="0 0 300 340"></svg>
 
             <div id="feedback-overlay" class="feedback-overlay">
                 <div id="feedback-title" class="feedback-title">Correct!</div>
@@ -471,7 +545,7 @@
 
         <div class="strum-zone" id="strum-zone">
             <svg class="strum-icon" viewBox="0 0 24 24">
-                <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 12,24M11,6V18H13V6H11Z"/>
+                <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,24M11,6V18H13V6H11Z"/>
             </svg>
             <span class="strum-text">Swipe here to strum & submit</span>
         </div>
@@ -498,8 +572,11 @@
             </div>
         </div>
 
-        <button class="btn btn-primary" id="restart-btn" style="margin-top: 10px;">Try Again</button>
+        <button class="btn btn-primary" id="restart-btn">Try Again</button>
+        <button class="btn btn-secondary" id="save-quiz-btn">Save Quiz</button>
         <button class="btn btn-secondary" id="setup-from-results-btn">Change Chords</button>
+        <button class="btn btn-secondary" id="share-quiz-btn">Share Quiz</button>
+        <div id="results-toast" class="toast-msg"></div>
     </div>
 </div>
 
@@ -551,39 +628,166 @@
 
     const baseFreqs = [82.41, 110.00, 146.83, 196.00, 246.94, 329.63];
 
-    function playChordAudio(stringStates) {
+    function playChordAudio(stringStates, startFret = 1) {
         let delayCount = 0;
         for (let i = 0; i < 6; i++) {
             const fret = stringStates[i];
             if (fret !== -1) {
-                const freq = baseFreqs[i] * Math.pow(2, fret / 12);
+                const pitchFret = fret === 0 ? 0 : (fret + startFret - 1);
+                const freq = baseFreqs[i] * Math.pow(2, pitchFret / 12);
                 playTone(freq, 'triangle', 1.2, delayCount * 0.04);
                 delayCount++;
             }
         }
     }
 
-    const chordDatabase = [
-        { name: "Em", frets: [0, 2, 2, 0, 0, 0] },
-        { name: "Am", frets: [-1, 0, 2, 2, 1, 0] },
-        { name: "A7", frets: [-1, 0, 2, 0, 2, 0] },
-        { name: "D7", frets: [-1, -1, 0, 2, 1, 2] },
-        { name: "C", frets: [-1, 3, 2, 0, 1, 0] },
-        { name: "G", frets: [3, 2, 0, 0, 0, 3] },
-        { name: "D", frets: [-1, -1, 0, 2, 3, 2] },
-        { name: "E", frets: [0, 2, 2, 1, 0, 0] },
-        { name: "F", frets: [-1, -1, 3, 2, 1, 1] },
+    const rawChordDatabase = [
         { name: "A", frets: [-1, 0, 2, 2, 2, 0] },
-        { name: "E7", frets: [0, 2, 0, 1, 0, 0] },
-        { name: "G7", frets: [3, 2, 0, 0, 0, 1] },
-        { name: "Dm", frets: [-1, -1, 0, 2, 3, 1] },
+        { name: "A+", frets: [-1, 0, 3, 2, 2, 1] },
+        { name: "A6", frets: [-1, 0, 2, 2, 2, 2] },
+        { name: "A7", frets: [-1, 0, 2, 0, 2, 0] },
+        { name: "A9", frets: [0, 0, 2, 4, 2, 0] },
+        { name: "Ab", frets: [1, 3, 3, 2, 1, 1], startFret: 4 },
+        { name: "Ab+", frets: [-1, -1, 2, 1, 1, 0], startFret: 1 },
+        { name: "Ab6", frets: [-1, -1, 1, 1, 1, 1], startFret: 1 },
+        { name: "Ab7", frets: [-1, -1, 1, 1, 1, 2], startFret: 1 },
+        { name: "Ab9", frets: [-1, -1, 1, 3, 1, 3], startFret: 1 },
+        { name: "Abmaj7", frets: [-1, -1, 1, 1, 1, 3], startFret: 1 },
+        { name: "Absus", frets: [-1, -1, 1, 1, 2, 2], startFret: 1 },
+        { name: "Adim", frets: [-1, -1, 1, 2, 1, 2] },
+        { name: "Amaj7", frets: [-1, 0, 2, 1, 2, 0] },
+        { name: "Am", frets: [-1, 0, 2, 2, 1, 0] },
+        { name: "Am6", frets: [-1, 0, 2, 2, 1, 2] },
         { name: "Am7", frets: [-1, 0, 2, 0, 1, 0] },
+        { name: "Asus", frets: [-1, 0, 2, 2, 3, 0] },
+
+        { name: "B", frets: [-1, 2, 4, 4, 4, 2] },
+        { name: "B+", frets: [-1, -1, 1, 0, 0, 0], startFret: 3 },
+        { name: "B5", frets: [-1, 2, 4, 4, -1, -1] },
+        { name: "B6", frets: [-1, 2, 1, 1, 0, 0] },
+        { name: "B7", frets: [-1, 2, 1, 2, 0, 2] },
+        { name: "B9", frets: [-1, 2, 1, 2, 2, 2] },
+        { name: "Bb", frets: [-1, 1, 3, 3, 3, 1] },
+        { name: "Bb+", frets: [-1, -1, 0, 3, 3, 2] },
+        { name: "Bb6", frets: [-1, -1, 3, 3, 3, 3] },
+        { name: "Bb7", frets: [-1, -1, 1, 1, 1, 1], startFret: 3 },
+        { name: "Bb9", frets: [-1, -1, 1, 1, 1, 1], startFret: 3 },
+        { name: "Bbdim", frets: [-1, -1, 2, 3, 2, 3] },
+        { name: "Bbmaj7", frets: [-1, 1, 3, 2, 3, 1] },
+        { name: "Bbm", frets: [-1, 1, 3, 3, 2, 1] },
+        { name: "Bbm6", frets: [-1, -1, 3, 3, 2, 3] },
+        { name: "Bbm7", frets: [-1, -1, 3, 3, 2, 4] },
+        { name: "Bbsus", frets: [-1, -1, 3, 3, 4, 1] },
+        { name: "Bdim", frets: [-1, -1, 0, 1, 0, 1], startFret: 1 },
+        { name: "Bmaj7", frets: [-1, 2, 4, 3, 4, 2] },
+        { name: "Bm", frets: [-1, 2, 4, 4, 3, 2] },
+        { name: "Bm6", frets: [-1, -1, 4, 4, 3, 4] },
+        { name: "Bm7", frets: [-1, 1, 3, 1, 3, 1], startFret: 2 },
+        { name: "Bsus", frets: [-1, 1, 4, 4, 2, 1], startFret: 2 },
+
+        { name: "C", frets: [-1, 3, 2, 0, 1, 0] },
+        { name: "C+", frets: [-1, -1, 2, 1, 1, 0] },
+        { name: "C6", frets: [-1, -1, 2, 2, 1, 3] },
+        { name: "C7", frets: [-1, 3, 2, 3, 1, 0] },
+        { name: "C9", frets: [-1, 3, 2, 3, 3, 3] },
+        { name: "C#dim", frets: [-1, -1, 2, 3, 2, 3] },
+        { name: "C#m", frets: [-1, -1, 2, 1, 2, 0] },
+        { name: "C#m6", frets: [-1, -1, 2, 3, 2, 4] },
+        { name: "C#m7", frets: [-1, -1, 2, 4, 2, 4] },
+        { name: "Cdim", frets: [-1, -1, 1, 2, 1, 2] },
+        { name: "Cmaj7", frets: [-1, 3, 2, 0, 0, 0] },
+        { name: "Cm", frets: [-1, 1, 3, 3, 2, 1], startFret: 3 },
+        { name: "Cm6", frets: [-1, -1, 1, 2, 1, 3] },
+        { name: "Cm7", frets: [-1, -1, 1, 3, 1, 4] },
+        { name: "Csus", frets: [-1, -1, 3, 0, 1, 1] },
+
+        { name: "D", frets: [-1, -1, 0, 2, 3, 2] },
+        { name: "D+", frets: [-1, -1, 0, 3, 3, 2] },
+        { name: "D6", frets: [-1, -1, 0, 2, 0, 2] },
+        { name: "D7", frets: [-1, -1, 0, 2, 1, 2] },
+        { name: "D9", frets: [-1, -1, 0, 2, 1, 0] },
+        { name: "Db", frets: [-1, -1, 3, 1, 2, 1] },
+        { name: "Db+", frets: [-1, -1, 3, 2, 2, 1] },
+        { name: "Db6", frets: [-1, -1, 3, 3, 2, 4] },
+        { name: "Db7", frets: [-1, -1, 3, 4, 2, 4] },
+        { name: "Db9", frets: [-1, -1, 3, 4, 4, 4] },
+        { name: "Dbmaj7", frets: [-1, -1, 3, 1, 1, 1] },
+        { name: "Dbsus", frets: [-1, -1, 3, 1, 2, 2] },
+        { name: "Ddim", frets: [-1, -1, 0, 1, 0, 1] },
+        { name: "Dmaj7", frets: [-1, -1, 0, 2, 2, 2] },
+        { name: "Dm", frets: [-1, -1, 0, 2, 3, 1] },
+        { name: "Dm6", frets: [-1, -1, 0, 2, 0, 1] },
+        { name: "Dm7", frets: [-1, -1, 0, 2, 1, 1] },
+        { name: "Dsus", frets: [-1, -1, 0, 2, 3, 3] },
+
+        { name: "E", frets: [0, 2, 2, 1, 0, 0] },
+        { name: "E+", frets: [-1, -1, 2, 1, 1, 0] },
+        { name: "E6", frets: [0, 2, 2, 1, 2, 0] },
+        { name: "E7", frets: [0, 2, 0, 1, 0, 0] },
+        { name: "E9", frets: [0, 2, 0, 1, 0, 2] },
+        { name: "Eb", frets: [-1, -1, 1, 3, 4, 3], startFret: 3 },
+        { name: "Eb+", frets: [-1, -1, 1, 0, 0, 3] },
+        { name: "Eb6", frets: [-1, -1, 1, 3, 1, 3] },
+        { name: "Eb7", frets: [-1, -1, 1, 3, 2, 3] },
+        { name: "Eb9", frets: [-1, 1, 1, 0, 2, 1] },
+        { name: "Ebdim", frets: [-1, -1, 1, 2, 1, 2] },
+        { name: "Ebm", frets: [-1, -1, 1, 3, 4, 2] },
+        { name: "Ebm6", frets: [-1, -1, 1, 3, 1, 2] },
+        { name: "Ebm7", frets: [-1, -1, 1, 3, 2, 2] },
+        { name: "Ebsus", frets: [-1, -1, 1, 3, 4, 4] },
+        { name: "Edim", frets: [-1, -1, 2, 3, 2, 3] },
+        { name: "Emaj7", frets: [0, 2, 1, 1, 0, 0] },
+        { name: "Em", frets: [0, 2, 2, 0, 0, 0] },
+        { name: "Em6", frets: [0, 2, 2, 0, 2, 0] },
         { name: "Em7", frets: [0, 2, 0, 0, 0, 0] },
-        { name: "B7", frets: [-1, 2, 1, 2, 0, 2] }
+        { name: "Esus", frets: [0, 2, 2, 2, 0, 0] },
+
+        { name: "F", frets: [1, 3, 3, 2, 1, 1] },
+        { name: "F mini", frets: [-1, -1, 3, 2, 1, 1] },
+        { name: "F+", frets: [-1, -1, 3, 2, 2, 1] },
+        { name: "F5", frets: [1, 3, 3, -1, -1, -1] },
+        { name: "F6", frets: [-1, -1, 3, 2, 3, 1] },
+        { name: "F7", frets: [1, 3, 1, 2, 1, 1] },
+        { name: "F9", frets: [-1, -1, 3, 2, 1, 3] },
+        { name: "F#", frets: [2, 4, 4, 3, 2, 2] },
+        { name: "F#7", frets: [-1, -1, 4, 3, 2, 0] },
+        { name: "F#9", frets: [-1, -1, 2, 1, 2, 2], startFret: 3 },
+        { name: "F#dim", frets: [-1, -1, 1, 2, 1, 2] },
+        { name: "F#m", frets: [2, 4, 4, 2, 2, 2] },
+        { name: "F#m6", frets: [-1, -1, 1, 2, 2, 2] },
+        { name: "F#m7", frets: [-1, -1, 2, 2, 2, 2] },
+        { name: "Fdim", frets: [-1, -1, 0, 1, 0, 1] },
+        { name: "Fmaj7", frets: [-1, -1, 3, 2, 1, 0] },
+        { name: "Fm", frets: [1, 3, 3, 1, 1, 1] },
+        { name: "Fm6", frets: [-1, -1, 3, 1, 3, 1] },
+        { name: "Fm7", frets: [1, 3, 1, 1, 1, 1] },
+        { name: "Fsus", frets: [-1, -1, 3, 3, 1, 1] },
+
+        { name: "G", frets: [3, 2, 0, 0, 0, 3] },
+        { name: "G+", frets: [-1, -1, 1, 0, 0, 3] },
+        { name: "G6", frets: [0, 2, 0, 0, 0, 0] },
+        { name: "G7", frets: [3, 2, 0, 0, 0, 1] },
+        { name: "G9", frets: [3, 0, 0, 2, 0, 1] },
+        { name: "G#dim", frets: [-1, -1, 0, 1, 0, 1], startFret: 1 },
+        { name: "G#m", frets: [1, 3, 3, 1, 1, 1], startFret: 4 },
+        { name: "G#m6", frets: [-1, -1, -1, 1, 0, 1], startFret: 1 },
+        { name: "G#m7", frets: [-1, -1, 1, 1, 0, 2], startFret: 1 },
+        { name: "Gb+", frets: [-1, -1, 4, 3, 3, 2] },
+        { name: "Gb6", frets: [-1, -1, 4, 3, 4, 2] },
+        { name: "Gbmaj7", frets: [-1, -1, 4, 3, 2, 1] },
+        { name: "Gbsus", frets: [-1, -1, 4, 4, 2, 2] },
+        { name: "Gdim", frets: [-1, -1, 2, 3, 2, 3] },
+        { name: "Gmaj7", frets: [-1, 1, 3, 2, 2, 1], startFret: 2 },
+        { name: "Gm", frets: [1, 3, 3, 1, 1, 1], startFret: 3 },
+        { name: "Gm6", frets: [-1, -1, 0, 3, 3, 3] },
+        { name: "Gm7", frets: [1, 3, 1, 1, 1, 1], startFret: 3 },
+        { name: "Gsus", frets: [-1, -1, 0, 0, 1, 3] }
     ];
 
+    const chordDatabase = rawChordDatabase.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+
     let selectedChordNames = new Set();
-    let revealedChordNames = new Set(); // Tracks buttons toggled to show fingering
+    let revealedChordNames = new Set();
     let activeDatabase = [];
     let quizQueue = [];
     let currentStep = 0;
@@ -592,10 +796,11 @@
     let userState = [0, 0, 0, 0, 0, 0];
     let seenChords = new Set();
     let isProcessing = false;
+    let activePresetName = null;
 
-    const paddingX = 40;
+    const paddingX = 50;
     const paddingY = 50;
-    const stringSpacing = 40;
+    const stringSpacing = 38;
     const fretSpacing = 50;
     const numFrets = 4;
 
@@ -603,6 +808,51 @@
 
     function formatChordPattern(frets) {
         return frets.map(f => f === -1 ? 'X' : f).join('-');
+    }
+
+    // LocalStorage Presets Helper
+    function getStoredPresets() {
+        try {
+            return JSON.parse(localStorage.getItem('chord_presets')) || {};
+        } catch (e) {
+            return {};
+        }
+    }
+
+    function saveStoredPresets(presets) {
+        localStorage.setItem('chord_presets', JSON.stringify(presets));
+    }
+
+    function populateSavedQuizDropdown() {
+        const dropdown = document.getElementById('saved-quiz-select');
+        const deleteBtn = document.getElementById('delete-preset-btn');
+        dropdown.innerHTML = '';
+        
+        const placeholder = document.createElement('option');
+        placeholder.value = "";
+        placeholder.disabled = true;
+        placeholder.textContent = activePresetName ? activePresetName : "Select saved Quiz";
+        if (!activePresetName) {
+            placeholder.selected = true;
+        }
+        dropdown.appendChild(placeholder);
+
+        const presets = getStoredPresets();
+        Object.keys(presets).forEach(name => {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            if (activePresetName && name === activePresetName) {
+                opt.selected = true;
+            }
+            dropdown.appendChild(opt);
+        });
+
+        if (activePresetName && presets[activePresetName]) {
+            deleteBtn.style.display = 'inline-block';
+        } else {
+            deleteBtn.style.display = 'none';
+        }
     }
 
     function initSetupUI() {
@@ -624,7 +874,6 @@
                 isLongPress = false;
                 longPressTimer = setTimeout(() => {
                     isLongPress = true;
-                    // Toggle revealed state
                     if (revealedChordNames.has(chord.name)) {
                         revealedChordNames.delete(chord.name);
                         btn.textContent = chord.name;
@@ -634,7 +883,7 @@
                         btn.textContent = formatChordPattern(chord.frets);
                         btn.classList.add('revealed');
                     }
-                }, 500); // 500ms long press duration
+                }, 500);
             };
 
             const cancelPress = () => {
@@ -644,12 +893,11 @@
                 }
             };
 
-            // Touch / Mouse event handlers for long-press & click separation
             btn.addEventListener('pointerdown', startPress);
             btn.addEventListener('pointerup', (e) => {
                 cancelPress();
                 if (!isLongPress) {
-                    // Regular tap/click to select/deselect chord
+                    activePresetName = null;
                     if (selectedChordNames.has(chord.name)) {
                         selectedChordNames.delete(chord.name);
                         btn.classList.remove('active');
@@ -658,25 +906,68 @@
                         btn.classList.add('active');
                     }
                     document.getElementById('setup-error').textContent = '';
+                    populateSavedQuizDropdown();
                 }
             });
             btn.addEventListener('pointerleave', cancelPress);
             btn.addEventListener('pointercancel', cancelPress);
-
-            // Prevent context menu on long press
             btn.addEventListener('contextmenu', (e) => e.preventDefault());
 
             grid.appendChild(btn);
         });
+
+        populateSavedQuizDropdown();
     }
 
+    // Handle URL query parameters for preset loading
+    function checkURLParameters() {
+        const params = new URLSearchParams(window.location.search);
+        const preset = params.get('preset');
+        const chordsParam = params.get('chords');
+
+        if (chordsParam) {
+            const chordList = chordsParam.split(',').map(c => c.trim());
+            selectedChordNames.clear();
+            chordList.forEach(name => {
+                if (chordDatabase.some(c => c.name === name)) {
+                    selectedChordNames.add(name);
+                }
+            });
+            if (preset) activePresetName = preset;
+        }
+    }
+
+    document.getElementById('saved-quiz-select').addEventListener('change', (e) => {
+        const presetName = e.target.value;
+        const presets = getStoredPresets();
+        if (presets[presetName]) {
+            selectedChordNames = new Set(presets[presetName]);
+            activePresetName = presetName;
+            initSetupUI();
+            document.getElementById('setup-error').textContent = '';
+        }
+    });
+
+    document.getElementById('delete-preset-btn').addEventListener('click', () => {
+        if (!activePresetName) return;
+        if (confirm(`Delete preset "${activePresetName}"?`)) {
+            const presets = getStoredPresets();
+            delete presets[activePresetName];
+            saveStoredPresets(presets);
+            activePresetName = null;
+            populateSavedQuizDropdown();
+        }
+    });
+
     document.getElementById('select-all-btn').addEventListener('click', () => {
+        activePresetName = null;
         selectedChordNames = new Set(chordDatabase.map(c => c.name));
         initSetupUI();
         document.getElementById('setup-error').textContent = '';
     });
 
     document.getElementById('clear-all-btn').addEventListener('click', () => {
+        activePresetName = null;
         selectedChordNames.clear();
         initSetupUI();
     });
@@ -739,14 +1030,25 @@
 
     function renderFretboard() {
         svg.innerHTML = '';
+        const currentChord = quizQueue[currentStep];
+        const startFret = (currentChord && currentChord.startFret) ? currentChord.startFret : 1;
 
         const nut = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         nut.setAttribute('x1', paddingX - 1);
         nut.setAttribute('y1', paddingY);
         nut.setAttribute('x2', paddingX + 5 * stringSpacing + 1);
         nut.setAttribute('y2', paddingY);
-        nut.setAttribute('class', 'nut');
+        nut.setAttribute('class', startFret === 1 ? 'nut' : 'fret');
         svg.appendChild(nut);
+
+        if (startFret > 1) {
+            const fretLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            fretLabel.setAttribute('x', paddingX - 22);
+            fretLabel.setAttribute('y', paddingY + (0.5 * fretSpacing));
+            fretLabel.textContent = `${startFret}fr`;
+            fretLabel.setAttribute('class', 'fret-number-text');
+            svg.appendChild(fretLabel);
+        }
 
         for (let i = 1; i <= numFrets; i++) {
             const fretY = paddingY + i * fretSpacing;
@@ -759,13 +1061,15 @@
             svg.appendChild(line);
         }
 
-        const dotY = paddingY + (2.5 * fretSpacing);
-        const marker = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        marker.setAttribute('cx', paddingX + 2.5 * stringSpacing);
-        marker.setAttribute('cy', dotY);
-        marker.setAttribute('r', 8);
-        marker.setAttribute('class', 'marker');
-        svg.appendChild(marker);
+        if (startFret === 1) {
+            const dotY = paddingY + (2.5 * fretSpacing);
+            const marker = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            marker.setAttribute('cx', paddingX + 2.5 * stringSpacing);
+            marker.setAttribute('cy', dotY);
+            marker.setAttribute('r', 8);
+            marker.setAttribute('class', 'marker');
+            svg.appendChild(marker);
+        }
 
         for (let i = 0; i < 6; i++) {
             const stringX = paddingX + i * stringSpacing;
@@ -862,7 +1166,7 @@
         const target = quizQueue[currentStep];
         const isCorrect = userState.every((fret, i) => fret === target.frets[i]);
 
-        playChordAudio(userState);
+        playChordAudio(userState, target.startFret || 1);
 
         const overlay = document.getElementById('feedback-overlay');
         const title = document.getElementById('feedback-title');
@@ -943,6 +1247,7 @@
         document.getElementById('correct-count').textContent = scoreCorrect;
         document.getElementById('incorrect-count').textContent = scoreIncorrect;
         document.getElementById('grade-display').textContent = calculateGrade(percentage);
+        document.getElementById('results-toast').textContent = '';
     }
 
     function showSetupScreen() {
@@ -972,6 +1277,39 @@
         
         loadStep();
     }
+
+    // Save Quiz functionality
+    document.getElementById('save-quiz-btn').addEventListener('click', () => {
+        const toast = document.getElementById('results-toast');
+        const presetName = prompt('Enter a name for this chord preset:', activePresetName || 'My Custom Quiz');
+        if (presetName && presetName.trim() !== '') {
+            const presets = getStoredPresets();
+            presets[presetName.trim()] = Array.from(selectedChordNames);
+            saveStoredPresets(presets);
+            activePresetName = presetName.trim();
+            toast.textContent = `Saved preset "${activePresetName}"!`;
+            setTimeout(() => { toast.textContent = ''; }, 3000);
+        }
+    });
+
+    // Share Quiz functionality
+    document.getElementById('share-quiz-btn').addEventListener('click', () => {
+        const toast = document.getElementById('results-toast');
+        const chordsArray = Array.from(selectedChordNames).join(',');
+        const url = new URL(window.location.href);
+        url.search = ''; // Clear existing query params
+        if (activePresetName) {
+            url.searchParams.set('preset', activePresetName);
+        }
+        url.searchParams.set('chords', chordsArray);
+
+        navigator.clipboard.writeText(url.toString()).then(() => {
+            toast.textContent = 'Quiz URL copied to clipboard!';
+            setTimeout(() => { toast.textContent = ''; }, 3000);
+        }).catch(() => {
+            toast.textContent = 'Failed to copy URL.';
+        });
+    });
 
     const strumZone = document.getElementById('strum-zone');
     let startX = 0;
@@ -1009,6 +1347,7 @@
     document.getElementById('setup-from-results-btn').addEventListener('click', showSetupScreen);
 
     setTheme('light');
+    checkURLParameters();
     initSetupUI();
 </script>
 </body>
