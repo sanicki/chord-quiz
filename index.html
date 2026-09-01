@@ -428,6 +428,7 @@
         </svg>
     </button>
 
+    <!-- Setup Screen -->
     <div id="setup-ui" class="setup-container">
         <h2 class="setup-title">Select Quiz Chords</h2>
         <p class="instructions">Choose which chords to include. Hover over any chord for 2s to reveal its fingering.</p>
@@ -444,6 +445,7 @@
         <button class="btn btn-primary" id="start-quiz-btn">Start Quiz</button>
     </div>
 
+    <!-- Active Quiz Screen -->
     <div id="quiz-ui" style="display: none;">
         <header>
             <span class="progress-text" id="progress-indicator">Chord 1/0</span>
@@ -452,7 +454,7 @@
 
         <div class="target-chord-container">
             <div class="target-chord" id="target-chord-name">Em</div>
-            <div id="hint-badge" class="hint-badge" style="display: none;">First Encounter — Pre-Filled</div>
+            <div id="hint-badge" class="hint-badge" style="display: none;">First Encounter - Study</div>
         </div>
 
         <p class="instructions">Tap top row to toggle Open (O) / Mute (X). Tap fretboard to place fingers. Swipe across the strum box to submit.</p>
@@ -479,6 +481,7 @@
         </div>
     </div>
 
+    <!-- Results Screen -->
     <div id="results-ui" class="results-container">
         <h2>Quiz Complete!</h2>
         <div class="grade-badge" id="grade-display">A+</div>
@@ -611,7 +614,6 @@
 
             let hoverTimer = null;
 
-            // Hover reveal handling (2 seconds threshold)
             btn.addEventListener('mouseenter', () => {
                 hoverTimer = setTimeout(() => {
                     btn.textContent = formatChordPattern(chord.frets);
