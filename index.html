@@ -513,7 +513,6 @@
         </svg>
     </button>
 
-    <!-- Setup Screen -->
     <div id="setup-ui" class="setup-container">
         <h2 class="setup-title">Select Quiz Chords</h2>
         <p class="instructions">Tap to select/deselect. Long-press any chord button to toggle between its name and fingering.</p>
@@ -541,7 +540,6 @@
         <div id="setup-toast" class="toast-msg"></div>
     </div>
 
-    <!-- Active Quiz Screen -->
     <div id="quiz-ui" style="display: none; flex-direction: column; gap: 10px;">
         <header>
             <span class="progress-text" id="progress-indicator">Chord 1/0</span>
@@ -577,7 +575,6 @@
         </div>
     </div>
 
-    <!-- Results Screen -->
     <div id="results-ui" class="results-container">
         <h2>Quiz Complete!</h2>
         <div class="grade-badge" id="grade-display">A+</div>
@@ -594,9 +591,7 @@
         </div>
 
         <button class="btn btn-primary" id="restart-btn">Try Again</button>
-        <button class="btn btn-secondary" id="save-quiz-btn">Save Quiz</button>
         <button class="btn btn-secondary" id="setup-from-results-btn">Change Chords</button>
-        <button class="btn btn-secondary" id="share-quiz-btn">Share Quiz</button>
         <div id="results-toast" class="toast-msg"></div>
     </div>
 </div>
@@ -1315,16 +1310,9 @@
             activePresetName = presetName.trim();
             populateSavedQuizDropdown();
             document.getElementById('setup-error').textContent = '';
-            
-            const resultsToast = document.getElementById('results-toast');
-            if (resultsToast) {
-                resultsToast.textContent = `Saved preset "${activePresetName}"!`;
-                setTimeout(() => { resultsToast.textContent = ''; }, 3000);
-            }
         }
     }
 
-    document.getElementById('save-quiz-btn').addEventListener('click', handleSaveQuiz);
     document.getElementById('setup-save-quiz-btn').addEventListener('click', handleSaveQuiz);
 
     // Share Quiz functionality
@@ -1345,22 +1333,17 @@
 
         navigator.clipboard.writeText(url.toString()).then(() => {
             const setupToast = document.getElementById('setup-toast');
-            const resultsToast = document.getElementById('results-toast');
-            
             if (setupToast) setupToast.textContent = 'Quiz URL copied to clipboard!';
-            if (resultsToast) resultsToast.textContent = 'Quiz URL copied to clipboard!';
             if (errorEl) errorEl.textContent = '';
             
             setTimeout(() => { 
                 if (setupToast) setupToast.textContent = ''; 
-                if (resultsToast) resultsToast.textContent = '';
             }, 3000);
         }).catch(() => {
             if (errorEl) errorEl.textContent = 'Failed to copy URL.';
         });
     }
 
-    document.getElementById('share-quiz-btn').addEventListener('click', handleShareQuiz);
     document.getElementById('setup-share-quiz-btn').addEventListener('click', handleShareQuiz);
 
     const strumZone = document.getElementById('strum-zone');
