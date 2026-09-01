@@ -82,10 +82,9 @@
             transition: background-color 0.3s ease, border-color 0.3s ease;
         }
 
-        .theme-toggle-btn {
+        .header-toggle-btn {
             position: absolute;
             top: 20px;
-            right: 20px;
             background: transparent;
             border: none;
             cursor: pointer;
@@ -99,15 +98,23 @@
             z-index: 10;
         }
 
-        .theme-toggle-btn:hover {
+        .header-toggle-btn:hover {
             color: var(--text);
             background-color: var(--strum-bg);
         }
 
-        .theme-toggle-btn svg {
+        .header-toggle-btn svg {
             width: 20px;
             height: 20px;
             fill: currentColor;
+        }
+
+        #mode-toggle {
+            left: 20px;
+        }
+
+        #theme-toggle {
+            right: 20px;
         }
 
         header {
@@ -116,6 +123,7 @@
             align-items: center;
             border-bottom: 1px solid var(--border);
             padding-bottom: 12px;
+            padding-left: 36px;
             padding-right: 36px;
         }
 
@@ -366,7 +374,7 @@
             gap: 8px;
             cursor: pointer;
             touch-action: none;
-            transition: background-color 0.2s, border-color 0.2s;
+            transition: background-color 0.2s, border-color 0.2s, color 0.2s;
             margin-bottom: 0;
         }
 
@@ -378,13 +386,14 @@
         .strum-icon {
             width: 32px;
             height: 32px;
-            fill: var(--text-muted);
+            fill: currentColor;
+            transition: fill 0.2s;
         }
 
         .strum-text {
             font-size: 0.85rem;
             font-weight: 600;
-            color: var(--text-muted);
+            color: currentColor;
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
@@ -504,7 +513,16 @@
 <body>
 
 <div class="quiz-container">
-    <button class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle Theme">
+    <button class="header-toggle-btn" id="mode-toggle" aria-label="Toggle Practice Mode" title="Toggle Draw / Play Mode">
+        <svg id="eye-icon" viewBox="0 0 24 24">
+            <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+        </svg>
+        <svg id="speaker-icon" style="display: none;" viewBox="0 0 24 24">
+            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+        </svg>
+    </button>
+
+    <button class="header-toggle-btn" id="theme-toggle" aria-label="Toggle Theme" title="Toggle Day / Night Mode">
         <svg id="sun-icon" viewBox="0 0 24 24">
             <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41s-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41s-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/>
         </svg>
@@ -515,7 +533,7 @@
 
     <div id="setup-ui" class="setup-container">
         <h2 class="setup-title">Select Quiz Chords</h2>
-        <p class="instructions">Tap to select/deselect. Long-press any chord button to toggle between its name and fingering.</p>
+        <p class="instructions" id="setup-instructions">Tap to select/deselect. Long-press any chord button to toggle between its name and fingering.</p>
         
         <div class="setup-actions">
             <button class="btn-sm" id="select-all-btn">Select All</button>
@@ -551,7 +569,7 @@
             <div id="hint-badge" class="hint-badge" style="display: none;">First Encounter — Study</div>
         </div>
 
-        <p class="instructions">Tap top row to toggle Open (O) / Mute (X). Tap fretboard to place fingers. Swipe across the strum box to submit.</p>
+        <p class="instructions" id="quiz-instructions">Tap top row to toggle Open (O) / Mute (X). Tap fretboard to place fingers. Swipe across the strum box to submit.</p>
 
         <div class="interactive-area">
             <svg id="fretboard" width="300" height="280" viewBox="0 0 300 280"></svg>
@@ -563,10 +581,10 @@
         </div>
 
         <div class="strum-zone" id="strum-zone">
-            <svg class="strum-icon" viewBox="0 0 24 24">
+            <svg class="strum-icon" id="strum-zone-icon" viewBox="0 0 24 24">
                 <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,24M11,6V18H13V6H11Z"/>
             </svg>
-            <span class="strum-text">Swipe here to strum & submit</span>
+            <span class="strum-text" id="strum-zone-text">Swipe here to strum & submit</span>
         </div>
 
         <div class="controls">
@@ -601,6 +619,12 @@
     const sunIcon = document.getElementById('sun-icon');
     const moonIcon = document.getElementById('moon-icon');
 
+    const modeBtn = document.getElementById('mode-toggle');
+    const eyeIcon = document.getElementById('eye-icon');
+    const speakerIcon = document.getElementById('speaker-icon');
+
+    let currentMode = 'visual'; // 'visual' (Eye/Tap) or 'ear' (Speaker/Audio)
+
     function setTheme(theme) {
         if (theme === 'light') {
             document.documentElement.setAttribute('data-theme', 'light');
@@ -616,6 +640,58 @@
     themeBtn.addEventListener('click', () => {
         const currentTheme = document.documentElement.getAttribute('data-theme');
         setTheme(currentTheme === 'light' ? 'dark' : 'light');
+    });
+
+    function updateStrumZoneVisuals(color, text) {
+        const strumZone = document.getElementById('strum-zone');
+        const strumText = document.getElementById('strum-zone-text');
+        
+        if (currentMode === 'visual') {
+            strumZone.style.backgroundColor = 'var(--strum-bg)';
+            strumZone.style.borderColor = 'var(--border)';
+            strumZone.style.color = 'var(--text-muted)';
+            strumText.textContent = 'Swipe here to strum & submit';
+            return;
+        }
+
+        if (color) {
+            strumZone.style.borderColor = color;
+            strumZone.style.color = color;
+            strumZone.style.backgroundColor = color.replace('rgb', 'rgba').replace(')', ', 0.12)');
+        } else {
+            strumZone.style.backgroundColor = 'var(--strum-bg)';
+            strumZone.style.borderColor = 'var(--border)';
+            strumZone.style.color = 'var(--text-muted)';
+        }
+        if (text) {
+            strumText.textContent = text;
+        }
+    }
+
+    function setMode(mode) {
+        currentMode = mode;
+        if (mode === 'visual') {
+            eyeIcon.style.display = 'block';
+            speakerIcon.style.display = 'none';
+            document.getElementById('quiz-instructions').textContent = 'Tap top row to toggle Open (O) / Mute (X). Tap fretboard to place fingers. Swipe across the strum box to submit.';
+            document.getElementById('clear-btn').style.display = 'inline-flex';
+            stopAudioListening();
+            updateStrumZoneVisuals();
+        } else {
+            eyeIcon.style.display = 'none';
+            speakerIcon.style.display = 'block';
+            document.getElementById('quiz-instructions').textContent = 'Speaker Mode: Strum your guitar! Play the target chord clearly to submit automatically.';
+            document.getElementById('clear-btn').style.display = 'none';
+            updateStrumZoneVisuals(null, 'Listening for strum...');
+            if (document.getElementById('quiz-ui').style.display !== 'none') {
+                startAudioListening();
+            }
+        }
+        renderFretboard();
+    }
+
+    modeBtn.addEventListener('click', () => {
+        setMode(currentMode === 'visual' ? 'ear' : 'visual');
     });
 
     const AudioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -814,6 +890,11 @@
     let isProcessing = false;
     let activePresetName = null;
 
+    // Mic & Pitch Audio Variables
+    let audioStream = null;
+    let micAnalyser = null;
+    let pitchCheckInterval = null;
+
     const paddingX = 50;
     const paddingY = 32;
     const stringSpacing = 38;
@@ -826,7 +907,6 @@
         return frets.map(f => f === -1 ? 'X' : f).join('-');
     }
 
-    // LocalStorage Presets Helper
     function getStoredPresets() {
         try {
             return JSON.parse(localStorage.getItem('chord_presets')) || {};
@@ -937,7 +1017,6 @@
         populateSavedQuizDropdown();
     }
 
-    // Handle URL query parameters for preset loading
     function checkURLParameters() {
         const params = new URLSearchParams(window.location.search);
         const preset = params.get('preset');
@@ -1117,10 +1196,12 @@
                 topText.setAttribute('fill', 'var(--text-muted)');
             }
             
-            topText.addEventListener('click', (e) => {
-                e.stopPropagation();
-                toggleStringTopState(i);
-            });
+            if (currentMode === 'visual') {
+                topText.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleStringTopState(i);
+                });
+            }
             svg.appendChild(topText);
 
             if (state > 0) {
@@ -1133,20 +1214,22 @@
             }
         }
 
-        for (let str = 0; str < 6; str++) {
-            for (let fr = 1; fr <= numFrets; fr++) {
-                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-                rect.setAttribute('x', paddingX + str * stringSpacing - stringSpacing/2);
-                rect.setAttribute('y', paddingY + (fr - 1) * fretSpacing);
-                rect.setAttribute('width', stringSpacing);
-                rect.setAttribute('height', fretSpacing);
-                rect.setAttribute('fill', 'transparent');
-                rect.style.cursor = 'pointer';
+        if (currentMode === 'visual') {
+            for (let str = 0; str < 6; str++) {
+                for (let fr = 1; fr <= numFrets; fr++) {
+                    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    rect.setAttribute('x', paddingX + str * stringSpacing - stringSpacing/2);
+                    rect.setAttribute('y', paddingY + (fr - 1) * fretSpacing);
+                    rect.setAttribute('width', stringSpacing);
+                    rect.setAttribute('height', fretSpacing);
+                    rect.setAttribute('fill', 'transparent');
+                    rect.style.cursor = 'pointer';
 
-                rect.addEventListener('click', () => {
-                    handleFretClick(str, fr);
-                });
-                svg.appendChild(rect);
+                    rect.addEventListener('click', () => {
+                        handleFretClick(str, fr);
+                    });
+                    svg.appendChild(rect);
+                }
             }
         }
     }
@@ -1177,12 +1260,19 @@
         renderFretboard();
     }
 
-    function evaluateAnswer() {
+    function evaluateAnswer(forcedResult) {
         if (isProcessing) return;
         isProcessing = true;
 
         const target = quizQueue[currentStep];
-        const isCorrect = userState.every((fret, i) => fret === target.frets[i]);
+        // In ear/listening mode userState is always a copy of the target
+        // chord's own frets (it's only used to render the reference
+        // diagram), so comparing it to target.frets is meaningless there -
+        // it can never be false. Ear mode instead passes its own
+        // true/false result in from the audio-matching logic below.
+        const isCorrect = (typeof forcedResult === 'boolean')
+            ? forcedResult
+            : userState.every((fret, i) => fret === target.frets[i]);
 
         playChordAudio(userState, target.startFret || 1);
 
@@ -1223,18 +1313,264 @@
     function loadStep() {
         const currentChord = quizQueue[currentStep];
 
-        if (!seenChords.has(currentChord.name)) {
-            userState = [...currentChord.frets];
-            seenChords.add(currentChord.name);
-            document.getElementById('hint-badge').style.display = 'inline-block';
+        if (currentMode === 'visual') {
+            if (!seenChords.has(currentChord.name)) {
+                userState = [...currentChord.frets];
+                seenChords.add(currentChord.name);
+                document.getElementById('hint-badge').style.display = 'inline-block';
+            } else {
+                userState = [0, 0, 0, 0, 0, 0];
+                document.getElementById('hint-badge').style.display = 'none';
+            }
         } else {
-            userState = [0, 0, 0, 0, 0, 0];
+            // Speaker / Audio Mode: Always show full reference chord
+            userState = [...currentChord.frets];
             document.getElementById('hint-badge').style.display = 'none';
+            updateStrumZoneVisuals(null, 'Listening for strum...');
         }
 
         document.getElementById('target-chord-name').textContent = currentChord.name;
         document.getElementById('progress-indicator').textContent = `Chord ${currentStep + 1}/${quizQueue.length}`;
         renderFretboard();
+    }
+
+    function getTargetPitchClasses(frets, startFret = 1) {
+        const pitchClasses = new Set();
+        frets.forEach((fret, stringIdx) => {
+            if (fret !== -1) {
+                const pitchFret = fret === 0 ? 0 : (fret + startFret - 1);
+                const basePitches = [4, 9, 2, 7, 11, 4]; // E, A, D, G, B, E
+                const pc = (basePitches[stringIdx] + pitchFret) % 12;
+                pitchClasses.add(pc);
+            }
+        });
+        return Array.from(pitchClasses);
+    }
+
+    function getChordRootPC(chordName) {
+        const rootMap = {
+            'A': 9, 'B': 11, 'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7,
+            'Ab': 8, 'Bb': 10, 'Db': 1, 'Eb': 3, 'Gb': 6,
+            'C#': 1, 'F#': 6, 'G#': 8
+        };
+        for (let prefix of ['C#', 'F#', 'G#', 'Ab', 'Bb', 'Db', 'Eb', 'Gb', 'A', 'B', 'C', 'D', 'E', 'F', 'G']) {
+            if (chordName.startsWith(prefix)) {
+                return rootMap[prefix];
+            }
+        }
+        return 0;
+    }
+
+    function interpolateColor(ratio) {
+        let r, g, b;
+        if (ratio < 0.5) {
+            const factor = ratio / 0.5;
+            r = Math.round(220 + (234 - 220) * factor);
+            g = Math.round(38 + (179 - 38) * factor);
+            b = Math.round(38 + (8 - 38) * factor);
+        } else {
+            const factor = (ratio - 0.5) / 0.5;
+            r = Math.round(234 + (16 - 234) * factor);
+            g = Math.round(179 + (185 - 179) * factor);
+            b = Math.round(8 + (129 - 8) * factor);
+        }
+        return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    async function startAudioListening() {
+        stopAudioListening();
+        try {
+            if (AudioCtx.state === 'suspended') {
+                await AudioCtx.resume();
+            }
+            audioStream = await navigator.mediaDevices.getUserMedia({ 
+                audio: { 
+                    echoCancellation: false, 
+                    noiseSuppression: false, 
+                    autoGainControl: true 
+                }, 
+                video: false 
+            });
+            const source = AudioCtx.createMediaStreamSource(audioStream);
+            micAnalyser = AudioCtx.createAnalyser();
+            micAnalyser.fftSize = 4096;
+            micAnalyser.smoothingTimeConstant = 0.2;
+            source.connect(micAnalyser);
+
+            const bufferLength = micAnalyser.frequencyBinCount;
+            const dataArray = new Float32Array(bufferLength);
+
+            let correctFramesCount = 0;
+            let incorrectFramesCount = 0;
+
+            pitchCheckInterval = setInterval(() => {
+                if (isProcessing || currentMode !== 'ear') return;
+                micAnalyser.getFloatFrequencyData(dataArray);
+
+                let sumPower = 0;
+                for (let i = 0; i < bufferLength; i++) {
+                    const linear = Math.pow(10, dataArray[i] / 20);
+                    sumPower += linear;
+                }
+                const avgPower = sumPower / bufferLength;
+
+                if (avgPower < 0.0001) {
+                    updateStrumZoneVisuals(null, 'Listening for strum...');
+                    correctFramesCount = 0;
+                    incorrectFramesCount = 0;
+                    return;
+                }
+
+                const chroma = new Float32Array(12);
+                const sampleRate = AudioCtx.sampleRate;
+
+                for (let i = 0; i < bufferLength; i++) {
+                    const freq = i * (sampleRate / micAnalyser.fftSize);
+                    if (freq >= 75 && freq <= 1100) {
+                        const db = dataArray[i];
+                        if (db > -68) {
+                            const midi = Math.round(12 * Math.log2(freq / 440) + 69);
+                            const pc = (midi % 12 + 12) % 12;
+                            chroma[pc] += Math.pow(10, db / 20);
+                        }
+                    }
+                }
+
+                const targetChord = quizQueue[currentStep];
+                const targetPCs = getTargetPitchClasses(targetChord.frets, targetChord.startFret || 1);
+                const rootPC = getChordRootPC(targetChord.name);
+
+                let maxChromaVal = 0;
+                for (let c = 0; c < 12; c++) {
+                    if (chroma[c] > maxChromaVal) maxChromaVal = chroma[c];
+                }
+
+                if (maxChromaVal === 0) {
+                    updateStrumZoneVisuals(null, 'Listening for strum...');
+                    correctFramesCount = 0;
+                    return;
+                }
+
+                // Which target notes are clearly ringing.
+                let targetMatches = 0;
+                targetPCs.forEach(pc => {
+                    if (chroma[pc] >= maxChromaVal * 0.20) {
+                        targetMatches++;
+                    }
+                });
+                const presenceFraction = targetMatches / targetPCs.length;
+                const rootPresent = chroma[rootPC] >= maxChromaVal * 0.20;
+
+                // NOTE: an earlier version penalized ratio based on generic
+                // non-target energy ("wrong notes"). Real-world logging
+                // showed that doesn't discriminate: a correct chord and a
+                // wrong chord both show plenty of loud non-target bins, and
+                // in particular an unfretted root string's natural harmonics
+                // (e.g. open A's 5th harmonic lands right on C#) can make a
+                // note look "present" even when nobody actually fretted it.
+                // Presence of all target notes turned out not to be fully
+                // reliable on its own either, for the same reason - so we
+                // pair it with a much more specific, targeted check below.
+                const requiredMatches = targetPCs.length <= 3
+                    ? targetPCs.length
+                    : targetPCs.length - 1;
+
+                // Any string this chord requires to be FRETTED (not left
+                // open, not muted) - if that string is instead ringing at
+                // its OPEN pitch, that's a direct, physical sign it wasn't
+                // fretted. Logged data confirmed this cleanly: every
+                // false-positive "all open strings" frame had the open G
+                // string (required to be fretted up to A for this chord) as
+                // the loudest or tied-loudest bin, while genuine x02220 takes
+                // kept it well below.
+                const basePitches = [4, 9, 2, 7, 11, 4]; // E, A, D, G, B, E
+                const openConflictPCs = [];
+                targetChord.frets.forEach((fret, stringIdx) => {
+                    if (fret > 0) {
+                        const openPC = basePitches[stringIdx];
+                        if (!targetPCs.includes(openPC) && !openConflictPCs.includes(openPC)) {
+                            openConflictPCs.push(openPC);
+                        }
+                    }
+                });
+                const hasOpenStringConflict = openConflictPCs.some(
+                    pc => chroma[pc] >= maxChromaVal * 0.4
+                );
+
+                const isMatch = targetMatches >= requiredMatches && rootPresent && !hasOpenStringConflict;
+
+                let ratio = presenceFraction;
+                if (!rootPresent) ratio *= 0.85;
+                if (hasOpenStringConflict) ratio *= 0.5;
+
+                const statusColor = interpolateColor(ratio);
+
+                const CLOSE_THRESHOLD = 0.5;
+
+                let labelText = 'Audio Detected...';
+                if (isMatch) labelText = 'Chord Matched!';
+                else if (ratio >= CLOSE_THRESHOLD) labelText = 'Getting Closer...';
+                else labelText = 'Incorrect Chord';
+
+                updateStrumZoneVisuals(statusColor, labelText);
+
+                if (isMatch) {
+                    correctFramesCount++;
+                    incorrectFramesCount = 0;
+                    if (correctFramesCount >= 2) {
+                        evaluateAnswer(true);
+                        correctFramesCount = 0;
+                    }
+                } else if (labelText === 'Incorrect Chord') {
+                    // A sustained, clearly-wrong strum (not just "Getting
+                    // Closer", which is intentionally never scored) counts as
+                    // a genuine wrong attempt. Same hard-reset-on-interruption
+                    // approach as the match counter above, for the same
+                    // reason: an isolated wrong-chord blip shouldn't count,
+                    // but two frames of it in a row reliably does.
+                    incorrectFramesCount++;
+                    correctFramesCount = 0;
+                    if (incorrectFramesCount >= 2) {
+                        evaluateAnswer(false);
+                        incorrectFramesCount = 0;
+                    }
+                } else {
+                    // "Getting Closer" (or any other non-qualifying state):
+                    // not scored either way, and doesn't count toward either
+                    // a correct or incorrect attempt.
+                    correctFramesCount = 0;
+                    incorrectFramesCount = 0;
+                }
+
+                // TEMP DEBUG: open the browser console (F12) to see the actual
+                // numbers behind each strum. Remove this block once tuned.
+                console.log(
+                    `[chord-debug] chord=${targetChord.name} targetPCs=${targetPCs} ` +
+                    `matches=${targetMatches}/${targetPCs.length} required=${requiredMatches} ` +
+                    `rootPresent=${rootPresent} openConflictPCs=${openConflictPCs} openConflict=${hasOpenStringConflict} ` +
+                    `isMatch=${isMatch} label=${labelText} ` +
+                    `correctFrames=${correctFramesCount} incorrectFrames=${incorrectFramesCount} ` +
+                    `maxChroma=${maxChromaVal.toFixed(4)} ` +
+                    `chroma=[${Array.from(chroma).map(v => v.toFixed(3)).join(',')}]`
+                );
+            }, 100);
+
+        } catch (err) {
+            console.error('Microphone access error:', err);
+            document.getElementById('setup-error').textContent = 'Microphone access is required for Speaker Mode.';
+        }
+    }
+
+    function stopAudioListening() {
+        if (pitchCheckInterval) {
+            clearInterval(pitchCheckInterval);
+            pitchCheckInterval = null;
+        }
+        if (audioStream) {
+            audioStream.getTracks().forEach(track => track.stop());
+            audioStream = null;
+        }
+        micAnalyser = null;
     }
 
     function calculateGrade(percentage) {
@@ -1254,6 +1590,7 @@
     }
 
     function showResults() {
+        stopAudioListening();
         document.getElementById('quiz-ui').style.display = 'none';
         document.getElementById('setup-ui').style.display = 'none';
         const resultsUi = document.getElementById('results-ui');
@@ -1269,6 +1606,7 @@
     }
 
     function showSetupScreen() {
+        stopAudioListening();
         document.getElementById('quiz-ui').style.display = 'none';
         document.getElementById('results-ui').style.display = 'none';
         document.getElementById('setup-ui').style.display = 'flex';
@@ -1294,9 +1632,12 @@
         document.getElementById('quiz-ui').style.display = 'flex';
         
         loadStep();
+
+        if (currentMode === 'ear') {
+            startAudioListening();
+        }
     }
 
-    // Save Quiz functionality
     function handleSaveQuiz() {
         if (selectedChordNames.size === 0) {
             document.getElementById('setup-error').textContent = 'Please select at least 1 chord to save.';
@@ -1315,7 +1656,6 @@
 
     document.getElementById('setup-save-quiz-btn').addEventListener('click', handleSaveQuiz);
 
-    // Share Quiz functionality
     function handleShareQuiz() {
         const errorEl = document.getElementById('setup-error');
         if (selectedChordNames.size === 0) {
@@ -1325,7 +1665,7 @@
 
         const chordsArray = Array.from(selectedChordNames).join(',');
         const url = new URL(window.location.href);
-        url.search = ''; // Clear existing query params
+        url.search = ''; 
         if (activePresetName) {
             url.searchParams.set('preset', activePresetName);
         }
@@ -1351,6 +1691,7 @@
     let isStrumming = false;
 
     strumZone.addEventListener('pointerdown', (e) => {
+        if (currentMode !== 'visual') return;
         startX = e.clientX;
         isStrumming = true;
         strumZone.classList.add('strumming');
@@ -1358,7 +1699,7 @@
     });
 
     strumZone.addEventListener('pointermove', (e) => {
-        if (!isStrumming) return;
+        if (!isStrumming || currentMode !== 'visual') return;
         const diffX = Math.abs(e.clientX - startX);
         if (diffX > 40) {
             isStrumming = false;
@@ -1368,7 +1709,7 @@
     });
 
     strumZone.addEventListener('pointerup', (e) => {
-        if (isStrumming) {
+        if (isStrumming && currentMode === 'visual') {
             isStrumming = false;
             strumZone.classList.remove('strumming');
             evaluateAnswer();
@@ -1382,6 +1723,7 @@
     document.getElementById('setup-from-results-btn').addEventListener('click', showSetupScreen);
 
     setTheme('light');
+    setMode('visual');
     checkURLParameters();
     initSetupUI();
 </script>
