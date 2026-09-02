@@ -566,6 +566,9 @@
 
         .feedback-title.pass { color: var(--open-o); }
         .feedback-title.fail { color: var(--muted-x); }
+
+        .target-correct { color: var(--open-o); font-weight: 700; }
+        .target-incorrect { color: var(--muted-x); font-weight: 700; }
     </style>
 </head>
 <body>
@@ -1094,6 +1097,19 @@
         return frets.map(f => f === -1 ? 'X' : f).join('-');
     }
 
+    // Same formatting as above, but colors each string's target digit
+    // green if the player's own answer matched it there, red if not - used
+    // for the "Target: ..." line on an incorrect answer, so a player can
+    // see at a glance which specific strings they got wrong. Only the
+    // digits are colored; the dash separators stay neutral.
+    function formatChordPatternComparison(targetFrets, userFrets) {
+        return targetFrets.map((f, i) => {
+            const label = f === -1 ? 'X' : f;
+            const cls = userFrets[i] === f ? 'target-correct' : 'target-incorrect';
+            return `<span class="${cls}">${label}</span>`;
+        }).join('-');
+    }
+
     // Presets are namespaced per instrument, since guitar and ukulele have
     // different chord vocabularies (a saved guitar preset's chord names
     // wouldn't reliably match anything meaningful in the ukulele database).
@@ -1565,7 +1581,18 @@
             scoreIncorrect++;
             title.textContent = "Incorrect";
             title.className = "feedback-title fail";
-            desc.textContent = `Target: ${formatChordPattern(target.frets)}`;
+            if (currentMode === 'draw') {
+                // userState is the player's own drawn answer here, so a
+                // genuine per-string comparison is meaningful.
+                desc.innerHTML = `Target: ${formatChordPatternComparison(target.frets, userState)}`;
+            } else {
+                // In play/ear mode userState is just a copy of the target
+                // (used only to render the reference diagram) - it doesn't
+                // reflect what the player actually played on their real
+                // instrument, so coloring it would misleadingly show every
+                // string as "correct" even on a genuine miss.
+                desc.textContent = `Target: ${formatChordPattern(target.frets)}`;
+            }
             delayDuration = 2600;
         }
 
