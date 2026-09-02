@@ -797,6 +797,7 @@
         revealedChordNames = new Set();
         seenChords = new Set();
         activePresetName = null;
+        liveDrawnBarres = [];
 
         initSetupUI();
         populateSavedQuizDropdown();
@@ -1049,6 +1050,17 @@
     let dragFret = null;
     let dragEndString = null;
     let dragMoved = false;
+    let currentDragBarreEntry = null; // reference into liveDrawnBarres for the in-progress drag, if any
+
+    // Barres the player has actually DRAWN via a drag gesture this quiz
+    // step - as opposed to two individually-tapped fingers that happen to
+    // land on the same fret (e.g. Em's A and D strings), which is NOT a
+    // barre and must never render as a pill. Each entry is re-validated
+    // against the current userState at render time, so it naturally stops
+    // rendering if the player later overwrites part of it with an
+    // individual tap. Cleared whenever the board resets (clearBoard,
+    // loadStep, instrument switch) so it never persists across chords.
+    let liveDrawnBarres = [];
 
     // Mic & Pitch Audio Variables
     let audioStream = null;
@@ -1350,60 +1362,46 @@
         // are all a similar gauge in real life, so none get the thick style.
         const thickStringCount = currentInstrument === 'guitar' ? 2 : 0;
 
-        // Barre detection: prefer an explicit `barre: {fret, from, to}` on
-        // the chord data. That's curated specifically for genuine full-neck
-        // barre shapes (E-shape, A-shape, etc.), which can have a different,
-        // higher-fretted note on an interior string - the plain adjacent-
-        // same-fret heuristic below can't bridge across that interruption,
-        // so it needs the explicit override to render as one continuous
-        // pill. Chords without an explicit barre fall back to that
-        // heuristic (adjacent strings sharing an identical nonzero fret).
+        // Barre detection. A pill is drawn ONLY for two sources of truth -
+        // never inferred from userState alone, since two individually-
+        // tapped fingers coincidentally landing on the same fret (e.g.
+        // Em's A and D strings, both fret 2) is NOT a barre and must not
+        // render as one:
+        //   1. Curated `barre: {fret, from, to}` metadata on the chord
+        //      itself - genuine full-neck barre shapes (E-shape, A-shape,
+        //      etc.), which can have a different, higher-fretted note on
+        //      an interior string.
+        //   2. Barres the player actually DRAGGED this step (see
+        //      liveDrawnBarres, populated by the drag handlers below) -
+        //      this lets a player choose to barre a chord that doesn't
+        //      normally require one, without the reverse ever happening
+        //      by accident.
         const barreStringIndices = new Set();
         const barreGroups = [];
-        if (currentChord && currentChord.barre) {
-            const { fret, from, to } = currentChord.barre;
-            // Only render the pill once userState ACTUALLY shows a barre
-            // there - never assume it just because the target chord has
-            // this metadata. In draw mode, a fresh (non-first-encounter)
-            // board starts all-zero, and the pill must not appear until the
-            // player has actually placed one (see the drag-to-barre
-            // handlers below). A valid barre requires both ends to be at
-            // the barre fret, and every string in between to be at that
-            // fret or HIGHER (never open/muted/lower - physically, a barre
-            // finger can't let a string sound lower than itself).
-            let validBarre = userState[from] === fret && userState[to] === fret;
-            if (validBarre) {
+
+        function tryAddBarre(fret, from, to) {
+            let valid = userState[from] === fret && userState[to] === fret;
+            if (valid) {
                 for (let k = from; k <= to; k++) {
-                    if (userState[k] < fret) { validBarre = false; break; }
+                    if (userState[k] < fret) { valid = false; break; }
                 }
             }
-            if (validBarre) {
+            if (valid) {
                 barreGroups.push({ fret, startIdx: from, endIdx: to });
                 // Only strings actually sounding AT the barre fret are
-                // covered by the pill; a string in-range but fretted higher
-                // by another finger still gets its own dot at that row.
+                // covered by the pill; a string in-range but fretted
+                // higher by another finger still gets its own dot.
                 for (let k = from; k <= to; k++) {
                     if (userState[k] === fret) barreStringIndices.add(k);
                 }
             }
-        } else {
-            let i = 0;
-            while (i < numStrings) {
-                if (userState[i] > 0) {
-                    let j = i;
-                    while (j + 1 < numStrings && userState[j + 1] === userState[i]) {
-                        j++;
-                    }
-                    if (j > i) {
-                        barreGroups.push({ fret: userState[i], startIdx: i, endIdx: j });
-                        for (let k = i; k <= j; k++) barreStringIndices.add(k);
-                    }
-                    i = j + 1;
-                } else {
-                    i++;
-                }
-            }
         }
+
+        if (currentChord && currentChord.barre) {
+            const { fret, from, to } = currentChord.barre;
+            tryAddBarre(fret, from, to);
+        }
+        liveDrawnBarres.forEach(({ fret, from, to }) => tryAddBarre(fret, from, to));
 
         const dotRadius = 13;
         barreGroups.forEach(({ fret, startIdx, endIdx }) => {
@@ -1521,6 +1519,7 @@
     function clearBoard() {
         if (isProcessing) return;
         userState = new Array(getNumStrings()).fill(0);
+        liveDrawnBarres = [];
         renderFretboard();
     }
 
@@ -1576,6 +1575,7 @@
 
     function loadStep() {
         const currentChord = quizQueue[currentStep];
+        liveDrawnBarres = [];
 
         if (currentMode === 'draw') {
             if (!seenChords.has(currentChord.name)) {
@@ -1975,6 +1975,17 @@
             for (let k = lo; k <= hi; k++) {
                 userState[k] = dragFret;
             }
+            // Record (or update in place) this drag as a genuine
+            // player-drawn barre, distinct from any coincidental same-fret
+            // adjacency - this is the only way a pill appears for a chord
+            // without curated barre metadata.
+            if (!currentDragBarreEntry) {
+                currentDragBarreEntry = { fret: dragFret, from: lo, to: hi };
+                liveDrawnBarres.push(currentDragBarreEntry);
+            } else {
+                currentDragBarreEntry.from = lo;
+                currentDragBarreEntry.to = hi;
+            }
             renderFretboard();
         }
     });
@@ -1990,6 +2001,7 @@
         dragFret = null;
         dragEndString = null;
         dragMoved = false;
+        currentDragBarreEntry = null;
     });
 
     svg.addEventListener('pointercancel', () => {
@@ -1997,6 +2009,7 @@
         dragFret = null;
         dragEndString = null;
         dragMoved = false;
+        currentDragBarreEntry = null;
     });
 
     strumZone.addEventListener('pointerdown', (e) => {

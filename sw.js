@@ -1,6 +1,6 @@
 // Bump this whenever index.html (or any precached asset) changes, so the
 // new version is fetched and old caches are cleaned up.
-const CACHE_VERSION = 'guitar-quiz-v2';
+const CACHE_VERSION = 'guitar-quiz-v3';
 
 const PRECACHE_URLS = [
     './',
