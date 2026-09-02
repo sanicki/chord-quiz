@@ -1047,6 +1047,8 @@
     let currentStep = 0;
     let scoreCorrect = 0;
     let scoreIncorrect = 0;
+    let scoredAttempts = 0; // denominator for the results percentage - excludes first-encounter study steps
+    let isFirstEncounterStep = false; // true only for a draw-mode step whose board was pre-filled as a study preview
     let userState = [0, 0, 0, 0, 0, 0];
     let seenChords = new Set(); // reset when the instrument changes (see setInstrument)
     let isProcessing = false;
@@ -1572,13 +1574,27 @@
 
         let delayDuration = 1600;
 
+        // A first-encounter step's board was pre-filled with the answer as
+        // a study preview (see loadStep) - swiping past it isn't a genuine
+        // attempt, so it shouldn't count toward the score in either
+        // direction, and shouldn't count toward the percentage denominator
+        // either (that would unfairly punish a player for not being tested
+        // on it, the same way scoring it as correct unfairly rewards them).
+        const isScoredAttempt = !isFirstEncounterStep;
+
         if (isCorrect) {
-            scoreCorrect++;
+            if (isScoredAttempt) {
+                scoreCorrect++;
+                scoredAttempts++;
+            }
             title.textContent = "Correct!";
             title.className = "feedback-title pass";
             desc.textContent = "";
         } else {
-            scoreIncorrect++;
+            if (isScoredAttempt) {
+                scoreIncorrect++;
+                scoredAttempts++;
+            }
             title.textContent = "Incorrect";
             title.className = "feedback-title fail";
             if (currentMode === 'draw') {
@@ -1619,14 +1635,20 @@
             if (!seenChords.has(currentChord.name)) {
                 userState = [...currentChord.frets];
                 seenChords.add(currentChord.name);
+                isFirstEncounterStep = true;
                 document.getElementById('hint-badge').style.display = 'inline-block';
             } else {
                 userState = new Array(getNumStrings()).fill(0);
+                isFirstEncounterStep = false;
                 document.getElementById('hint-badge').style.display = 'none';
             }
         } else {
-            // Play / Audio Mode: Always show full reference chord
+            // Play / Audio Mode: Always show full reference chord - there's
+            // no "study preview" concept here since the on-screen board was
+            // never the thing being tested, the player's real instrument is
+            // (via mic matching), so every step is a genuine attempt.
             userState = [...currentChord.frets];
+            isFirstEncounterStep = false;
             document.getElementById('hint-badge').style.display = 'none';
             updateStrumZoneVisuals(null, 'Listening for strum...');
         }
@@ -1898,8 +1920,15 @@
         const resultsUi = document.getElementById('results-ui');
         resultsUi.style.display = 'flex';
 
-        const total = quizQueue.length;
-        const percentage = Math.round((scoreCorrect / total) * 100);
+        // scoredAttempts (not quizQueue.length) is the right denominator -
+        // it already excludes first-encounter study steps from both sides
+        // of the fraction, so the percentage reflects only genuine
+        // attempts. Guarded against 0 defensively, though in practice it
+        // can't happen: starting a quiz requires at least one selected
+        // chord, and every chord gets 3 queue slots with only the first
+        // ever being a study step, so at least 2 scored attempts always exist.
+        const total = scoredAttempts;
+        const percentage = total > 0 ? Math.round((scoreCorrect / total) * 100) : 0;
 
         document.getElementById('correct-count').textContent = scoreCorrect;
         document.getElementById('incorrect-count').textContent = scoreIncorrect;
@@ -1927,6 +1956,7 @@
         currentStep = 0;
         scoreCorrect = 0;
         scoreIncorrect = 0;
+        scoredAttempts = 0;
 
         document.getElementById('score-tracker').textContent = `Score: 0`;
         document.getElementById('setup-ui').style.display = 'none';
