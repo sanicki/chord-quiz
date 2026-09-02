@@ -703,10 +703,31 @@
         }
     }
 
+    let themeManuallySet = false;
+
     themeBtn.addEventListener('click', () => {
+        themeManuallySet = true;
         const currentTheme = document.documentElement.getAttribute('data-theme');
         setTheme(currentTheme === 'light' ? 'dark' : 'light');
     });
+
+    // Live-react to OS/browser theme changes (e.g. a scheduled sunset
+    // switch to dark mode) - but only until the user picks a theme
+    // themselves during this session, at which point their choice sticks
+    // and we stop overriding it out from under them.
+    if (window.matchMedia) {
+        const darkSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        const handleSchemeChange = (e) => {
+            if (themeManuallySet) return;
+            setTheme(e.matches ? 'dark' : 'light');
+        };
+        if (darkSchemeQuery.addEventListener) {
+            darkSchemeQuery.addEventListener('change', handleSchemeChange);
+        } else if (darkSchemeQuery.addListener) {
+            // Safari <14 fallback
+            darkSchemeQuery.addListener(handleSchemeChange);
+        }
+    }
 
     function updateStrumZoneVisuals(color, text) {
         const strumZone = document.getElementById('strum-zone');
@@ -1988,7 +2009,12 @@
     document.getElementById('restart-btn').addEventListener('click', startQuiz);
     document.getElementById('setup-from-results-btn').addEventListener('click', showSetupScreen);
 
-    setTheme('light');
+    // Match the OS/browser's light-dark preference on load, rather than
+    // always defaulting to light. `matchMedia` returns false (light) in
+    // browsers that don't support prefers-color-scheme at all, which is a
+    // safe fallback.
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setTheme(prefersDark ? 'dark' : 'light');
     setMode('draw');
     checkURLParameters();
     // Sync the instrument icon to whatever was persisted from a previous
