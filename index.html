@@ -628,7 +628,7 @@
             <div id="hint-badge" class="hint-badge" style="display: none;">First Encounter — Study</div>
         </div>
 
-        <p class="instructions" id="quiz-instructions">Tap top row to toggle Open (O) / Mute (X). Tap fretboard to place fingers. Swipe across the strum box to submit.</p>
+        <p class="instructions" id="quiz-instructions">Tap top row to toggle Open (O) / Mute (X). Tap fretboard to place fingers. Draw barres first. Swipe across the strum box to submit.</p>
 
         <div class="interactive-area">
             <svg id="fretboard" width="300" height="280" viewBox="0 0 300 280"></svg>
@@ -760,7 +760,7 @@
         if (mode === 'draw') {
             eyeIcon.style.display = 'block';
             speakerIcon.style.display = 'none';
-            document.getElementById('quiz-instructions').textContent = 'Tap top row to toggle Open (O) / Mute (X). Tap fretboard to place fingers. Swipe across the strum box to submit.';
+            document.getElementById('quiz-instructions').textContent = 'Tap top row to toggle Open (O) / Mute (X). Tap fretboard to place fingers. Draw barres first. Swipe across the strum box to submit.';
             document.getElementById('clear-btn').style.display = 'inline-flex';
             stopAudioListening();
             updateStrumZoneVisuals();
@@ -852,144 +852,85 @@
 
     const rawChordDatabase = [
         { name: "A", frets: [-1, 0, 2, 2, 2, 0] },
-        { name: "A+", frets: [-1, 0, 3, 2, 2, 1] },
         { name: "A6", frets: [-1, 0, 2, 2, 2, 2] },
         { name: "A7", frets: [-1, 0, 2, 0, 2, 0] },
-        { name: "A9", frets: [0, 0, 2, 4, 2, 0] },
-        { name: "Ab", frets: [1, 3, 3, 2, 1, 1], startFret: 4 },
-        { name: "Ab+", frets: [-1, -1, 2, 1, 1, 0], startFret: 1 },
+        { name: "Ab", frets: [-1, -1, 3, 2, 1, 1], startFret: 4 },
         { name: "Ab6", frets: [-1, -1, 1, 1, 1, 1], startFret: 1 },
         { name: "Ab7", frets: [-1, -1, 1, 1, 1, 2], startFret: 1 },
-        { name: "Ab9", frets: [-1, -1, 1, 3, 1, 3], startFret: 1 },
         { name: "Abmaj7", frets: [-1, -1, 1, 1, 1, 3], startFret: 1 },
-        { name: "Absus", frets: [-1, -1, 1, 1, 2, 2], startFret: 1 },
-        { name: "Adim", frets: [-1, -1, 1, 2, 1, 2] },
+        { name: "Absus", frets: [-1, -1, 1, 1, 2, -1] },
         { name: "Amaj7", frets: [-1, 0, 2, 1, 2, 0] },
         { name: "Am", frets: [-1, 0, 2, 2, 1, 0] },
-        { name: "Am6", frets: [-1, 0, 2, 2, 1, 2] },
         { name: "Am7", frets: [-1, 0, 2, 0, 1, 0] },
         { name: "Asus", frets: [-1, 0, 2, 2, 3, 0] },
 
-        { name: "B", frets: [-1, 2, 4, 4, 4, 2] },
-        { name: "B+", frets: [-1, -1, 1, 0, 0, 0], startFret: 3 },
+        { name: "B", frets: [-1, -1, -1, 4, 4, 2] },
         { name: "B5", frets: [-1, 2, 4, 4, -1, -1] },
-        { name: "B6", frets: [-1, 2, 1, 1, 0, 0] },
+        { name: "B6", frets: [-1, 2, 1, 1, 0, -1] },
         { name: "B7", frets: [-1, 2, 1, 2, 0, 2] },
-        { name: "B9", frets: [-1, 2, 1, 2, 2, 2] },
-        { name: "Bb", frets: [-1, 1, 3, 3, 3, 1] },
-        { name: "Bb+", frets: [-1, -1, 0, 3, 3, 2] },
+        { name: "Bb", frets: [-1, 1, 3, 3, 3, 1], barre: { fret: 1, from: 1, to: 5 } },
         { name: "Bb6", frets: [-1, -1, 3, 3, 3, 3] },
-        { name: "Bb7", frets: [-1, -1, 1, 1, 1, 1], startFret: 3 },
-        { name: "Bb9", frets: [-1, -1, 1, 1, 1, 1], startFret: 3 },
-        { name: "Bbdim", frets: [-1, -1, 2, 3, 2, 3] },
-        { name: "Bbmaj7", frets: [-1, 1, 3, 2, 3, 1] },
-        { name: "Bbm", frets: [-1, 1, 3, 3, 2, 1] },
-        { name: "Bbm6", frets: [-1, -1, 3, 3, 2, 3] },
+        { name: "Bb7", frets: [-1, 1, 3, 1, 3, 1], barre: { fret: 1, from: 1, to: 5 } },
+        { name: "Bbmaj7", frets: [-1, 1, 3, 2, 3, 1], barre: { fret: 1, from: 1, to: 5 } },
+        { name: "Bbm", frets: [-1, 1, 3, 3, 2, 1], barre: { fret: 1, from: 1, to: 5 } },
         { name: "Bbm7", frets: [-1, -1, 3, 3, 2, 4] },
         { name: "Bbsus", frets: [-1, -1, 3, 3, 4, 1] },
-        { name: "Bdim", frets: [-1, -1, 0, 1, 0, 1], startFret: 1 },
-        { name: "Bmaj7", frets: [-1, 2, 4, 3, 4, 2] },
-        { name: "Bm", frets: [-1, 2, 4, 4, 3, 2] },
-        { name: "Bm6", frets: [-1, -1, 4, 4, 3, 4] },
-        { name: "Bm7", frets: [-1, 1, 3, 1, 3, 1], startFret: 2 },
-        { name: "Bsus", frets: [-1, 1, 4, 4, 2, 1], startFret: 2 },
+        { name: "Bmaj7", frets: [-1, 2, 4, 3, 4, 2], barre: { fret: 2, from: 1, to: 5 } },
+        { name: "Bm", frets: [-1, -1, -1, 4, 3, 2] },
+        { name: "Bm7", frets: [-1, 2, 0, 2, 0, 2] },
+        { name: "Bsus", frets: [-1, 2, 4, 4, 0, 0] },
 
         { name: "C", frets: [-1, 3, 2, 0, 1, 0] },
-        { name: "C+", frets: [-1, -1, 2, 1, 1, 0] },
-        { name: "C6", frets: [-1, -1, 2, 2, 1, 3] },
+        { name: "C6", frets: [-1, 3, 2, 2, 1, 0] },
         { name: "C7", frets: [-1, 3, 2, 3, 1, 0] },
-        { name: "C9", frets: [-1, 3, 2, 3, 3, 3] },
-        { name: "C#dim", frets: [-1, -1, 2, 3, 2, 3] },
         { name: "C#m", frets: [-1, -1, 2, 1, 2, 0] },
-        { name: "C#m6", frets: [-1, -1, 2, 3, 2, 4] },
         { name: "C#m7", frets: [-1, -1, 2, 4, 2, 4] },
-        { name: "Cdim", frets: [-1, -1, 1, 2, 1, 2] },
         { name: "Cmaj7", frets: [-1, 3, 2, 0, 0, 0] },
-        { name: "Cm", frets: [-1, 1, 3, 3, 2, 1], startFret: 3 },
-        { name: "Cm6", frets: [-1, -1, 1, 2, 1, 3] },
-        { name: "Cm7", frets: [-1, -1, 1, 3, 1, 4] },
+        { name: "Cm", frets: [-1, 1, 3, 3, 2, 1], startFret: 3, barre: { fret: 1, from: 1, to: 5 } },
+        { name: "Cm7", frets: [-1, 1, 3, 1, 2, 1], startFret: 3, barre: { fret: 1, from: 1, to: 5 } },
         { name: "Csus", frets: [-1, -1, 3, 0, 1, 1] },
 
         { name: "D", frets: [-1, -1, 0, 2, 3, 2] },
-        { name: "D+", frets: [-1, -1, 0, 3, 3, 2] },
         { name: "D6", frets: [-1, -1, 0, 2, 0, 2] },
         { name: "D7", frets: [-1, -1, 0, 2, 1, 2] },
-        { name: "D9", frets: [-1, -1, 0, 2, 1, 0] },
-        { name: "Db", frets: [-1, -1, 3, 1, 2, 1] },
-        { name: "Db+", frets: [-1, -1, 3, 2, 2, 1] },
-        { name: "Db6", frets: [-1, -1, 3, 3, 2, 4] },
-        { name: "Db7", frets: [-1, -1, 3, 4, 2, 4] },
-        { name: "Db9", frets: [-1, -1, 3, 4, 4, 4] },
-        { name: "Dbmaj7", frets: [-1, -1, 3, 1, 1, 1] },
-        { name: "Dbsus", frets: [-1, -1, 3, 1, 2, 2] },
-        { name: "Ddim", frets: [-1, -1, 0, 1, 0, 1] },
         { name: "Dmaj7", frets: [-1, -1, 0, 2, 2, 2] },
         { name: "Dm", frets: [-1, -1, 0, 2, 3, 1] },
-        { name: "Dm6", frets: [-1, -1, 0, 2, 0, 1] },
         { name: "Dm7", frets: [-1, -1, 0, 2, 1, 1] },
         { name: "Dsus", frets: [-1, -1, 0, 2, 3, 3] },
 
         { name: "E", frets: [0, 2, 2, 1, 0, 0] },
-        { name: "E+", frets: [-1, -1, 2, 1, 1, 0] },
         { name: "E6", frets: [0, 2, 2, 1, 2, 0] },
         { name: "E7", frets: [0, 2, 0, 1, 0, 0] },
-        { name: "E9", frets: [0, 2, 0, 1, 0, 2] },
-        { name: "Eb", frets: [-1, -1, 1, 3, 4, 3], startFret: 3 },
-        { name: "Eb+", frets: [-1, -1, 1, 0, 0, 3] },
-        { name: "Eb6", frets: [-1, -1, 1, 3, 1, 3] },
-        { name: "Eb7", frets: [-1, -1, 1, 3, 2, 3] },
-        { name: "Eb9", frets: [-1, 1, 1, 0, 2, 1] },
-        { name: "Ebdim", frets: [-1, -1, 1, 2, 1, 2] },
-        { name: "Ebm", frets: [-1, -1, 1, 3, 4, 2] },
-        { name: "Ebm6", frets: [-1, -1, 1, 3, 1, 2] },
-        { name: "Ebm7", frets: [-1, -1, 1, 3, 2, 2] },
-        { name: "Ebsus", frets: [-1, -1, 1, 3, 4, 4] },
-        { name: "Edim", frets: [-1, -1, 2, 3, 2, 3] },
         { name: "Emaj7", frets: [0, 2, 1, 1, 0, 0] },
         { name: "Em", frets: [0, 2, 2, 0, 0, 0] },
-        { name: "Em6", frets: [0, 2, 2, 0, 2, 0] },
         { name: "Em7", frets: [0, 2, 0, 0, 0, 0] },
         { name: "Esus", frets: [0, 2, 2, 2, 0, 0] },
 
-        { name: "F", frets: [1, 3, 3, 2, 1, 1] },
+        { name: "F", frets: [1, 3, 3, 2, 1, 1], barre: { fret: 1, from: 0, to: 5 } },
         { name: "F mini", frets: [-1, -1, 3, 2, 1, 1] },
-        { name: "F+", frets: [-1, -1, 3, 2, 2, 1] },
         { name: "F5", frets: [1, 3, 3, -1, -1, -1] },
         { name: "F6", frets: [-1, -1, 3, 2, 3, 1] },
-        { name: "F7", frets: [1, 3, 1, 2, 1, 1] },
-        { name: "F9", frets: [-1, -1, 3, 2, 1, 3] },
-        { name: "F#", frets: [2, 4, 4, 3, 2, 2] },
+        { name: "F7", frets: [1, 3, 1, 2, 1, 1], barre: { fret: 1, from: 0, to: 5 } },
+        { name: "F#", frets: [2, 4, 4, 3, 2, 2], barre: { fret: 2, from: 0, to: 5 } },
         { name: "F#7", frets: [-1, -1, 4, 3, 2, 0] },
-        { name: "F#9", frets: [-1, -1, 2, 1, 2, 2], startFret: 3 },
-        { name: "F#dim", frets: [-1, -1, 1, 2, 1, 2] },
-        { name: "F#m", frets: [2, 4, 4, 2, 2, 2] },
-        { name: "F#m6", frets: [-1, -1, 1, 2, 2, 2] },
+        { name: "F#m", frets: [2, 4, 4, 2, 2, 2], barre: { fret: 2, from: 0, to: 5 } },
         { name: "F#m7", frets: [-1, -1, 2, 2, 2, 2] },
-        { name: "Fdim", frets: [-1, -1, 0, 1, 0, 1] },
         { name: "Fmaj7", frets: [-1, -1, 3, 2, 1, 0] },
-        { name: "Fm", frets: [1, 3, 3, 1, 1, 1] },
-        { name: "Fm6", frets: [-1, -1, 3, 1, 3, 1] },
-        { name: "Fm7", frets: [1, 3, 1, 1, 1, 1] },
+        { name: "Fm", frets: [1, 3, 3, 1, 1, 1], barre: { fret: 1, from: 0, to: 5 } },
+        { name: "Fm7", frets: [1, 3, 1, 1, 1, 1], barre: { fret: 1, from: 0, to: 5 } },
         { name: "Fsus", frets: [-1, -1, 3, 3, 1, 1] },
 
         { name: "G", frets: [3, 2, 0, 0, 0, 3] },
-        { name: "G+", frets: [-1, -1, 1, 0, 0, 3] },
         { name: "G6", frets: [0, 2, 0, 0, 0, 0] },
         { name: "G7", frets: [3, 2, 0, 0, 0, 1] },
-        { name: "G9", frets: [3, 0, 0, 2, 0, 1] },
-        { name: "G#dim", frets: [-1, -1, 0, 1, 0, 1], startFret: 1 },
-        { name: "G#m", frets: [1, 3, 3, 1, 1, 1], startFret: 4 },
-        { name: "G#m6", frets: [-1, -1, -1, 1, 0, 1], startFret: 1 },
+        { name: "G#m", frets: [1, 3, 3, 1, 1, 1], startFret: 4, barre: { fret: 1, from: 0, to: 5 } },
         { name: "G#m7", frets: [-1, -1, 1, 1, 0, 2], startFret: 1 },
-        { name: "Gb+", frets: [-1, -1, 4, 3, 3, 2] },
         { name: "Gb6", frets: [-1, -1, 4, 3, 4, 2] },
         { name: "Gbmaj7", frets: [-1, -1, 4, 3, 2, 1] },
         { name: "Gbsus", frets: [-1, -1, 4, 4, 2, 2] },
-        { name: "Gdim", frets: [-1, -1, 2, 3, 2, 3] },
-        { name: "Gmaj7", frets: [-1, 1, 3, 2, 2, 1], startFret: 2 },
-        { name: "Gm", frets: [1, 3, 3, 1, 1, 1], startFret: 3 },
-        { name: "Gm6", frets: [-1, -1, 0, 3, 3, 3] },
-        { name: "Gm7", frets: [1, 3, 1, 1, 1, 1], startFret: 3 },
+        { name: "Gmaj7", frets: [3, 2, 0, 0, 0, 2] },
+        { name: "Gm", frets: [1, 3, 3, 1, 1, 1], startFret: 3, barre: { fret: 1, from: 0, to: 5 } },
+        { name: "Gm7", frets: [1, 3, 1, 1, 1, 1], startFret: 3, barre: { fret: 1, from: 0, to: 5 } },
         { name: "Gsus", frets: [-1, -1, 0, 0, 1, 3] }
     ];
 
@@ -1002,124 +943,66 @@
     const rawUkuleleChordDatabase = [
         { name: "A", frets: [2, 1, 0, 0] },
         { name: "Am", frets: [2, 0, 0, 0] },
-        { name: "Aaug", frets: [2, 1, 1, 4] },
-        { name: "Adim", frets: [2, 3, 2, 3] },
         { name: "A6", frets: [2, 4, 2, 4] },
-        { name: "Am6", frets: [2, 4, 0, 3] },
         { name: "A7", frets: [0, 1, 0, 0] },
         { name: "Amaj7", frets: [1, 1, 0, 0] },
         { name: "Am7", frets: [2, 4, 3, 3] },
-        { name: "A9", frets: [0, 1, 0, 2] },
-        { name: "Ab", frets: [5, 3, 4, 3] },
+        { name: "Ab", frets: [3, 1, 2, 1], startFret: 3 },
         { name: "Abm", frets: [1, 3, 4, 2] },
-        { name: "Abaug", frets: [1, 0, 0, 3] },
-        { name: "Abdim", frets: [1, 2, 1, 2] },
         { name: "Ab6", frets: [1, 3, 1, 3] },
-        { name: "Abm6", frets: [1, 3, 1, 2] },
         { name: "Ab7", frets: [1, 3, 2, 3] },
-        { name: "Abmaj7", frets: [1, 3, 0, 3] },
+        { name: "Abmaj7", frets: [1, 3, 3, 3] },
         { name: "Abm7", frets: [1, 3, 2, 2] },
-        { name: "Ab9", frets: [3, 3, 2, 3] },
         { name: "B", frets: [4, 3, 2, 2] },
         { name: "Bm", frets: [4, 2, 2, 2] },
-        { name: "Baug", frets: [0, 3, 3, 2] },
-        { name: "Bdim", frets: [1, 2, 1, 2] },
         { name: "B6", frets: [1, 3, 2, 2] },
-        { name: "Bm6", frets: [1, 2, 2, 2] },
-        { name: "B7", frets: [2, 3, 2, 2] },
+        { name: "B7", frets: [2, 3, 2, 2], barre: { fret: 2, from: 0, to: 3 } },
         { name: "Bmaj7", frets: [4, 3, 2, 1] },
         { name: "Bm7", frets: [2, 2, 2, 2] },
-        { name: "B9", frets: [2, 3, 2, 4] },
         { name: "Bb", frets: [3, 2, 1, 1] },
         { name: "Bbm", frets: [3, 1, 1, 1] },
-        { name: "Bbaug", frets: [3, 2, 2, 1] },
-        { name: "Bbdim", frets: [0, 1, 0, 1] },
         { name: "Bb6", frets: [0, 2, 1, 1] },
-        { name: "Bbm6", frets: [0, 1, 1, 1] },
-        { name: "Bb7", frets: [1, 2, 1, 1] },
+        { name: "Bb7", frets: [1, 2, 1, 1], barre: { fret: 1, from: 0, to: 3 } },
         { name: "Bbmaj7", frets: [3, 2, 1, 0] },
         { name: "Bbm7", frets: [1, 1, 1, 1] },
-        { name: "Bb9", frets: [1, 2, 1, 3] },
         { name: "C", frets: [0, 0, 0, 3] },
         { name: "Cm", frets: [0, 3, 3, 3] },
-        { name: "Caug", frets: [1, 0, 0, 3] },
-        { name: "Cdim", frets: [2, 3, 2, 3] },
         { name: "C6", frets: [0, 0, 0, 0] },
-        { name: "Cm6", frets: [2, 3, 3, 3] },
         { name: "C7", frets: [0, 0, 0, 1] },
         { name: "Cmaj7", frets: [0, 0, 0, 2] },
         { name: "Cm7", frets: [3, 3, 3, 3] },
-        { name: "C9", frets: [0, 2, 0, 1] },
         { name: "D", frets: [2, 2, 2, 0] },
         { name: "Dm", frets: [2, 2, 1, 0] },
-        { name: "Daug", frets: [3, 2, 2, 1] },
-        { name: "Ddim", frets: [1, 2, 1, 2] },
-        { name: "D6", frets: [2, 2, 0, 2] },
-        { name: "Dm6", frets: [2, 2, 1, 2] },
+        { name: "D6", frets: [-1, 2, 2, 2] },
         { name: "D7", frets: [2, 2, 2, 3] },
         { name: "Dmaj7", frets: [2, 2, 2, 4] },
         { name: "Dm7", frets: [2, 2, 1, 3] },
-        { name: "D9", frets: [2, 4, 2, 3] },
-        { name: "Db", frets: [1, 1, 1, 3] },
         { name: "Dbm", frets: [1, 1, 0, 4] },
-        { name: "Dbaug", frets: [1, 0, 0, 4] },
-        { name: "Dbdim", frets: [0, 1, 0, 1] },
-        { name: "Db6", frets: [1, 1, 1, 1] },
-        { name: "Dbm6", frets: [1, 1, 0, 1] },
-        { name: "Db7", frets: [1, 1, 1, 2] },
-        { name: "Dbmaj7", frets: [1, 1, 1, 3] },
         { name: "Dbm7", frets: [1, 1, 0, 2] },
-        { name: "Db9", frets: [1, 1, 1, 2] },
-        { name: "E", frets: [4, 4, 4, 2] },
+        { name: "E", frets: [1, 4, 0, 2] },
         { name: "Em", frets: [0, 4, 3, 2] },
-        { name: "Eaug", frets: [1, 0, 0, 3] },
-        { name: "Edim", frets: [0, 1, 0, 1] },
-        { name: "E6", frets: [4, 4, 4, 4] },
-        { name: "Em6", frets: [0, 1, 0, 2] },
+        { name: "E6", frets: [1, 4, 0, 4] },
         { name: "E7", frets: [1, 2, 0, 2] },
         { name: "Emaj7", frets: [1, 3, 0, 2] },
         { name: "Em7", frets: [0, 2, 0, 2] },
-        { name: "E9", frets: [1, 2, 0, 2] },
-        { name: "Eb", frets: [0, 3, 3, 1] },
-        { name: "Ebm", frets: [3, 3, 2, 1] },
-        { name: "Ebaug", frets: [0, 3, 3, 2] },
-        { name: "Ebdim", frets: [2, 3, 2, 3] },
-        { name: "Eb6", frets: [3, 3, 3, 3] },
-        { name: "Ebm6", frets: [3, 3, 2, 3] },
-        { name: "Eb7", frets: [3, 3, 3, 4] },
-        { name: "Ebmaj7", frets: [3, 3, 3, 5] },
-        { name: "Ebm7", frets: [3, 3, 2, 4] },
-        { name: "Eb9", frets: [0, 3, 1, 4] },
         { name: "F", frets: [2, 0, 1, 0] },
         { name: "Fm", frets: [1, 0, 1, 3] },
-        { name: "Faug", frets: [2, 1, 1, 0] },
-        { name: "Fdim", frets: [1, 2, 1, 2] },
         { name: "F6", frets: [2, 2, 1, 3] },
-        { name: "Fm6", frets: [1, 2, 0, 3] },
         { name: "F7", frets: [2, 3, 1, 3] },
         { name: "Fmaj7", frets: [2, 4, 1, 3] },
         { name: "Fm7", frets: [1, 3, 1, 3] },
-        { name: "F9", frets: [2, 3, 3, 3] },
         { name: "G", frets: [0, 2, 3, 2] },
         { name: "Gm", frets: [0, 2, 3, 1] },
-        { name: "Gaug", frets: [0, 3, 3, 2] },
-        { name: "Gdim", frets: [0, 1, 0, 1] },
         { name: "G6", frets: [0, 2, 0, 2] },
-        { name: "Gm6", frets: [0, 2, 0, 1] },
         { name: "G7", frets: [0, 2, 1, 2] },
         { name: "Gmaj7", frets: [0, 2, 2, 2] },
         { name: "Gm7", frets: [0, 2, 1, 1] },
-        { name: "G9", frets: [0, 5, 5, 2] },
         { name: "Gb", frets: [3, 1, 2, 1] },
         { name: "Gbm", frets: [2, 1, 2, 4] },
-        { name: "Gbaug", frets: [3, 2, 2, 1] },
-        { name: "Gbdim", frets: [2, 3, 2, 3] },
         { name: "Gb6", frets: [3, 3, 2, 4] },
-        { name: "Gbm6", frets: [2, 3, 2, 4] },
         { name: "Gb7", frets: [3, 4, 2, 4] },
-        { name: "Gbmaj7", frets: [3, 4, 2, 4] },
+        { name: "Gbmaj7", frets: [-1, 4, 1, 3], startFret: 2 },
         { name: "Gbm7", frets: [2, 4, 2, 4] },
-        { name: "Gb9", frets: [1, 1, 0, 1] }
     ];
     const ukuleleChordDatabase = rawUkuleleChordDatabase.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 
@@ -1153,6 +1036,19 @@
     let seenChords = new Set(); // reset when the instrument changes (see setInstrument)
     let isProcessing = false;
     let activePresetName = null;
+
+    // Fretboard drag-to-barre state. A tap-and-drag across multiple strings
+    // at the same fret lays down a barre in one gesture (setting all spanned
+    // strings to that fret); a plain tap with no movement still behaves as a
+    // single-string toggle, same as before. Kept at module level (rather
+    // than per-render) because the fretboard SVG's children are fully
+    // rebuilt on every renderFretboard() call, so per-cell listeners can't
+    // hold drag state across a render - only the stable svg element and
+    // these variables persist through that.
+    let dragStartString = null;
+    let dragFret = null;
+    let dragEndString = null;
+    let dragMoved = false;
 
     // Mic & Pitch Audio Variables
     let audioStream = null;
@@ -1454,6 +1350,77 @@
         // are all a similar gauge in real life, so none get the thick style.
         const thickStringCount = currentInstrument === 'guitar' ? 2 : 0;
 
+        // Barre detection: prefer an explicit `barre: {fret, from, to}` on
+        // the chord data. That's curated specifically for genuine full-neck
+        // barre shapes (E-shape, A-shape, etc.), which can have a different,
+        // higher-fretted note on an interior string - the plain adjacent-
+        // same-fret heuristic below can't bridge across that interruption,
+        // so it needs the explicit override to render as one continuous
+        // pill. Chords without an explicit barre fall back to that
+        // heuristic (adjacent strings sharing an identical nonzero fret).
+        const barreStringIndices = new Set();
+        const barreGroups = [];
+        if (currentChord && currentChord.barre) {
+            const { fret, from, to } = currentChord.barre;
+            // Only render the pill once userState ACTUALLY shows a barre
+            // there - never assume it just because the target chord has
+            // this metadata. In draw mode, a fresh (non-first-encounter)
+            // board starts all-zero, and the pill must not appear until the
+            // player has actually placed one (see the drag-to-barre
+            // handlers below). A valid barre requires both ends to be at
+            // the barre fret, and every string in between to be at that
+            // fret or HIGHER (never open/muted/lower - physically, a barre
+            // finger can't let a string sound lower than itself).
+            let validBarre = userState[from] === fret && userState[to] === fret;
+            if (validBarre) {
+                for (let k = from; k <= to; k++) {
+                    if (userState[k] < fret) { validBarre = false; break; }
+                }
+            }
+            if (validBarre) {
+                barreGroups.push({ fret, startIdx: from, endIdx: to });
+                // Only strings actually sounding AT the barre fret are
+                // covered by the pill; a string in-range but fretted higher
+                // by another finger still gets its own dot at that row.
+                for (let k = from; k <= to; k++) {
+                    if (userState[k] === fret) barreStringIndices.add(k);
+                }
+            }
+        } else {
+            let i = 0;
+            while (i < numStrings) {
+                if (userState[i] > 0) {
+                    let j = i;
+                    while (j + 1 < numStrings && userState[j + 1] === userState[i]) {
+                        j++;
+                    }
+                    if (j > i) {
+                        barreGroups.push({ fret: userState[i], startIdx: i, endIdx: j });
+                        for (let k = i; k <= j; k++) barreStringIndices.add(k);
+                    }
+                    i = j + 1;
+                } else {
+                    i++;
+                }
+            }
+        }
+
+        const dotRadius = 13;
+        barreGroups.forEach(({ fret, startIdx, endIdx }) => {
+            const x1 = paddingX + startIdx * stringSpacing;
+            const x2 = paddingX + endIdx * stringSpacing;
+            const centerY = paddingY + (fret - 0.5) * fretSpacing;
+            const pill = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            pill.setAttribute('x', x1 - dotRadius);
+            pill.setAttribute('y', centerY - dotRadius);
+            pill.setAttribute('width', (x2 - x1) + dotRadius * 2);
+            pill.setAttribute('height', dotRadius * 2);
+            pill.setAttribute('rx', dotRadius);
+            pill.setAttribute('ry', dotRadius);
+            pill.setAttribute('class', 'finger-dot barre-pill');
+            svg.appendChild(pill);
+        });
+
         for (let i = 0; i < numStrings; i++) {
             const stringX = paddingX + i * stringSpacing;
             
@@ -1490,11 +1457,11 @@
             }
             svg.appendChild(topText);
 
-            if (state > 0) {
+            if (state > 0 && !barreStringIndices.has(i)) {
                 const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
                 circle.setAttribute('cx', stringX);
                 circle.setAttribute('cy', paddingY + (state - 0.5) * fretSpacing);
-                circle.setAttribute('r', 13);
+                circle.setAttribute('r', dotRadius);
                 circle.setAttribute('class', 'finger-dot');
                 svg.appendChild(circle);
             }
@@ -1511,8 +1478,19 @@
                     rect.setAttribute('fill', 'transparent');
                     rect.style.cursor = 'pointer';
 
-                    rect.addEventListener('click', () => {
-                        handleFretClick(str, fr);
+                    // Starts a potential drag-to-barre. Capture is taken on
+                    // the stable `svg` element (not this rect), because
+                    // renderFretboard() rebuilds all these cells from
+                    // scratch on every call - a capture held by this rect
+                    // itself would break the instant a re-render (triggered
+                    // by the drag's own movement handler) replaces it.
+                    rect.addEventListener('pointerdown', (e) => {
+                        if (isProcessing) return;
+                        dragStartString = str;
+                        dragFret = fr;
+                        dragEndString = str;
+                        dragMoved = false;
+                        svg.setPointerCapture(e.pointerId);
                     });
                     svg.appendChild(rect);
                 }
@@ -1976,6 +1954,50 @@
     const strumZone = document.getElementById('strum-zone');
     let startX = 0;
     let isStrumming = false;
+
+    // Drag-to-barre movement/release tracking. Registered once on the
+    // stable `svg` element (see the pointerdown handler inside
+    // renderFretboard for why) rather than per fret-cell.
+    svg.addEventListener('pointermove', (e) => {
+        if (dragStartString === null || currentMode !== 'draw' || isProcessing) return;
+        const svgRect = svg.getBoundingClientRect();
+        if (svgRect.width === 0) return;
+        const scaleX = 300 / svgRect.width; // viewBox width is always 300
+        const localX = (e.clientX - svgRect.left) * scaleX;
+        const stringSpacing = getStringSpacing();
+        let strIdx = Math.round((localX - paddingX) / stringSpacing);
+        strIdx = Math.max(0, Math.min(getNumStrings() - 1, strIdx));
+        if (strIdx !== dragEndString) {
+            dragEndString = strIdx;
+            dragMoved = true;
+            const lo = Math.min(dragStartString, dragEndString);
+            const hi = Math.max(dragStartString, dragEndString);
+            for (let k = lo; k <= hi; k++) {
+                userState[k] = dragFret;
+            }
+            renderFretboard();
+        }
+    });
+
+    svg.addEventListener('pointerup', () => {
+        if (dragStartString === null) return;
+        if (!dragMoved) {
+            // Plain tap, no drag across strings - same single-string toggle
+            // behavior as before drag-to-barre existed.
+            handleFretClick(dragStartString, dragFret);
+        }
+        dragStartString = null;
+        dragFret = null;
+        dragEndString = null;
+        dragMoved = false;
+    });
+
+    svg.addEventListener('pointercancel', () => {
+        dragStartString = null;
+        dragFret = null;
+        dragEndString = null;
+        dragMoved = false;
+    });
 
     strumZone.addEventListener('pointerdown', (e) => {
         if (currentMode !== 'draw') return;
