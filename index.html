@@ -2104,7 +2104,16 @@
     // project subpath (e.g. /guitar-quiz/) as well as a user/org page root.
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js').catch((err) => {
+            // updateViaCache: 'none' stops the browser from checking sw.js
+            // for updates against its regular HTTP cache - without this,
+            // a browser can serve a stale cached copy of sw.js itself on
+            // every "check for updates," never even fetching the new
+            // version over the network to notice the commit-SHA changed.
+            // That's a separate layer from the Cache Storage API we
+            // manage inside sw.js, and it's what actually caused an
+            // update to stick around until a full site-data wipe instead
+            // of resolving on a normal reopen.
+            navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).catch((err) => {
                 console.error('Service worker registration failed:', err);
             });
         });
