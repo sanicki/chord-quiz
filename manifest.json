@@ -1,7 +1,7 @@
 {
-  "name": "Guitar Chord Quiz",
+  "name": "Chord Quiz",
   "short_name": "Chord Quiz",
-  "description": "Interactive guitar chord quiz - practice by drawing chords or playing them on your guitar.",
+  "description": "Interactive chord quiz for guitar and ukulele - practice by drawing chords or playing them on your instrument.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

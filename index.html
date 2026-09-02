@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Guitar Chord Quiz</title>
+    <title>Chord Quiz</title>
 
     <!-- PWA: manifest + icons -->
     <link rel="manifest" href="./manifest.json">
@@ -273,6 +273,21 @@
             text-align: center;
         }
 
+        .instrument-toggle-row {
+            display: flex;
+            /* Shifts left by 4px to pixel-align with the eye/speaker toggle
+               above, which sits at position:absolute; left:20px (4px outside
+               the container's normal 24px content padding). */
+            margin-left: -4px;
+        }
+
+        .instrument-toggle-btn {
+            /* Same circular icon-button look as .header-toggle-btn, but in
+               normal document flow instead of absolutely positioned in a
+               header corner. */
+            position: static;
+        }
+
         /* 3 Columns Layout for Chords */
         .chord-grid {
             display: grid;
@@ -383,11 +398,15 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             gap: 8px;
             cursor: pointer;
             touch-action: none;
             transition: background-color 0.2s, border-color 0.2s, color 0.2s;
             margin-bottom: 0;
+            position: relative;
+            overflow: hidden;
+            min-height: 100px;
         }
 
         .strum-zone:active, .strum-zone.strumming {
@@ -396,18 +415,34 @@
         }
 
         .strum-icon {
-            width: 32px;
-            height: 32px;
+            /* Sized to roughly the width of the fretboard neck (190px) plus
+               a little extra, like an instrument's sound hole - and
+               positioned absolutely so the box (overflow: hidden) only
+               reveals the slice of it that falls within the strum bar,
+               rather than growing the box to fit the whole circle. */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 210px;
+            height: 210px;
             fill: currentColor;
             transition: fill 0.2s;
+            z-index: 0;
         }
 
         .strum-text {
             font-size: 0.85rem;
             font-weight: 600;
-            color: currentColor;
+            /* Inverted against the icon: the icon fills with currentColor
+               (the dynamic state color), so the text uses the surface color
+               instead of matching it - otherwise it would blend into the
+               now much-larger icon sitting behind it. */
+            color: var(--card-bg);
             text-transform: uppercase;
             letter-spacing: 0.05em;
+            position: relative;
+            z-index: 1;
         }
 
         .controls {
@@ -567,6 +602,18 @@
             <button class="btn-sm" id="setup-save-quiz-btn">Save Quiz</button>
             <button class="btn-sm" id="setup-share-quiz-btn">Share Quiz</button>
         </div>
+        <div class="instrument-toggle-row">
+            <button class="header-toggle-btn instrument-toggle-btn" id="instrument-toggle" aria-label="Toggle Instrument" title="Toggle Guitar / Ukulele">
+                <svg id="guitar-icon" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+                    <text x="12" y="16.5" text-anchor="middle" font-size="12" font-weight="700" fill="var(--card-bg)">G</text>
+                </svg>
+                <svg id="ukulele-icon" style="display: none;" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+                    <text x="12" y="16.5" text-anchor="middle" font-size="12" font-weight="700" fill="var(--card-bg)">U</text>
+                </svg>
+            </button>
+        </div>
         <div id="setup-toast" class="toast-msg"></div>
     </div>
 
@@ -593,10 +640,10 @@
         </div>
 
         <div class="strum-zone" id="strum-zone">
-            <svg class="strum-icon" id="strum-zone-icon" viewBox="0 0 24 24">
-                <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,24M11,6V18H13V6H11Z"/>
+            <svg class="strum-icon" id="strum-zone-icon" width="210" height="210" viewBox="2 2 20 20">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
             </svg>
-            <span class="strum-text" id="strum-zone-text">Swipe here to strum & submit</span>
+            <span class="strum-text" id="strum-zone-text">Swipe here to strum</span>
         </div>
 
         <div class="controls">
@@ -635,6 +682,10 @@
     const eyeIcon = document.getElementById('eye-icon');
     const speakerIcon = document.getElementById('speaker-icon');
 
+    const instrumentBtn = document.getElementById('instrument-toggle');
+    const guitarIcon = document.getElementById('guitar-icon');
+    const ukuleleIcon = document.getElementById('ukulele-icon');
+
     let currentMode = 'draw'; // 'draw' (Eye/Tap) or 'play' (Speaker/Audio)
 
     function setTheme(theme) {
@@ -665,7 +716,7 @@
             strumZone.style.backgroundColor = 'var(--strum-bg)';
             strumZone.style.borderColor = 'var(--border)';
             strumZone.style.color = 'var(--text-muted)';
-            strumText.textContent = 'Swipe here to strum & submit';
+            strumText.textContent = 'Swipe here to strum';
             return;
         }
 
@@ -695,7 +746,8 @@
         } else {
             eyeIcon.style.display = 'none';
             speakerIcon.style.display = 'block';
-            document.getElementById('quiz-instructions').textContent = 'Play Mode: Strum your guitar! Play the target chord clearly to submit automatically.';
+            const instrumentLabel = currentInstrument === 'ukulele' ? 'ukulele' : 'guitar';
+            document.getElementById('quiz-instructions').textContent = `Play Mode: Strum your ${instrumentLabel}! Play the target chord clearly to submit automatically.`;
             document.getElementById('clear-btn').style.display = 'none';
             updateStrumZoneVisuals(null, 'Listening for strum...');
             if (document.getElementById('quiz-ui').style.display !== 'none') {
@@ -707,6 +759,31 @@
 
     modeBtn.addEventListener('click', () => {
         setMode(currentMode === 'draw' ? 'play' : 'draw');
+    });
+
+    function setInstrument(instrument) {
+        currentInstrument = instrument;
+        localStorage.setItem('instrument', instrument);
+        guitarIcon.style.display = instrument === 'guitar' ? 'block' : 'none';
+        ukuleleIcon.style.display = instrument === 'ukulele' ? 'block' : 'none';
+
+        // Guitar and ukulele have different chord vocabularies (different
+        // string counts/tunings, and even different suffix conventions -
+        // e.g. this chart's ukulele "aug"/"dim" vs the guitar set's "+"/"5"),
+        // so a chord selection made for one doesn't carry over meaningfully
+        // to the other. Reset to a clean slate on switch.
+        selectedChordNames = new Set();
+        revealedChordNames = new Set();
+        seenChords = new Set();
+        activePresetName = null;
+
+        initSetupUI();
+        populateSavedQuizDropdown();
+        document.getElementById('setup-error').textContent = '';
+    }
+
+    instrumentBtn.addEventListener('click', () => {
+        setInstrument(currentInstrument === 'guitar' ? 'ukulele' : 'guitar');
     });
 
     const AudioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -733,11 +810,15 @@
         }, delay * 1000);
     }
 
-    const baseFreqs = [82.41, 110.00, 146.83, 196.00, 246.94, 329.63];
+    // Base open-string frequencies (Hz), low-to-high as drawn on the
+    // fretboard, matching each instrument's tuning definition above.
+    const GUITAR_BASE_FREQS = [82.41, 110.00, 146.83, 196.00, 246.94, 329.63];
+    const UKULELE_BASE_FREQS = [392.00, 261.63, 329.63, 440.00]; // G4, C4, E4, A4
 
     function playChordAudio(stringStates, startFret = 1) {
+        const baseFreqs = currentInstrument === 'ukulele' ? UKULELE_BASE_FREQS : GUITAR_BASE_FREQS;
         let delayCount = 0;
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < baseFreqs.length; i++) {
             const fret = stringStates[i];
             if (fret !== -1) {
                 const pitchFret = fret === 0 ? 0 : (fret + startFret - 1);
@@ -891,7 +972,154 @@
         { name: "Gsus", frets: [-1, -1, 0, 0, 1, 3] }
     ];
 
-    const chordDatabase = rawChordDatabase.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+    const guitarChordDatabase = rawChordDatabase.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+
+    // Ukulele chord shapes, standard GCEA tuning. Transcribed from a Walrus
+    // Productions ukulele chord chart and cross-referenced against
+    // ukulele-chords.com for accuracy. "dim" entries are full diminished-7th
+    // (4-note) voicings, matching that chart's own convention.
+    const rawUkuleleChordDatabase = [
+        { name: "A", frets: [2, 1, 0, 0] },
+        { name: "Am", frets: [2, 0, 0, 0] },
+        { name: "Aaug", frets: [2, 1, 1, 4] },
+        { name: "Adim", frets: [2, 3, 2, 3] },
+        { name: "A6", frets: [2, 4, 2, 4] },
+        { name: "Am6", frets: [2, 4, 0, 3] },
+        { name: "A7", frets: [0, 1, 0, 0] },
+        { name: "Amaj7", frets: [1, 1, 0, 0] },
+        { name: "Am7", frets: [2, 4, 3, 3] },
+        { name: "A9", frets: [0, 1, 0, 2] },
+        { name: "Ab", frets: [5, 3, 4, 3] },
+        { name: "Abm", frets: [1, 3, 4, 2] },
+        { name: "Abaug", frets: [1, 0, 0, 3] },
+        { name: "Abdim", frets: [1, 2, 1, 2] },
+        { name: "Ab6", frets: [1, 3, 1, 3] },
+        { name: "Abm6", frets: [1, 3, 1, 2] },
+        { name: "Ab7", frets: [1, 3, 2, 3] },
+        { name: "Abmaj7", frets: [1, 3, 0, 3] },
+        { name: "Abm7", frets: [1, 3, 2, 2] },
+        { name: "Ab9", frets: [3, 3, 2, 3] },
+        { name: "B", frets: [4, 3, 2, 2] },
+        { name: "Bm", frets: [4, 2, 2, 2] },
+        { name: "Baug", frets: [0, 3, 3, 2] },
+        { name: "Bdim", frets: [1, 2, 1, 2] },
+        { name: "B6", frets: [1, 3, 2, 2] },
+        { name: "Bm6", frets: [1, 2, 2, 2] },
+        { name: "B7", frets: [2, 3, 2, 2] },
+        { name: "Bmaj7", frets: [4, 3, 2, 1] },
+        { name: "Bm7", frets: [2, 2, 2, 2] },
+        { name: "B9", frets: [2, 3, 2, 4] },
+        { name: "Bb", frets: [3, 2, 1, 1] },
+        { name: "Bbm", frets: [3, 1, 1, 1] },
+        { name: "Bbaug", frets: [3, 2, 2, 1] },
+        { name: "Bbdim", frets: [0, 1, 0, 1] },
+        { name: "Bb6", frets: [0, 2, 1, 1] },
+        { name: "Bbm6", frets: [0, 1, 1, 1] },
+        { name: "Bb7", frets: [1, 2, 1, 1] },
+        { name: "Bbmaj7", frets: [3, 2, 1, 0] },
+        { name: "Bbm7", frets: [1, 1, 1, 1] },
+        { name: "Bb9", frets: [1, 2, 1, 3] },
+        { name: "C", frets: [0, 0, 0, 3] },
+        { name: "Cm", frets: [0, 3, 3, 3] },
+        { name: "Caug", frets: [1, 0, 0, 3] },
+        { name: "Cdim", frets: [2, 3, 2, 3] },
+        { name: "C6", frets: [0, 0, 0, 0] },
+        { name: "Cm6", frets: [2, 3, 3, 3] },
+        { name: "C7", frets: [0, 0, 0, 1] },
+        { name: "Cmaj7", frets: [0, 0, 0, 2] },
+        { name: "Cm7", frets: [3, 3, 3, 3] },
+        { name: "C9", frets: [0, 2, 0, 1] },
+        { name: "D", frets: [2, 2, 2, 0] },
+        { name: "Dm", frets: [2, 2, 1, 0] },
+        { name: "Daug", frets: [3, 2, 2, 1] },
+        { name: "Ddim", frets: [1, 2, 1, 2] },
+        { name: "D6", frets: [2, 2, 0, 2] },
+        { name: "Dm6", frets: [2, 2, 1, 2] },
+        { name: "D7", frets: [2, 2, 2, 3] },
+        { name: "Dmaj7", frets: [2, 2, 2, 4] },
+        { name: "Dm7", frets: [2, 2, 1, 3] },
+        { name: "D9", frets: [2, 4, 2, 3] },
+        { name: "Db", frets: [1, 1, 1, 3] },
+        { name: "Dbm", frets: [1, 1, 0, 4] },
+        { name: "Dbaug", frets: [1, 0, 0, 4] },
+        { name: "Dbdim", frets: [0, 1, 0, 1] },
+        { name: "Db6", frets: [1, 1, 1, 1] },
+        { name: "Dbm6", frets: [1, 1, 0, 1] },
+        { name: "Db7", frets: [1, 1, 1, 2] },
+        { name: "Dbmaj7", frets: [1, 1, 1, 3] },
+        { name: "Dbm7", frets: [1, 1, 0, 2] },
+        { name: "Db9", frets: [1, 1, 1, 2] },
+        { name: "E", frets: [4, 4, 4, 2] },
+        { name: "Em", frets: [0, 4, 3, 2] },
+        { name: "Eaug", frets: [1, 0, 0, 3] },
+        { name: "Edim", frets: [0, 1, 0, 1] },
+        { name: "E6", frets: [4, 4, 4, 4] },
+        { name: "Em6", frets: [0, 1, 0, 2] },
+        { name: "E7", frets: [1, 2, 0, 2] },
+        { name: "Emaj7", frets: [1, 3, 0, 2] },
+        { name: "Em7", frets: [0, 2, 0, 2] },
+        { name: "E9", frets: [1, 2, 0, 2] },
+        { name: "Eb", frets: [0, 3, 3, 1] },
+        { name: "Ebm", frets: [3, 3, 2, 1] },
+        { name: "Ebaug", frets: [0, 3, 3, 2] },
+        { name: "Ebdim", frets: [2, 3, 2, 3] },
+        { name: "Eb6", frets: [3, 3, 3, 3] },
+        { name: "Ebm6", frets: [3, 3, 2, 3] },
+        { name: "Eb7", frets: [3, 3, 3, 4] },
+        { name: "Ebmaj7", frets: [3, 3, 3, 5] },
+        { name: "Ebm7", frets: [3, 3, 2, 4] },
+        { name: "Eb9", frets: [0, 3, 1, 4] },
+        { name: "F", frets: [2, 0, 1, 0] },
+        { name: "Fm", frets: [1, 0, 1, 3] },
+        { name: "Faug", frets: [2, 1, 1, 0] },
+        { name: "Fdim", frets: [1, 2, 1, 2] },
+        { name: "F6", frets: [2, 2, 1, 3] },
+        { name: "Fm6", frets: [1, 2, 0, 3] },
+        { name: "F7", frets: [2, 3, 1, 3] },
+        { name: "Fmaj7", frets: [2, 4, 1, 3] },
+        { name: "Fm7", frets: [1, 3, 1, 3] },
+        { name: "F9", frets: [2, 3, 3, 3] },
+        { name: "G", frets: [0, 2, 3, 2] },
+        { name: "Gm", frets: [0, 2, 3, 1] },
+        { name: "Gaug", frets: [0, 3, 3, 2] },
+        { name: "Gdim", frets: [0, 1, 0, 1] },
+        { name: "G6", frets: [0, 2, 0, 2] },
+        { name: "Gm6", frets: [0, 2, 0, 1] },
+        { name: "G7", frets: [0, 2, 1, 2] },
+        { name: "Gmaj7", frets: [0, 2, 2, 2] },
+        { name: "Gm7", frets: [0, 2, 1, 1] },
+        { name: "G9", frets: [0, 5, 5, 2] },
+        { name: "Gb", frets: [3, 1, 2, 1] },
+        { name: "Gbm", frets: [2, 1, 2, 4] },
+        { name: "Gbaug", frets: [3, 2, 2, 1] },
+        { name: "Gbdim", frets: [2, 3, 2, 3] },
+        { name: "Gb6", frets: [3, 3, 2, 4] },
+        { name: "Gbm6", frets: [2, 3, 2, 4] },
+        { name: "Gb7", frets: [3, 4, 2, 4] },
+        { name: "Gbmaj7", frets: [3, 4, 2, 4] },
+        { name: "Gbm7", frets: [2, 4, 2, 4] },
+        { name: "Gb9", frets: [1, 1, 0, 1] }
+    ];
+    const ukuleleChordDatabase = rawUkuleleChordDatabase.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+
+    // Tuning definitions: pitch classes for each open string, low-to-high as
+    // drawn left-to-right on the fretboard. Guitar = E A D G B E. Ukulele =
+    // G C E A (standard reentrant "high G" tuning).
+    const INSTRUMENTS = {
+        guitar: { numStrings: 6, tuning: [4, 9, 2, 7, 11, 4], database: guitarChordDatabase },
+        ukulele: { numStrings: 4, tuning: [7, 0, 4, 9], database: ukuleleChordDatabase }
+    };
+    let currentInstrument = localStorage.getItem('instrument') === 'ukulele' ? 'ukulele' : 'guitar';
+
+    function getChordDatabase() {
+        return INSTRUMENTS[currentInstrument].database;
+    }
+    function getNumStrings() {
+        return INSTRUMENTS[currentInstrument].numStrings;
+    }
+    function getTuning() {
+        return INSTRUMENTS[currentInstrument].tuning;
+    }
 
     let selectedChordNames = new Set();
     let revealedChordNames = new Set();
@@ -901,7 +1129,7 @@
     let scoreCorrect = 0;
     let scoreIncorrect = 0;
     let userState = [0, 0, 0, 0, 0, 0];
-    let seenChords = new Set();
+    let seenChords = new Set(); // reset when the instrument changes (see setInstrument)
     let isProcessing = false;
     let activePresetName = null;
 
@@ -912,9 +1140,13 @@
 
     const paddingX = 50;
     const paddingY = 32;
-    const stringSpacing = 38;
     const fretSpacing = 45;
     const numFrets = 4;
+    // String spacing is derived from string count so the fretboard always
+    // spans the same total width (matches the 6-string layout: 5 gaps * 38px).
+    function getStringSpacing() {
+        return 190 / (getNumStrings() - 1);
+    }
 
     const svg = document.getElementById('fretboard');
 
@@ -922,16 +1154,27 @@
         return frets.map(f => f === -1 ? 'X' : f).join('-');
     }
 
+    // Presets are namespaced per instrument, since guitar and ukulele have
+    // different chord vocabularies (a saved guitar preset's chord names
+    // wouldn't reliably match anything meaningful in the ukulele database).
     function getStoredPresets() {
         try {
-            return JSON.parse(localStorage.getItem('chord_presets')) || {};
+            const all = JSON.parse(localStorage.getItem('chord_presets_v2')) || {};
+            return all[currentInstrument] || {};
         } catch (e) {
             return {};
         }
     }
 
     function saveStoredPresets(presets) {
-        localStorage.setItem('chord_presets', JSON.stringify(presets));
+        let all = {};
+        try {
+            all = JSON.parse(localStorage.getItem('chord_presets_v2')) || {};
+        } catch (e) {
+            all = {};
+        }
+        all[currentInstrument] = presets;
+        localStorage.setItem('chord_presets_v2', JSON.stringify(all));
     }
 
     function populateSavedQuizDropdown() {
@@ -972,7 +1215,7 @@
         const grid = document.getElementById('chord-select-grid');
         grid.innerHTML = '';
 
-        chordDatabase.forEach(chord => {
+        getChordDatabase().forEach(chord => {
             const btn = document.createElement('div');
             const isSelected = selectedChordNames.has(chord.name);
             const isRevealed = revealedChordNames.has(chord.name);
@@ -1041,7 +1284,7 @@
             const chordList = chordsParam.split(',').map(c => c.trim());
             selectedChordNames.clear();
             chordList.forEach(name => {
-                if (chordDatabase.some(c => c.name === name)) {
+                if (getChordDatabase().some(c => c.name === name)) {
                     selectedChordNames.add(name);
                 }
             });
@@ -1073,7 +1316,7 @@
 
     document.getElementById('select-all-btn').addEventListener('click', () => {
         activePresetName = null;
-        selectedChordNames = new Set(chordDatabase.map(c => c.name));
+        selectedChordNames = new Set(getChordDatabase().map(c => c.name));
         initSetupUI();
         document.getElementById('setup-error').textContent = '';
     });
@@ -1144,11 +1387,14 @@
         svg.innerHTML = '';
         const currentChord = quizQueue[currentStep];
         const startFret = (currentChord && currentChord.startFret) ? currentChord.startFret : 1;
+        const numStrings = getNumStrings();
+        const stringSpacing = getStringSpacing();
+        const lastGap = numStrings - 1;
 
         const nut = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         nut.setAttribute('x1', paddingX - 1);
         nut.setAttribute('y1', paddingY);
-        nut.setAttribute('x2', paddingX + 5 * stringSpacing + 1);
+        nut.setAttribute('x2', paddingX + lastGap * stringSpacing + 1);
         nut.setAttribute('y2', paddingY);
         nut.setAttribute('class', startFret === 1 ? 'nut' : 'fret');
         svg.appendChild(nut);
@@ -1167,7 +1413,7 @@
             const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
             line.setAttribute('x1', paddingX);
             line.setAttribute('y1', fretY);
-            line.setAttribute('x2', paddingX + 5 * stringSpacing);
+            line.setAttribute('x2', paddingX + lastGap * stringSpacing);
             line.setAttribute('y2', fretY);
             line.setAttribute('class', 'fret');
             svg.appendChild(line);
@@ -1176,14 +1422,18 @@
         if (startFret === 1) {
             const dotY = paddingY + (2.5 * fretSpacing);
             const marker = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            marker.setAttribute('cx', paddingX + 2.5 * stringSpacing);
+            marker.setAttribute('cx', paddingX + (lastGap / 2) * stringSpacing);
             marker.setAttribute('cy', dotY);
             marker.setAttribute('r', 8);
             marker.setAttribute('class', 'marker');
             svg.appendChild(marker);
         }
 
-        for (let i = 0; i < 6; i++) {
+        // Bass strings drawn thicker for guitar (low E, A); ukulele strings
+        // are all a similar gauge in real life, so none get the thick style.
+        const thickStringCount = currentInstrument === 'guitar' ? 2 : 0;
+
+        for (let i = 0; i < numStrings; i++) {
             const stringX = paddingX + i * stringSpacing;
             
             const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -1191,7 +1441,7 @@
             line.setAttribute('y1', paddingY);
             line.setAttribute('x2', stringX);
             line.setAttribute('y2', paddingY + numFrets * fretSpacing);
-            line.setAttribute('class', `string ${i < 2 ? 'string-thick' : ''}`);
+            line.setAttribute('class', `string ${i < thickStringCount ? 'string-thick' : ''}`);
             svg.appendChild(line);
 
             const topText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -1230,7 +1480,7 @@
         }
 
         if (currentMode === 'draw') {
-            for (let str = 0; str < 6; str++) {
+            for (let str = 0; str < numStrings; str++) {
                 for (let fr = 1; fr <= numFrets; fr++) {
                     const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
                     rect.setAttribute('x', paddingX + str * stringSpacing - stringSpacing/2);
@@ -1271,7 +1521,7 @@
 
     function clearBoard() {
         if (isProcessing) return;
-        userState = [0, 0, 0, 0, 0, 0];
+        userState = new Array(getNumStrings()).fill(0);
         renderFretboard();
     }
 
@@ -1334,7 +1584,7 @@
                 seenChords.add(currentChord.name);
                 document.getElementById('hint-badge').style.display = 'inline-block';
             } else {
-                userState = [0, 0, 0, 0, 0, 0];
+                userState = new Array(getNumStrings()).fill(0);
                 document.getElementById('hint-badge').style.display = 'none';
             }
         } else {
@@ -1351,10 +1601,10 @@
 
     function getTargetPitchClasses(frets, startFret = 1) {
         const pitchClasses = new Set();
+        const basePitches = getTuning();
         frets.forEach((fret, stringIdx) => {
             if (fret !== -1) {
                 const pitchFret = fret === 0 ? 0 : (fret + startFret - 1);
-                const basePitches = [4, 9, 2, 7, 11, 4]; // E, A, D, G, B, E
                 const pc = (basePitches[stringIdx] + pitchFret) % 12;
                 pitchClasses.add(pc);
             }
@@ -1498,7 +1748,7 @@
                 // string (required to be fretted up to A for this chord) as
                 // the loudest or tied-loudest bin, while genuine x02220 takes
                 // kept it well below.
-                const basePitches = [4, 9, 2, 7, 11, 4]; // E, A, D, G, B, E
+                const basePitches = getTuning();
                 const openConflictPCs = [];
                 targetChord.frets.forEach((fret, stringIdx) => {
                     if (fret > 0) {
@@ -1634,7 +1884,7 @@
             return;
         }
 
-        activeDatabase = chordDatabase.filter(c => selectedChordNames.has(c.name));
+        activeDatabase = getChordDatabase().filter(c => selectedChordNames.has(c.name));
         quizQueue = buildQuizQueue();
         seenChords.clear();
         currentStep = 0;
@@ -1645,12 +1895,13 @@
         document.getElementById('setup-ui').style.display = 'none';
         document.getElementById('results-ui').style.display = 'none';
         document.getElementById('quiz-ui').style.display = 'flex';
-        
-        loadStep();
 
-        if (currentMode === 'play') {
-            startAudioListening();
-        }
+        // Re-run so the mode instructions text picks up whichever instrument
+        // was selected on the setup screen, even if the mode itself (draw
+        // vs play) hasn't changed since the last quiz.
+        setMode(currentMode);
+
+        loadStep();
     }
 
     function handleSaveQuiz() {
@@ -1740,6 +1991,12 @@
     setTheme('light');
     setMode('draw');
     checkURLParameters();
+    // Sync the instrument icon to whatever was persisted from a previous
+    // visit (without wiping the restored chord selection the way a live
+    // setInstrument() switch does - that reset is only for an active,
+    // user-initiated toggle).
+    guitarIcon.style.display = currentInstrument === 'guitar' ? 'block' : 'none';
+    ukuleleIcon.style.display = currentInstrument === 'ukulele' ? 'block' : 'none';
     initSetupUI();
 
     // PWA: register the service worker so the app shell is cached and the
