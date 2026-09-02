@@ -358,6 +358,17 @@
             display: block;
         }
 
+        #fretboard {
+            /* Overrides the generic svg rule above. The drag-to-barre
+               gesture needs full control over touch drags on this element -
+               "manipulation" still lets the browser interpret a finger drag
+               as a page scroll/pan, which silently breaks the gesture on
+               touch devices (often firing pointercancel instead of
+               pointermove) without affecting mouse input at all. Same
+               reasoning as .strum-zone below. */
+            touch-action: none;
+        }
+
         .nut { stroke: var(--nut-color); stroke-width: 6; }
         .fret { stroke: var(--fret-color); stroke-width: 2; }
         .string { stroke: var(--string-color); stroke-width: 2; }

@@ -31,6 +31,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Inject service worker cache version
+        # sw.js ships with a __CACHE_VERSION__ placeholder (never a real
+        # value in the repo). Stamping in the commit SHA here means the
+        # cache only ever busts when a commit actually changed - no manual
+        # version bump to remember, and no risk of forgetting it.
+        run: sed -i "s/__CACHE_VERSION__/${{ github.sha }}/" sw.js
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact

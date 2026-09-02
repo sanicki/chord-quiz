@@ -1,6 +1,8 @@
-// Bump this whenever index.html (or any precached asset) changes, so the
-// new version is fetched and old caches are cleaned up.
-const CACHE_VERSION = 'guitar-quiz-v3';
+// The deploy workflow (.github/workflows/static.yml) replaces the
+// placeholder below with the commit SHA on every push to main, so this
+// never needs a manual bump - it's just "did the deployed commit change,"
+// which is exactly the question that matters for cache invalidation.
+const CACHE_VERSION = '__CACHE_VERSION__';
 
 const PRECACHE_URLS = [
     './',
